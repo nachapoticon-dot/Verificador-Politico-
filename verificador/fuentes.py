@@ -99,13 +99,17 @@ def extraer_meta(texto: str) -> dict | None:
 def _dominios_propuestos(ruta: Path) -> set[str]:
     if not ruta.exists():
         return set()
+    try:
+        text = ruta.read_text(encoding="utf-8")
+    except OSError:
+        return set()
     doms: set[str] = set()
-    for linea in ruta.read_text(encoding="utf-8").splitlines():
+    for linea in text.splitlines():
         linea = linea.strip()
         if not linea:
             continue
         try:
-            doms.add(json.loads(linea)["dominio"])
+            doms.add(json.loads(linea)["dominio"].lower())
         except Exception:  # noqa: BLE001
             continue
     return doms
@@ -158,9 +162,9 @@ def _revisar() -> int:
             continue
         try:
             d = json.loads(linea)
+            filas[d["dominio"]] = d  # última valoración gana
         except Exception:  # noqa: BLE001
             continue
-        filas[d["dominio"]] = d  # última valoración gana
     print(f"{len(filas)} dominio(s) propuesto(s) (no en el registro curado):\n")
     for dom, d in sorted(filas.items()):
         print(f'  "{dom}": {{"credibilidad": "{d.get("credibilidad")}", '

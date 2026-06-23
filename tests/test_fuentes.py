@@ -1,7 +1,12 @@
+import json as _json
 from unittest import mock
 from io import StringIO
+from pathlib import Path
 
-from verificador.fuentes import Fuente, dominio_registrable, clasificar, anotar
+from verificador.fuentes import (
+    Fuente, dominio_registrable, clasificar, anotar,
+    extraer_meta, capturar_propuestas,
+)
 
 
 def test_dominio_registrable_normaliza():
@@ -51,11 +56,6 @@ def test_registro_degrada_a_dict_vacio_si_json_invalido():
     import verificador.fuentes as m
     with mock.patch("pathlib.Path.open", return_value=StringIO("not-json")):
         assert m._cargar_registro() == {}
-
-
-import json as _json
-from pathlib import Path
-from verificador.fuentes import extraer_meta, capturar_propuestas
 
 
 def test_extraer_meta_lee_el_json_final():
