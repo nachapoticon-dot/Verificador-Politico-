@@ -93,21 +93,73 @@ def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> 
     return resultados or [{"aviso": "Sin resultados para esa búsqueda."}]
 
 
-def leer_pagina(url: str, max_chars: int = 6000) -> str:
-    """Descarga una URL y devuelve su texto principal limpio (truncado)."""
-    import trafilatura  # import perezoso
+_navegador_singleton = None  # (playwright, browser) reutilizados entre lecturas
 
-    try:
-        resp = httpx.get(url, headers=_HEADERS, timeout=20.0, follow_redirects=True)
-        resp.raise_for_status()
-    except Exception as e:  # noqa: BLE001
-        return f"[No pude abrir {url}: {e}]"
 
-    texto = trafilatura.extract(
-        resp.text, include_comments=False, include_tables=True, favor_recall=True
+def _extraer(html: str) -> str | None:
+    import trafilatura
+
+    return trafilatura.extract(
+        html, include_comments=False, include_tables=True, favor_recall=True
     )
+
+
+def _leer_rapido(url: str) -> str | None:
+    """Ruta rápida: httpx + trafilatura. None si falla o sale vacío."""
+    try:
+        resp = httpx.get(url, headers=_HEADERS, timeout=8.0, follow_redirects=True)
+        resp.raise_for_status()
+    except Exception:  # noqa: BLE001
+        return None
+    texto = _extraer(resp.text)
+    return texto or None
+
+
+def _navegador():
+    """Lanza Chromium una sola vez y lo reutiliza (coste de arranque amortizado)."""
+    global _navegador_singleton
+    if _navegador_singleton is None:
+        from playwright.sync_api import sync_playwright
+
+        pw = sync_playwright().start()
+        browser = pw.chromium.launch(headless=True)
+        _navegador_singleton = (pw, browser)
+    return _navegador_singleton[1]
+
+
+def _leer_navegador(url: str) -> str | None:
+    """Fallback: renderiza con Chromium y extrae el texto principal."""
+    try:
+        browser = _navegador()
+        page = browser.new_page(user_agent=_HEADERS["User-Agent"])
+        try:
+            page.goto(url, wait_until="networkidle", timeout=20000)
+            html = page.content()
+        finally:
+            page.close()
+    except Exception:  # noqa: BLE001 — degradación elegante (p.ej. Chromium ausente)
+        return None
+    return _extraer(html)
+
+
+def cerrar_navegador() -> None:
+    """Cierra el navegador persistente, si se abrió."""
+    global _navegador_singleton
+    if _navegador_singleton is not None:
+        pw, browser = _navegador_singleton
+        try:
+            browser.close()
+            pw.stop()
+        except Exception:  # noqa: BLE001
+            pass
+        _navegador_singleton = None
+
+
+def leer_pagina(url: str, max_chars: int = 6000) -> str:
+    """Descarga una URL y devuelve su texto principal (rápido → navegador)."""
+    texto = _leer_rapido(url) or _leer_navegador(url)
     if not texto:
-        return f"[No pude extraer texto legible de {url}]"
+        return f"[No pude abrir ni extraer texto de {url}.]"
     if len(texto) > max_chars:
         texto = texto[:max_chars] + "\n…[texto truncado]"
     return texto
