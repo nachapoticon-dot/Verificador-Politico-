@@ -1,0 +1,117 @@
+# Verificador Político
+
+Un agente de IA **sin tendencia política** que verifica hechos sobre la
+actualidad política de **cualquier país**. Le haces una pregunta, busca en la
+web, **contrasta medios de distintas tendencias** (derecha, izquierda, centro y
+verificadores independientes) y responde con un veredicto basado en hechos,
+citando siempre sus fuentes.
+
+Sirve para preguntas como *"¿es verdad que el candidato X va a privatizar la
+educación?"* o *"¿Milei eliminó el Banco Central?"*: separa lo que alguien
+**dijo** de lo que le **atribuyen**, y explica si algo es siquiera posible
+institucionalmente en ese país.
+
+## Qué hace distinto
+
+- **No toma partido.** Su única lealtad son los hechos. Nunca insinúa a quién votar.
+- **Cualquier país.** Detecta la jurisdicción de la pregunta y adapta los medios
+  y el análisis institucional a ese país. Puedes fijar uno con `--pais`.
+- **Contrasta tendencias.** Busca cómo cubren el mismo hecho medios de derecha y
+  de izquierda, y prioriza verificadores de la red IFCN (ColombiaCheck,
+  Chequeado, Maldita, PolitiFact, AFP Factual…).
+- **Va a la fuente primaria.** Para declaraciones busca la cita completa, no el
+  titular, y detecta lo sacado de contexto.
+- **Evalúa lo que "va a pasar".** Explica si una promesa o un miedo de campaña es
+  jurídica y constitucionalmente posible (casi ningún cargo legisla solo).
+- **Etiqueta cada respuesta:** ✅ Verdadero · ❌ Falso · ⚠️ Engañoso ·
+  🔀 Sacado de contexto · 🔮 Predicción / no comprobable · ❓ Sin evidencia.
+
+## Cómo funciona
+
+- **Modelo: DeepSeek** (`deepseek-chat`), vía API compatible con OpenAI.
+- **Búsqueda propia:** como DeepSeek no tiene búsqueda web nativa, el agente usa
+  herramientas propias por *function calling* — `buscar_web` (DuckDuckGo, sin
+  API key) y `leer_pagina` (descarga y extrae el texto principal). Verás la
+  traza de investigación en vivo (qué busca, qué lee).
+- **Claves:** reutiliza tu `DEEPSEEK_API_KEY`. La busca en este orden: variable
+  de entorno → `.env` local → `.env.local` del proyecto EdifcIA (son proyectos
+  separados; este solo lee la clave, no toca EdifcIA).
+
+## Instalación
+
+Requiere Python 3.10+.
+
+```bash
+cd verificador-politico
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+# La clave se toma de EdifcIA automáticamente; o ponla tú:
+# export DEEPSEEK_API_KEY=sk-...
+```
+
+## Uso
+
+Modo chat:
+
+```bash
+python main.py
+```
+
+Pregunta única (con país opcional para sesgar la búsqueda):
+
+```bash
+python main.py --pais AR "¿es verdad que Milei eliminó el Banco Central?"
+python main.py "¿es verdad que el candidato X va a privatizar la educación?"
+```
+
+Dentro del chat: `/pais XX` fija país, `/pais off` lo quita, `/nuevo` olvida la
+conversación, `/salir` cierra.
+
+### Interfaz web ("Tomás")
+
+Además del CLI hay una interfaz web —**Tomás**, un agente de análisis: le das una
+pregunta o una afirmación y devuelve una respuesta factual validada fuente por
+fuente. Transmite la traza de validación en vivo (qué busca, qué lee) y dibuja el
+veredicto y un **medidor de espectro** con las fuentes contrastadas. Incluye una
+capa de moderación que pone límites con respeto antes de gastar una llamada al
+modelo.
+
+```bash
+uvicorn verificador.server:app --reload
+# abre http://127.0.0.1:8000
+```
+
+Puedes fijar país (campo de 2 letras) y elegir rigor (rápido / riguroso) desde
+la propia página.
+
+## Estructura
+
+```
+verificador-politico/
+├── main.py                 # punto de entrada del CLI
+├── verificador/
+│   ├── agent.py            # bucle de tool-calling sobre DeepSeek
+│   ├── search.py           # herramientas buscar_web / leer_pagina
+│   ├── prompts.py          # metodología, neutralidad, espectro de medios
+│   ├── config.py           # carga de la clave (incl. desde EdifcIA)
+│   ├── moderation.py       # límites de respeto (sin coste de modelo)
+│   ├── server.py           # servidor web (FastAPI + SSE)
+│   └── cli.py              # interfaz de terminal
+├── web/                    # interfaz "El Fiel" (HTML/CSS/JS, sin build)
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+├── requirements.txt
+└── .env.example
+```
+
+## Límites honestos
+
+- La IA puede equivocarse: úsalo como punto de partida. Por eso **siempre cita
+  fuentes** — verifícalas tú también.
+- Depende de lo que haya en la web (vía DuckDuckGo); si un tema es muy nuevo o
+  nadie lo ha reportado, dirá "sin evidencia suficiente" en lugar de inventar.
+- La clasificación de tendencia de cada medio es orientativa.
+- DeepSeek no tiene búsqueda nativa; la calidad depende de los resultados de
+  DuckDuckGo y de las páginas que se logren leer.
+```

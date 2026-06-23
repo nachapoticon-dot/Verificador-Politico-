@@ -1,0 +1,10 @@
+# El verificador usa DeepSeek (API compatible con OpenAI).
+openai>=1.55
+# Búsqueda web sin clave (DuckDuckGo) y extracción de texto de páginas.
+ddgs>=6.0
+trafilatura>=1.12
+httpx>=0.27
+# Interfaz web: servidor (FastAPI) y motor ASGI (uvicorn) que transmite la
+# traza de investigación en vivo por SSE.
+fastapi>=0.110
+uvicorn[standard]>=0.29
