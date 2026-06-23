@@ -218,4 +218,22 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "ver_video",
+            "description": (
+                "Lee el CONTENIDO de un vídeo (YouTube, Shorts) por su "
+                "transcripción para verificar lo que se dice en él. Úsala cuando "
+                "la fuente sea un vídeo. No analiza la imagen."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "La URL del vídeo."},
+                },
+                "required": ["url"],
+            },
+        },
+    },
 ]

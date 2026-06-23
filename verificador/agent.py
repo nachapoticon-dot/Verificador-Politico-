@@ -18,7 +18,8 @@ from openai import OpenAI
 
 from .config import Config, cargar_config
 from .prompts import SYSTEM_PROMPT
-from .search import TOOL_SCHEMAS, buscar_web, leer_pagina
+from . import search
+from .search import TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 
 
 @dataclass
@@ -27,7 +28,7 @@ class Verificador:
 
     config: Config = field(default_factory=lambda: _require_config())
     messages: list[dict] = field(default_factory=list)
-    max_pasos: int = 12
+    max_pasos: int = 8
     # Código de país ISO-3166 (p. ej. "AR") para sesgar la búsqueda, o None.
     country: str | None = None
     # Nivel de exigencia: "rapido" (menos fuentes, más veloz) o "riguroso".
@@ -66,6 +67,8 @@ class Verificador:
             return json.dumps(res, ensure_ascii=False)
         if nombre == "leer_pagina":
             return leer_pagina(url=args.get("url", ""))
+        if nombre == "ver_video":
+            return search.ver_video(url=args.get("url", ""))
         return f"[Herramienta desconocida: {nombre}]"
 
     def preguntar(self, pregunta: str, on_step: Callable[[str], None] | None = None) -> str:
@@ -76,7 +79,7 @@ class Verificador:
         """
         self.messages.append({"role": "user", "content": pregunta})
 
-        pasos = 6 if self.rigor == "rapido" else self.max_pasos
+        pasos = 4 if self.rigor == "rapido" else self.max_pasos
         for _ in range(pasos):
             resp = self._client.chat.completions.create(
                 model=self.config.model,
