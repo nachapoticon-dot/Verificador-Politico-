@@ -51,3 +51,38 @@ def test_registro_degrada_a_dict_vacio_si_json_invalido():
     import verificador.fuentes as m
     with mock.patch("pathlib.Path.open", return_value=StringIO("not-json")):
         assert m._cargar_registro() == {}
+
+
+import json as _json
+from pathlib import Path
+from verificador.fuentes import extraer_meta, capturar_propuestas
+
+
+def test_extraer_meta_lee_el_json_final():
+    texto = 'Bla bla [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
+    meta = extraer_meta(texto)
+    assert meta["veredicto"] == "informativo"
+    assert extraer_meta("sin json") is None
+    assert extraer_meta("```json\n{mal json\n```") is None
+
+
+def test_capturar_propuestas_solo_desconocidas_y_dedupe(tmp_path):
+    ruta = tmp_path / "propuestas.jsonl"
+    meta = {"fuentes": [
+        {"medio": "Reuters", "url": "https://reuters.com/a", "credibilidad": "alta", "tendencia": "centro"},
+        {"medio": "Diario Raro", "url": "https://diario-raro-xyz.tld/n", "credibilidad": "media", "tendencia": "centro"},
+    ]}
+    assert capturar_propuestas(meta, ruta) == 1  # reuters ya está en el registro
+    # repetir el mismo dominio no añade otra línea
+    assert capturar_propuestas(meta, ruta) == 0
+    lineas = [l for l in ruta.read_text(encoding="utf-8").splitlines() if l.strip()]
+    assert len(lineas) == 1
+    fila = _json.loads(lineas[0])
+    assert fila["dominio"] == "diario-raro-xyz.tld"
+    assert fila["credibilidad"] == "media"
+
+
+def test_capturar_propuestas_meta_vacia_no_rompe(tmp_path):
+    ruta = tmp_path / "p.jsonl"
+    assert capturar_propuestas(None, ruta) == 0
+    assert capturar_propuestas({}, ruta) == 0
