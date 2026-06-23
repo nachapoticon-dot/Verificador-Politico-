@@ -32,6 +32,23 @@ _DIM = "\033[2m"
 _BOLD = "\033[1m"
 _RESET = "\033[0m"
 
+# Icono por tipo de paso de la traza de investigación.
+_ICONOS = {"busqueda": "🔎", "pagina": "📄", "video": "🎬"}
+
+
+def _formatear_paso(ev: dict) -> str:
+    """Convierte un evento de traza (dict estructurado) en una línea legible.
+
+    Robusto ante claves ausentes: cae a lo que haya (titulo → dominio → url).
+    """
+    if not isinstance(ev, dict):  # defensivo: contrato antiguo (str)
+        return str(ev)
+    icono = _ICONOS.get(ev.get("tipo") or "", "•")
+    estado = ev.get("estado") or ""
+    etiqueta = ev.get("titulo") or ev.get("dominio") or ev.get("url") or ""
+    partes = [p for p in (icono, estado, etiqueta) if p]
+    return " ".join(partes)
+
 
 def _leer_pregunta() -> str | None:
     try:
@@ -99,8 +116,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _responder(agente: Verificador, pregunta: str) -> int:
-    def on_step(linea: str) -> None:
-        print(f"{_DIM}  {linea}{_RESET}", flush=True)
+    def on_step(ev: dict) -> None:
+        print(f"{_DIM}  {_formatear_paso(ev)}{_RESET}", flush=True)
 
     print(f"\n{_BOLD}Verificador ›{_RESET} {_DIM}(investigando…){_RESET}")
     try:
