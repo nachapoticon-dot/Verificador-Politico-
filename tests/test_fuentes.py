@@ -1,3 +1,6 @@
+from unittest import mock
+from io import StringIO
+
 from verificador.fuentes import Fuente, dominio_registrable, clasificar, anotar
 
 
@@ -34,3 +37,17 @@ def test_anotar_desconocida_pide_clasificar():
     a = anotar("https://un-dominio-rarisimo-xyz.tld/nota")
     assert "no registrado" in a
     assert "propuesta" in a
+
+
+def test_registro_degrada_a_dict_vacio_si_falta_json():
+    import verificador.fuentes as m
+    # Path instances tienen atributos de solo-lectura (Py3.14), así que
+    # parcheamos Path.open a nivel de clase: mismo efecto, no crashea.
+    with mock.patch("pathlib.Path.open", side_effect=FileNotFoundError):
+        assert m._cargar_registro() == {}
+
+
+def test_registro_degrada_a_dict_vacio_si_json_invalido():
+    import verificador.fuentes as m
+    with mock.patch("pathlib.Path.open", return_value=StringIO("not-json")):
+        assert m._cargar_registro() == {}
