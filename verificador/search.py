@@ -12,6 +12,7 @@ llamarlas para contrastar fuentes de distintas tendencias.
 
 from __future__ import annotations
 
+import atexit
 import httpx
 import re
 
@@ -122,7 +123,11 @@ def _navegador():
         from playwright.sync_api import sync_playwright
 
         pw = sync_playwright().start()
-        browser = pw.chromium.launch(headless=True)
+        try:
+            browser = pw.chromium.launch(headless=True)
+        except Exception:
+            pw.stop()
+            raise
         _navegador_singleton = (pw, browser)
     return _navegador_singleton[1]
 
@@ -153,6 +158,9 @@ def cerrar_navegador() -> None:
         except Exception:  # noqa: BLE001
             pass
         _navegador_singleton = None
+
+
+atexit.register(cerrar_navegador)
 
 
 def leer_pagina(url: str, max_chars: int = 6000) -> str:
