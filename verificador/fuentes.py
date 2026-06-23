@@ -10,6 +10,8 @@ para revisión humana (no se aplican solas).
 from __future__ import annotations
 
 import json
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 from urllib.parse import urlparse
@@ -76,3 +78,101 @@ def anotar(url: str) -> str:
     return (f"[fuente: {f.dominio} · fiabilidad "
             f"{_ETIQ_CRED.get(f.credibilidad, f.credibilidad.upper())}"
             f"{nota} · tendencia {f.tendencia}]")
+
+
+PROPUESTAS_PATH = _DATA_DIR / "propuestas.jsonl"
+
+_JSON_RE = re.compile(r"```json\s*([\s\S]*?)```\s*$", re.IGNORECASE)
+
+
+def extraer_meta(texto: str) -> dict | None:
+    """Parsea el bloque ```json``` final de una respuesta. None si falta o es inválido."""
+    m = _JSON_RE.search(texto or "")
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(1).strip())
+    except Exception:  # noqa: BLE001 — JSON inválido: lo ignoramos
+        return None
+
+
+def _dominios_propuestos(ruta: Path) -> set[str]:
+    if not ruta.exists():
+        return set()
+    doms: set[str] = set()
+    for linea in ruta.read_text(encoding="utf-8").splitlines():
+        linea = linea.strip()
+        if not linea:
+            continue
+        try:
+            doms.add(json.loads(linea)["dominio"])
+        except Exception:  # noqa: BLE001
+            continue
+    return doms
+
+
+def capturar_propuestas(meta: dict | None, ruta: Path | None = None) -> int:
+    """Registra (append-only, deduplicado) los dominios de `meta.fuentes` que no
+    están en el registro curado. Nunca lanza: si algo falla, devuelve lo escrito.
+    """
+    if ruta is None:
+        ruta = PROPUESTAS_PATH
+    if not meta:
+        return 0
+    fuentes = meta.get("fuentes") or []
+    ya = {d.lower() for d in _REGISTRO} | _dominios_propuestos(ruta)
+    nuevos = 0
+    try:
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        for f in fuentes:
+            url = (f or {}).get("url") or ""
+            dom = dominio_registrable(url)
+            if not dom or dom in ya or clasificar(url) is not None:
+                continue
+            fila = {
+                "dominio": dom,
+                "credibilidad": f.get("credibilidad"),
+                "tendencia": f.get("tendencia"),
+                "ejemplo_url": url,
+                "ts": datetime.now(timezone.utc).isoformat(),
+            }
+            with ruta.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(fila, ensure_ascii=False) + "\n")
+            ya.add(dom)
+            nuevos += 1
+    except Exception:  # noqa: BLE001 — la captura jamás rompe la respuesta
+        return nuevos
+    return nuevos
+
+
+def _revisar() -> int:
+    """Imprime las propuestas pendientes agrupadas por dominio (para curar a mano)."""
+    propuestas = _dominios_propuestos(PROPUESTAS_PATH)
+    if not propuestas:
+        print("No hay propuestas pendientes.")
+        return 0
+    filas: dict[str, dict] = {}
+    for linea in PROPUESTAS_PATH.read_text(encoding="utf-8").splitlines():
+        linea = linea.strip()
+        if not linea:
+            continue
+        try:
+            d = json.loads(linea)
+        except Exception:  # noqa: BLE001
+            continue
+        filas[d["dominio"]] = d  # última valoración gana
+    print(f"{len(filas)} dominio(s) propuesto(s) (no en el registro curado):\n")
+    for dom, d in sorted(filas.items()):
+        print(f'  "{dom}": {{"credibilidad": "{d.get("credibilidad")}", '
+              f'"tendencia": "{d.get("tendencia")}", "tipo": "?"}}'
+              f'   # ej: {d.get("ejemplo_url")}')
+    print("\nCopia las aprobadas a verificador/data/fuentes.json.")
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) >= 2 and sys.argv[1] == "revisar":
+        raise SystemExit(_revisar())
+    print("Uso: python -m verificador.fuentes revisar")
+    raise SystemExit(1)
