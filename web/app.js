@@ -280,6 +280,7 @@ function pintarRespuesta(texto) {
   cont.className = "veredicto";
 
   const { prosa, meta } = partirRespuesta(texto);
+  const fuentes = (meta && meta.fuentes) || [];
   const sello = selloDe(meta, prosa);
 
   const firma = document.createElement("div");
@@ -307,11 +308,42 @@ function pintarRespuesta(texto) {
 
   const body = document.createElement("div");
   body.className = "respuesta-cuerpo";
-  body.innerHTML = formatear(prosa);
+  body.innerHTML = enlazarCitas(formatear(prosa), fuentes);
   cont.appendChild(body);
 
   if (meta && Array.isArray(meta.fuentes) && meta.fuentes.length) {
     cont.appendChild(pintarEspectro(meta.fuentes));
+  }
+
+  // Lista textual de fuentes con extracto desplegable ("ver de dónde salió").
+  // Construida por DOM (no innerHTML) para que f.url, f.medio y ex.extracto
+  // nunca se concatenen en una cadena HTML — XSS-safe.
+  if (fuentes.length) {
+    const lista = document.createElement("ul");
+    lista.className = "fuentes-lista";
+    fuentes.forEach((f) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = f.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "[" + f.n + "] " + (f.medio || f.url);
+      li.appendChild(a);
+      const ex = EXTRACTOS[f.url];
+      if (ex) {
+        const details = document.createElement("details");
+        details.className = "prueba";
+        const summary = document.createElement("summary");
+        summary.textContent = "ver de dónde salió";
+        const blockquote = document.createElement("blockquote");
+        blockquote.textContent = ex.extracto;
+        details.appendChild(summary);
+        details.appendChild(blockquote);
+        li.appendChild(details);
+      }
+      lista.appendChild(li);
+    });
+    cont.appendChild(lista);
   }
 
   msg.appendChild(cont);
@@ -422,6 +454,19 @@ function enlazar(s) {
   s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
     (m, pre, url) => pre + '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + "</a>");
   return s;
+}
+
+// Convierte referencias [n] en la prosa (ya escapada y formateada) en enlaces
+// clicables a la fuente n. La URL se codifica con encodeURI para evitar
+// inyección de atributos si el modelo devolviera una URL con comillas.
+function enlazarCitas(texto, fuentes) {
+  const porN = {};
+  (fuentes || []).forEach((f) => { porN[f.n] = f; });
+  return texto.replace(/\[(\d+)\]/g, (m, n) => {
+    const f = porN[n];
+    if (!f) return m;
+    return '<a class="cita" href="' + encodeURI(f.url) + '" target="_blank" rel="noopener">[' + n + "]</a>";
+  });
 }
 
 function setEnCurso(v) {
