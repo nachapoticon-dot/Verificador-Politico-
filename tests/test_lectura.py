@@ -1,4 +1,59 @@
+import threading
+
+import pytest
+
 from verificador import search
+
+
+def _chromium_disponible() -> bool:
+    """Sonda barata: ¿podemos importar Playwright y lanzar Chromium?"""
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception:  # noqa: BLE001
+        return False
+    try:
+        with sync_playwright() as pw:
+            navegador = pw.chromium.launch(headless=True)
+            navegador.close()
+    except Exception:  # noqa: BLE001
+        return False
+    return True
+
+
+@pytest.mark.skipif(
+    not _chromium_disponible(), reason="Playwright/Chromium no disponible en este entorno"
+)
+def test_navegador_reutilizado_entre_hilos(tmp_path):
+    """Dos hilos distintos leen vía Chromium y ambos obtienen el texto.
+
+    Real (no mockeado) y hermético (file://, sin red). Falla con el diseño de
+    singleton-por-llamada (afinidad de hilo de Playwright); pasa con el hilo
+    propietario único.
+    """
+    pagina = tmp_path / "pagina.html"
+    pagina.write_text(
+        "<html><body><article><h1>Titular de prueba</h1>"
+        "<p>Este es un párrafo de prueba con texto suficiente para que "
+        "trafilatura lo extraiga sin problemas en este test hermético sin red.</p>"
+        "</article></body></html>",
+        encoding="utf-8",
+    )
+    url = pagina.as_uri()
+
+    resultados: dict[int, str | None] = {}
+
+    def correr(k: int) -> None:
+        resultados[k] = search._leer_navegador(url)
+
+    hilos = [threading.Thread(target=correr, args=(i,)) for i in range(2)]
+    for h in hilos:
+        h.start()
+    for h in hilos:
+        h.join(timeout=60)
+    search.cerrar_navegador()
+
+    assert resultados.get(0) and "párrafo de prueba" in resultados[0]
+    assert resultados.get(1) and "párrafo de prueba" in resultados[1]
 
 
 def test_leer_pagina_usa_ruta_rapida(monkeypatch):
@@ -7,25 +62,31 @@ def test_leer_pagina_usa_ruta_rapida(monkeypatch):
     def boom(url):
         raise AssertionError("no debería usar el navegador")
     monkeypatch.setattr(search, "_leer_navegador", boom)
-    assert search.leer_pagina("https://x.com") == "Texto rápido legible"
+    out = search.leer_pagina("https://x.com")
+    assert out.texto == "Texto rápido legible"
+    assert out.ok is True
 
 
 def test_leer_pagina_cae_al_navegador(monkeypatch):
     monkeypatch.setattr(search, "_leer_rapido", lambda url: None)
     monkeypatch.setattr(search, "_leer_navegador", lambda url: "Texto del navegador")
-    assert search.leer_pagina("https://js-pesado.com") == "Texto del navegador"
+    out = search.leer_pagina("https://js-pesado.com")
+    assert out.texto == "Texto del navegador"
+    assert out.ok is True
 
 
 def test_leer_pagina_trunca(monkeypatch):
     monkeypatch.setattr(search, "_leer_rapido", lambda url: "A" * 9000)
     monkeypatch.setattr(search, "_leer_navegador", lambda url: None)
     out = search.leer_pagina("https://x.com", max_chars=100)
-    assert out.endswith("…[texto truncado]")
-    assert len(out) < 200
+    assert out.texto.endswith("…[texto truncado]")
+    assert len(out.texto) < 200
+    assert out.ok is True
 
 
 def test_leer_pagina_falla_todo(monkeypatch):
     monkeypatch.setattr(search, "_leer_rapido", lambda url: None)
     monkeypatch.setattr(search, "_leer_navegador", lambda url: None)
     out = search.leer_pagina("https://imposible.com")
-    assert "no pude" in out.lower()
+    assert "no pude" in out.texto.lower()
+    assert out.ok is False

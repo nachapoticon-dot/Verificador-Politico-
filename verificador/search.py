@@ -13,8 +13,25 @@ llamarlas para contrastar fuentes de distintas tendencias.
 from __future__ import annotations
 
 import atexit
+import queue
+import threading
+from typing import NamedTuple
+
 import httpx
 import re
+
+
+class Lectura(NamedTuple):
+    """Resultado de una herramienta de lectura.
+
+    `texto` es lo que se le devuelve al modelo (contrato de cara al modelo:
+    siempre un string). `ok` indica si la lectura tuvo éxito y es lo que decide
+    el `estado` de la traza (ok → ✓; False → fallo). En fallo, `texto` es un
+    aviso para el modelo que NUNCA debe llegar al visor de evidencias.
+    """
+
+    texto: str
+    ok: bool
 
 # Mapa mínimo de país ISO-3166 → región de DuckDuckGo, para sesgar resultados.
 _REGION = {
@@ -56,11 +73,13 @@ def _fetch_transcripcion(video_id: str) -> str | None:
     return texto or None
 
 
-def ver_video(url: str, max_chars: int = 6000) -> str:
+def ver_video(url: str, max_chars: int = 6000) -> Lectura:
     """Lee el contenido de un vídeo por su transcripción (YouTube/Shorts).
 
     Verifica lo que se DICE en el vídeo, no la imagen. Para otras plataformas
     sin transcripción, devuelve un aviso (TikTok se cubre vía leer_pagina/navegador).
+    Devuelve ``Lectura(texto, ok)``: ``ok`` es False si no hay transcripción
+    accesible (no es YouTube, o no la hay).
     """
     vid = _id_youtube(url)
     if vid:
@@ -68,9 +87,13 @@ def ver_video(url: str, max_chars: int = 6000) -> str:
         if texto:
             if len(texto) > max_chars:
                 texto = texto[:max_chars] + "\n…[transcripción truncada]"
-            return f"[Transcripción de {url}]\n{texto}"
-        return f"[{url}: sin transcripción disponible; no puedo leer su audio.]"
-    return f"[{url}: no es un vídeo de YouTube con transcripción accesible.]"
+            return Lectura(f"[Transcripción de {url}]\n{texto}", True)
+        return Lectura(
+            f"[{url}: sin transcripción disponible; no puedo leer su audio.]", False
+        )
+    return Lectura(
+        f"[{url}: no es un vídeo de YouTube con transcripción accesible.]", False
+    )
 
 
 def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> list[dict]:
@@ -94,7 +117,98 @@ def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> 
     return resultados or [{"aviso": "Sin resultados para esa búsqueda."}]
 
 
-_navegador_singleton = None  # (playwright, browser) reutilizados entre lecturas
+# --- Playwright en un único hilo propietario de larga vida -------------------
+#
+# Los objetos de la API síncrona de Playwright tienen AFINIDAD DE HILO: solo se
+# pueden usar desde el hilo que los creó. Como el servidor corre cada petición
+# en un hilo daemon nuevo, un singleton creado perezosamente en el hilo de una
+# petición revienta cuando otra petición (otro hilo) lo reutiliza.
+#
+# Solución: un solo hilo propietario arranca y posee `sync_playwright()` + el
+# Chromium lanzado. Los llamadores envían un trabajo (la url) a una cola y
+# bloquean esperando su resultado. TODAS las llamadas de Playwright (launch,
+# new_page, goto, content, close) ocurren EN ese hilo. El apagado se señaliza
+# con un centinela para que el cierre también ocurra en el hilo propietario.
+
+_CENTINELA = object()  # señal de apagado para el hilo propietario
+_navegador_lock = threading.Lock()
+_navegador_hilo: threading.Thread | None = None
+_navegador_jobs: "queue.Queue | None" = None
+
+
+def _bucle_navegador(jobs: "queue.Queue") -> None:
+    """Cuerpo del hilo propietario: posee Playwright y atiende trabajos.
+
+    Si Chromium no está disponible (no instalado o el launch falla), el hilo
+    se marca inutilizable y responde None a cada trabajo (degradación elegante).
+    """
+    from playwright.sync_api import sync_playwright
+
+    pw = None
+    browser = None
+    try:
+        pw = sync_playwright().start()
+        browser = pw.chromium.launch(headless=True)
+    except Exception:  # noqa: BLE001 — Chromium ausente o launch fallido
+        if pw is not None:
+            try:
+                pw.stop()
+            except Exception:  # noqa: BLE001
+                pass
+        # Drena trabajos devolviendo None hasta recibir el centinela.
+        while True:
+            job = jobs.get()
+            if job is _CENTINELA:
+                return
+            _url, result_q = job
+            result_q.put(None)
+
+    try:
+        while True:
+            job = jobs.get()
+            if job is _CENTINELA:
+                break
+            url, result_q = job
+            try:
+                result_q.put(_leer_en_pagina(browser, url))
+            except Exception:  # noqa: BLE001 — nunca dejes a un llamador colgado
+                result_q.put(None)
+    finally:
+        try:
+            browser.close()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            pw.stop()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _arrancar_navegador() -> "queue.Queue":
+    """Arranca el hilo propietario una sola vez (idempotente) y devuelve su cola."""
+    global _navegador_hilo, _navegador_jobs
+    with _navegador_lock:
+        if _navegador_hilo is None or not _navegador_hilo.is_alive():
+            _navegador_jobs = queue.Queue()
+            _navegador_hilo = threading.Thread(
+                target=_bucle_navegador,
+                args=(_navegador_jobs,),
+                name="playwright-owner",
+                daemon=True,
+            )
+            _navegador_hilo.start()
+        return _navegador_jobs
+
+
+def _leer_en_pagina(browser, url: str) -> str | None:
+    """Renderiza una url en el navegador y extrae su texto. Corre en el hilo propietario."""
+    page = browser.new_page(user_agent=_HEADERS["User-Agent"])
+    try:
+        page.goto(url, wait_until="networkidle", timeout=20000)
+        html = page.content()
+    finally:
+        page.close()
+    return _extraer(html)
 
 
 def _extraer(html: str) -> str | None:
@@ -116,61 +230,54 @@ def _leer_rapido(url: str) -> str | None:
     return texto or None
 
 
-def _navegador():
-    """Lanza Chromium una sola vez y lo reutiliza (coste de arranque amortizado)."""
-    global _navegador_singleton
-    if _navegador_singleton is None:
-        from playwright.sync_api import sync_playwright
+def _leer_navegador(url: str, timeout: float = 30.0) -> str | None:
+    """Fallback: envía la url al hilo propietario de Chromium y espera su texto.
 
-        pw = sync_playwright().start()
-        try:
-            browser = pw.chromium.launch(headless=True)
-        except Exception:
-            pw.stop()
-            raise
-        _navegador_singleton = (pw, browser)
-    return _navegador_singleton[1]
-
-
-def _leer_navegador(url: str) -> str | None:
-    """Fallback: renderiza con Chromium y extrae el texto principal."""
+    Bloquea hasta `timeout` segundos. Devuelve None ante cualquier fallo o si
+    Chromium no está disponible (el hilo propietario degrada a None), de modo
+    que `_leer_rapido(url) or _leer_navegador(url)` siga respondiendo.
+    """
+    jobs = _arrancar_navegador()
+    result_q: "queue.Queue" = queue.Queue(maxsize=1)
+    jobs.put((url, result_q))
     try:
-        browser = _navegador()
-        page = browser.new_page(user_agent=_HEADERS["User-Agent"])
-        try:
-            page.goto(url, wait_until="networkidle", timeout=20000)
-            html = page.content()
-        finally:
-            page.close()
-    except Exception:  # noqa: BLE001 — degradación elegante (p.ej. Chromium ausente)
+        return result_q.get(timeout=timeout)
+    except queue.Empty:
         return None
-    return _extraer(html)
 
 
 def cerrar_navegador() -> None:
-    """Cierra el navegador persistente, si se abrió."""
-    global _navegador_singleton
-    if _navegador_singleton is not None:
-        pw, browser = _navegador_singleton
-        try:
-            browser.close()
-            pw.stop()
-        except Exception:  # noqa: BLE001
-            pass
-        _navegador_singleton = None
+    """Apaga el hilo propietario: señaliza el centinela y espera su cierre.
+
+    El navegador y Playwright se cierran EN el hilo propietario (nunca desde
+    otro hilo), respetando la afinidad de hilo de la API síncrona.
+    """
+    global _navegador_hilo, _navegador_jobs
+    with _navegador_lock:
+        hilo = _navegador_hilo
+        jobs = _navegador_jobs
+        _navegador_hilo = None
+        _navegador_jobs = None
+    if hilo is not None and jobs is not None:
+        jobs.put(_CENTINELA)
+        hilo.join(timeout=10)
 
 
 atexit.register(cerrar_navegador)
 
 
-def leer_pagina(url: str, max_chars: int = 6000) -> str:
-    """Descarga una URL y devuelve su texto principal (rápido → navegador)."""
+def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
+    """Descarga una URL y devuelve su texto principal (rápido → navegador).
+
+    Devuelve ``Lectura(texto, ok)``: ``ok`` es False si no se pudo abrir ni
+    extraer texto (el aviso no debe llegar al visor de evidencias).
+    """
     texto = _leer_rapido(url) or _leer_navegador(url)
     if not texto:
-        return f"[No pude abrir ni extraer texto de {url}.]"
+        return Lectura(f"[No pude abrir ni extraer texto de {url}.]", False)
     if len(texto) > max_chars:
         texto = texto[:max_chars] + "\n…[texto truncado]"
-    return texto
+    return Lectura(texto, True)
 
 
 # Esquemas que se le pasan al modelo (formato de tools de OpenAI/DeepSeek).
