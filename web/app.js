@@ -57,6 +57,8 @@ const TEND_POS = {
 // Estas no caen en el eje: son árbitros (verificadores, agencias).
 const ARBITROS = new Set(["verificador", "internacional"]);
 
+const EXTRACTOS = {}; // url -> { extracto, titulo } acumulado de la traza
+
 // La mini-cara de Tomás para firmar cada respuesta (le da voz al personaje).
 const MINI_AVATAR =
   '<svg viewBox="0 0 48 48" class="mini-avatar" aria-hidden="true">' +
@@ -177,8 +179,8 @@ function parseSSE(bloque) {
 }
 
 function manejarEvento({ evento, dato }, traza) {
-  if (evento === "paso") {
-    pintarPaso(traza, dato.texto || "");
+  if (evento === "traza") {
+    pintarTrazaEvento(traza, dato);
   } else if (evento === "respuesta") {
     cerrarTraza(traza);
     pintarRespuesta(dato.texto || "");
@@ -227,12 +229,27 @@ function pintarTraza() {
   return box;
 }
 
-function pintarPaso(traza, texto) {
-  if (!texto) return;
-  const linea = document.createElement("p");
-  linea.className = "traza-paso";
-  linea.textContent = texto;
-  traza.appendChild(linea);
+function pintarTrazaEvento(traza, ev) {
+  if (ev.url && ev.extracto) EXTRACTOS[ev.url] = { extracto: ev.extracto, titulo: ev.titulo };
+  let card = traza.querySelector('[data-id="' + ev.id + '"]');
+  if (!card) {
+    card = document.createElement("div");
+    card.className = "fuente-card";
+    card.dataset.id = ev.id;
+    const icono = ev.tipo === "busqueda" ? "🔎" : ev.tipo === "video" ? "▶" : "📄";
+    const dom = ev.dominio
+      ? '<img class="fav" alt="" src="https://www.google.com/s2/favicons?domain=' + ev.dominio + '&sz=32" />'
+      : '<span class="fav fav--q">' + icono + "</span>";
+    card.innerHTML = dom +
+      '<span class="fuente-tit"></span>' +
+      '<span class="fuente-estado"></span>';
+    card.querySelector(".fuente-tit").textContent = ev.titulo || ev.dominio || "";
+    traza.appendChild(card);
+  }
+  const est = card.querySelector(".fuente-estado");
+  const etiquetas = { buscando: "buscando…", leyendo: "leyendo…", ok: "✓", fallo: "✗" };
+  est.textContent = etiquetas[ev.estado] || "";
+  card.dataset.estado = ev.estado;
 }
 
 function cerrarTraza(traza, sinPasos) {
@@ -241,7 +258,7 @@ function cerrarTraza(traza, sinPasos) {
   const cab = traza.querySelector(".traza-cab");
   if (cab) cab.lastChild.textContent = sinPasos ? " sin investigar" : " investigación cerrada";
   // Si no hubo ningún paso, la traza no aporta: la quitamos.
-  if (!traza.querySelector(".traza-paso")) traza.closest(".msg")?.remove();
+  if (!traza.querySelector(".fuente-card")) traza.closest(".msg")?.remove();
 }
 
 function pintarRespuesta(texto) {
