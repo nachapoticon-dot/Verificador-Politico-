@@ -13,6 +13,7 @@ llamarlas para contrastar fuentes de distintas tendencias.
 from __future__ import annotations
 
 import httpx
+import re
 
 # Mapa mínimo de país ISO-3166 → región de DuckDuckGo, para sesgar resultados.
 _REGION = {
@@ -29,6 +30,46 @@ _HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
     )
 }
+
+_YT_RE = re.compile(
+    r"(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
+)
+
+
+def _id_youtube(url: str) -> str | None:
+    m = _YT_RE.search(url or "")
+    return m.group(1) if m else None
+
+
+def _fetch_transcripcion(video_id: str) -> str | None:
+    """Devuelve la transcripción unida, o None si no hay. Aísla la dependencia."""
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+
+        tramos = YouTubeTranscriptApi.get_transcript(
+            video_id, languages=["es", "en", "pt", "fr"]
+        )
+    except Exception:  # noqa: BLE001 — sin transcripción disponible
+        return None
+    texto = " ".join(t.get("text", "") for t in tramos).strip()
+    return texto or None
+
+
+def ver_video(url: str, max_chars: int = 6000) -> str:
+    """Lee el contenido de un vídeo por su transcripción (YouTube/Shorts).
+
+    Verifica lo que se DICE en el vídeo, no la imagen. Para otras plataformas
+    sin transcripción, devuelve un aviso (TikTok se cubre vía leer_pagina/navegador).
+    """
+    vid = _id_youtube(url)
+    if vid:
+        texto = _fetch_transcripcion(vid)
+        if texto:
+            if len(texto) > max_chars:
+                texto = texto[:max_chars] + "\n…[transcripción truncada]"
+            return f"[Transcripción de {url}]\n{texto}"
+        return f"[{url}: sin transcripción disponible; no puedo leer su audio.]"
+    return f"[{url}: no es un vídeo de YouTube con transcripción accesible.]"
 
 
 def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> list[dict]:
