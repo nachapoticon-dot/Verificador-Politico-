@@ -159,6 +159,15 @@ body {
 @keyframes latido { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 .traza.cerrada .dot { animation: none; background: var(--muted); }
 .traza-paso { font-family: var(--mono); font-size: 0.79rem; line-height: 1.5; color: var(--muted); margin: 0.2rem 0; word-break: break-word; animation: surgir 0.3s ease both; }
+.fuente-card { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); animation: surgir 0.3s ease both; }
+.fuente-card .fav { width: 18px; height: 18px; border-radius: 4px; flex: none; display: grid; place-items: center; }
+.fuente-card .fuente-tit { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fuente-card .fuente-estado { color: var(--muted); }
+.fuente-card[data-estado="buscando"] .fuente-estado,
+.fuente-card[data-estado="leyendo"] .fuente-estado { color: var(--tomas); animation: latido 1.1s ease-in-out infinite; }
+.fuente-card[data-estado="ok"] .fuente-estado { color: var(--true); }
+.fuente-card[data-estado="fallo"] { opacity: 0.55; }
+.fuente-card[data-estado="fallo"] .fuente-estado { color: var(--false); }
 
 /* firma de Tomás sobre la respuesta */
 .resp-firma { display: flex; align-items: center; gap: 0.5rem; margin: 1.4rem 0 0.9rem; }
