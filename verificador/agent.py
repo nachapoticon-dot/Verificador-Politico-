@@ -13,6 +13,7 @@ import datetime as _dt
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 from openai import OpenAI
 
@@ -71,7 +72,7 @@ class Verificador:
             return search.ver_video(url=args.get("url", ""))
         return f"[Herramienta desconocida: {nombre}]"
 
-    def preguntar(self, pregunta: str, on_step: Callable[[str], None] | None = None) -> str:
+    def preguntar(self, pregunta: str, on_step: Callable[[dict], None] | None = None) -> str:
         """Procesa una pregunta y devuelve la respuesta final.
 
         ``on_step`` (opcional) recibe líneas de progreso (qué busca, qué lee)
@@ -115,15 +116,20 @@ class Verificador:
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
                     args = {}
+                ev = _evento_inicio(tc.id, tc.function.name, args)
                 if on_step:
-                    on_step(_describir_paso(tc.function.name, args))
+                    on_step(ev)
                 resultado = self._ejecutar_tool(tc.function.name, args)
+                if on_step:
+                    fin = {"id": ev["id"], "tipo": ev["tipo"], "estado": "ok",
+                           "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
+                    if ev["tipo"] in ("pagina", "video"):
+                        fin["extracto"] = (resultado or "")[:1500]
+                        if resultado.startswith("[No pude") or "sin transcripción" in resultado.lower():
+                            fin["estado"] = "fallo"
+                    on_step(fin)
                 self.messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tc.id,
-                        "content": resultado,
-                    }
+                    {"role": "tool", "tool_call_id": tc.id, "content": resultado}
                 )
 
         return (
@@ -136,12 +142,22 @@ class Verificador:
         self._reset_system()
 
 
-def _describir_paso(nombre: str, args: dict) -> str:
+def _dominio(url: str) -> str:
+    try:
+        host = urlparse(url).netloc.lower()
+    except Exception:  # noqa: BLE001
+        return ""
+    return host[4:] if host.startswith("www.") else host
+
+
+def _evento_inicio(_id: str, nombre: str, args: dict) -> dict:
     if nombre == "buscar_web":
-        return f"🔎 buscando: {args.get('query', '')}"
-    if nombre == "leer_pagina":
-        return f"📄 leyendo: {args.get('url', '')}"
-    return f"⚙️  {nombre}({args})"
+        return {"id": _id, "tipo": "busqueda", "estado": "buscando",
+                "titulo": args.get("query", ""), "url": None, "dominio": None}
+    tipo = "video" if nombre == "ver_video" else "pagina"
+    url = args.get("url", "")
+    return {"id": _id, "tipo": tipo, "estado": "leyendo",
+            "titulo": _dominio(url) or url, "url": url, "dominio": _dominio(url)}
 
 
 def _require_config() -> Config:
