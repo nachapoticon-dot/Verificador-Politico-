@@ -73,5 +73,6 @@ def anotar(url: str) -> str:
         return ("[fuente: dominio no registrado — clasifícala tú en el JSON de "
                 "cierre; quedará como propuesta de revisión]")
     nota = f" ({f.nota})" if f.nota else ""
-    return (f"[fuente: {f.dominio} · fiabilidad {_ETIQ_CRED[f.credibilidad]}"
+    return (f"[fuente: {f.dominio} · fiabilidad "
+            f"{_ETIQ_CRED.get(f.credibilidad, f.credibilidad.upper())}"
             f"{nota} · tendencia {f.tendencia}]")
