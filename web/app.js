@@ -57,6 +57,8 @@ const TEND_POS = {
 // Estas no caen en el eje: son árbitros (verificadores, agencias).
 const ARBITROS = new Set(["verificador", "internacional"]);
 
+const EXTRACTOS = {}; // url -> { extracto, titulo } acumulado de la traza
+
 // La mini-cara de Tomás para firmar cada respuesta (le da voz al personaje).
 const MINI_AVATAR =
   '<svg viewBox="0 0 48 48" class="mini-avatar" aria-hidden="true">' +
@@ -177,8 +179,8 @@ function parseSSE(bloque) {
 }
 
 function manejarEvento({ evento, dato }, traza) {
-  if (evento === "paso") {
-    pintarPaso(traza, dato.texto || "");
+  if (evento === "traza") {
+    pintarTrazaEvento(traza, dato);
   } else if (evento === "respuesta") {
     cerrarTraza(traza);
     pintarRespuesta(dato.texto || "");
@@ -227,12 +229,40 @@ function pintarTraza() {
   return box;
 }
 
-function pintarPaso(traza, texto) {
-  if (!texto) return;
-  const linea = document.createElement("p");
-  linea.className = "traza-paso";
-  linea.textContent = texto;
-  traza.appendChild(linea);
+function pintarTrazaEvento(traza, ev) {
+  if (ev.url && ev.extracto) EXTRACTOS[ev.url] = { extracto: ev.extracto, titulo: ev.titulo };
+  let card = traza.querySelector('[data-id="' + ev.id + '"]');
+  if (!card) {
+    card = document.createElement("div");
+    card.className = "fuente-card";
+    card.dataset.id = ev.id;
+
+    let fav;
+    if (ev.dominio) {
+      fav = document.createElement("img");
+      fav.className = "fav";
+      fav.alt = "";
+      fav.src = "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(ev.dominio) + "&sz=32";
+    } else {
+      fav = document.createElement("span");
+      fav.className = "fav fav--q";
+      fav.textContent = ev.tipo === "busqueda" ? "🔎" : ev.tipo === "video" ? "▶" : "📄";
+    }
+
+    const tit = document.createElement("span");
+    tit.className = "fuente-tit";
+    tit.textContent = ev.titulo || ev.dominio || "";
+
+    const estadoEl = document.createElement("span");
+    estadoEl.className = "fuente-estado";
+
+    card.append(fav, tit, estadoEl);
+    traza.appendChild(card);
+  }
+  const est = card.querySelector(".fuente-estado");
+  const etiquetas = { buscando: "buscando…", leyendo: "leyendo…", ok: "✓", fallo: "✗" };
+  est.textContent = etiquetas[ev.estado] || "";
+  card.dataset.estado = ev.estado;
 }
 
 function cerrarTraza(traza, sinPasos) {
@@ -241,7 +271,7 @@ function cerrarTraza(traza, sinPasos) {
   const cab = traza.querySelector(".traza-cab");
   if (cab) cab.lastChild.textContent = sinPasos ? " sin investigar" : " investigación cerrada";
   // Si no hubo ningún paso, la traza no aporta: la quitamos.
-  if (!traza.querySelector(".traza-paso")) traza.closest(".msg")?.remove();
+  if (!traza.querySelector(".fuente-card")) traza.closest(".msg")?.remove();
 }
 
 function pintarRespuesta(texto) {
@@ -250,6 +280,7 @@ function pintarRespuesta(texto) {
   cont.className = "veredicto";
 
   const { prosa, meta } = partirRespuesta(texto);
+  const fuentes = (meta && meta.fuentes) || [];
   const sello = selloDe(meta, prosa);
 
   const firma = document.createElement("div");
@@ -277,11 +308,42 @@ function pintarRespuesta(texto) {
 
   const body = document.createElement("div");
   body.className = "respuesta-cuerpo";
-  body.innerHTML = formatear(prosa);
+  body.innerHTML = enlazarCitas(formatear(prosa), fuentes);
   cont.appendChild(body);
 
   if (meta && Array.isArray(meta.fuentes) && meta.fuentes.length) {
     cont.appendChild(pintarEspectro(meta.fuentes));
+  }
+
+  // Lista textual de fuentes con extracto desplegable ("ver de dónde salió").
+  // Construida por DOM (no innerHTML) para que f.url, f.medio y ex.extracto
+  // nunca se concatenen en una cadena HTML — XSS-safe.
+  if (fuentes.length) {
+    const lista = document.createElement("ul");
+    lista.className = "fuentes-lista";
+    fuentes.forEach((f) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = urlSegura(f.url);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "[" + f.n + "] " + (f.medio || f.url);
+      li.appendChild(a);
+      const ex = EXTRACTOS[f.url];
+      if (ex) {
+        const details = document.createElement("details");
+        details.className = "prueba";
+        const summary = document.createElement("summary");
+        summary.textContent = "ver de dónde salió";
+        const blockquote = document.createElement("blockquote");
+        blockquote.textContent = ex.extracto;
+        details.appendChild(summary);
+        details.appendChild(blockquote);
+        li.appendChild(details);
+      }
+      lista.appendChild(li);
+    });
+    cont.appendChild(lista);
   }
 
   msg.appendChild(cont);
@@ -392,6 +454,33 @@ function enlazar(s) {
   s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
     (m, pre, url) => pre + '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + "</a>");
   return s;
+}
+
+// Solo http/https son navegables de forma segura; cualquier otra cosa
+// (javascript:, data:, una URL ausente, etc.) se neutraliza a "#". Devuelve la
+// URL original sin normalizar para no alterar enlaces válidos; el cifrado de
+// caracteres se hace en el punto de uso (encodeURI / propiedad .href).
+function urlSegura(u) {
+  try {
+    const p = new URL(u);
+    return (p.protocol === "http:" || p.protocol === "https:") ? u : "#";
+  } catch (_) {
+    return "#";
+  }
+}
+
+// Convierte referencias [n] en la prosa (ya escapada y formateada) en enlaces
+// clicables a la fuente n. La URL pasa por urlSegura (bloquea esquemas no
+// navegables) y encodeURI (evita inyección de atributos si llegara una URL con
+// comillas u otros caracteres). El [n] es numérico, así que es seguro inline.
+function enlazarCitas(texto, fuentes) {
+  const porN = {};
+  (fuentes || []).forEach((f) => { porN[f.n] = f; });
+  return texto.replace(/\[(\d+)\]/g, (m, n) => {
+    const f = porN[n];
+    if (!f) return m;
+    return '<a class="cita" href="' + encodeURI(urlSegura(f.url)) + '" target="_blank" rel="noopener">[' + n + "]</a>";
+  });
 }
 
 function setEnCurso(v) {
