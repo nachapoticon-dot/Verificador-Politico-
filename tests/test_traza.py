@@ -1,5 +1,6 @@
 from verificador import agent as agentmod
 from verificador.agent import Verificador, _dominio
+from verificador.search import Lectura
 
 
 class _FakeMsg:
@@ -37,7 +38,7 @@ def test_on_step_estructurado(monkeypatch):
     monkeypatch.setattr(
         a._client.chat.completions, "create", lambda **k: _Choices(next(it))
     )
-    monkeypatch.setattr(agentmod, "leer_pagina", lambda url, **k: "EXTRACTO LEGIBLE")
+    monkeypatch.setattr(agentmod, "leer_pagina", lambda url, **k: Lectura("EXTRACTO LEGIBLE", True))
 
     eventos = []
     a.preguntar("¿es verdad X?", on_step=eventos.append)
@@ -69,7 +70,9 @@ def test_on_step_fallo(monkeypatch):
     )
     monkeypatch.setattr(
         agentmod, "leer_pagina",
-        lambda url, **k: "[No pude abrir ni extraer texto de https://www.elpais.com/n.]"
+        lambda url, **k: Lectura(
+            "[No pude abrir ni extraer texto de https://www.elpais.com/n.]", False
+        ),
     )
 
     eventos = []
@@ -79,3 +82,33 @@ def test_on_step_fallo(monkeypatch):
     fallo = [e for e in eventos if e["estado"] == "fallo"]
     assert leyendo and leyendo[0]["tipo"] == "pagina"
     assert fallo and fallo[0]["id"] == leyendo[0]["id"]
+    # En fallo NUNCA se emite extracto (no debe llegar al visor de evidencias).
+    assert "extracto" not in fallo[0]
+
+
+def test_on_step_ver_video_no_youtube_es_fallo(monkeypatch):
+    from verificador.config import Config
+    a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
+
+    respuestas = [
+        _FakeMsg("", [_FakeTC("v1", "ver_video", '{"url": "https://www.tiktok.com/@x/video/1"}')]),
+        _FakeMsg("Veredicto final"),
+    ]
+
+    class _Choices:
+        def __init__(self, m): self.choices = [type("C", (), {"message": m})()]
+
+    it = iter(respuestas)
+    monkeypatch.setattr(
+        a._client.chat.completions, "create", lambda **k: _Choices(next(it))
+    )
+    # No mockeamos ver_video: el caso real no-YouTube debe dar ok=False.
+
+    eventos = []
+    a.preguntar("¿es verdad X?", on_step=eventos.append)
+
+    leyendo = [e for e in eventos if e["estado"] == "leyendo"]
+    fallo = [e for e in eventos if e["estado"] == "fallo"]
+    assert leyendo and leyendo[0]["tipo"] == "video"
+    assert fallo and fallo[0]["id"] == leyendo[0]["id"]
+    assert "extracto" not in fallo[0]
