@@ -19,8 +19,7 @@ from openai import OpenAI
 
 from .config import Config, cargar_config
 from .prompts import SYSTEM_PROMPT
-from . import search
-from .search import TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
+from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 
 
 @dataclass
@@ -55,8 +54,13 @@ class Verificador:
             }
         ]
 
-    def _ejecutar_tool(self, nombre: str, args: dict) -> str:
-        """Despacha una llamada de herramienta y devuelve el resultado serializado."""
+    def _ejecutar_tool(self, nombre: str, args: dict) -> Lectura:
+        """Despacha una llamada de herramienta y devuelve ``Lectura(texto, ok)``.
+
+        ``texto`` es lo que se le manda al modelo; ``ok`` decide el estado de la
+        traza. Las herramientas de lectura ya devuelven ``Lectura``; las demás
+        se envuelven aquí.
+        """
         if nombre == "buscar_web":
             tope = 4 if self.rigor == "rapido" else 8
             pedido = int(args.get("max_resultados", 6))
@@ -65,12 +69,12 @@ class Verificador:
                 max_resultados=max(1, min(pedido, tope)),
                 pais=self.country,
             )
-            return json.dumps(res, ensure_ascii=False)
+            return Lectura(json.dumps(res, ensure_ascii=False), True)
         if nombre == "leer_pagina":
             return leer_pagina(url=args.get("url", ""))
         if nombre == "ver_video":
-            return search.ver_video(url=args.get("url", ""))
-        return f"[Herramienta desconocida: {nombre}]"
+            return ver_video(url=args.get("url", ""))
+        return Lectura(f"[Herramienta desconocida: {nombre}]", False)
 
     def preguntar(self, pregunta: str, on_step: Callable[[dict], None] | None = None) -> str:
         """Procesa una pregunta y devuelve la respuesta final.
@@ -120,18 +124,18 @@ class Verificador:
                 ev = _evento_inicio(tc.id, tc.function.name, args)
                 if on_step:
                     on_step(ev)
-                resultado = self._ejecutar_tool(tc.function.name, args)
+                lectura = self._ejecutar_tool(tc.function.name, args)
                 if on_step:
-                    fin = {"id": ev["id"], "tipo": ev["tipo"], "estado": "ok",
+                    fin = {"id": ev["id"], "tipo": ev["tipo"],
+                           "estado": "ok" if lectura.ok else "fallo",
                            "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
-                    if ev["tipo"] in ("pagina", "video"):
-                        r = resultado or ""
-                        fin["extracto"] = r[:1500]
-                        if r.startswith("[No pude") or "sin transcripción" in r.lower():
-                            fin["estado"] = "fallo"
+                    # Solo en éxito guardamos el extracto: el texto de error
+                    # nunca debe llegar al visor "ver de dónde salió".
+                    if ev["tipo"] in ("pagina", "video") and lectura.ok:
+                        fin["extracto"] = lectura.texto[:1500]
                     on_step(fin)
                 self.messages.append(
-                    {"role": "tool", "tool_call_id": tc.id, "content": resultado}
+                    {"role": "tool", "tool_call_id": tc.id, "content": lectura.texto}
                 )
 
         return (
