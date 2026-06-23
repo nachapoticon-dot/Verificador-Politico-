@@ -75,7 +75,8 @@ class Verificador:
     def preguntar(self, pregunta: str, on_step: Callable[[dict], None] | None = None) -> str:
         """Procesa una pregunta y devuelve la respuesta final.
 
-        ``on_step`` (opcional) recibe líneas de progreso (qué busca, qué lee)
+        ``on_step`` (opcional) recibe un dict estructurado por cada herramienta
+        (evento de inicio con tipo y estado; evento de fin con estado y extracto)
         para mostrar la traza de investigación en vivo.
         """
         self.messages.append({"role": "user", "content": pregunta})
@@ -124,8 +125,9 @@ class Verificador:
                     fin = {"id": ev["id"], "tipo": ev["tipo"], "estado": "ok",
                            "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
                     if ev["tipo"] in ("pagina", "video"):
-                        fin["extracto"] = (resultado or "")[:1500]
-                        if resultado.startswith("[No pude") or "sin transcripción" in resultado.lower():
+                        r = resultado or ""
+                        fin["extracto"] = r[:1500]
+                        if r.startswith("[No pude") or "sin transcripción" in r.lower():
                             fin["estado"] = "fallo"
                     on_step(fin)
                 self.messages.append(
@@ -156,8 +158,9 @@ def _evento_inicio(_id: str, nombre: str, args: dict) -> dict:
                 "titulo": args.get("query", ""), "url": None, "dominio": None}
     tipo = "video" if nombre == "ver_video" else "pagina"
     url = args.get("url", "")
+    dom = _dominio(url)
     return {"id": _id, "tipo": tipo, "estado": "leyendo",
-            "titulo": _dominio(url) or url, "url": url, "dominio": _dominio(url)}
+            "titulo": dom or url, "url": url, "dominio": dom}
 
 
 def _require_config() -> Config:
