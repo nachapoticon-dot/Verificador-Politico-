@@ -324,7 +324,7 @@ function pintarRespuesta(texto) {
     fuentes.forEach((f) => {
       const li = document.createElement("li");
       const a = document.createElement("a");
-      a.href = f.url;
+      a.href = urlSegura(f.url);
       a.target = "_blank";
       a.rel = "noopener";
       a.textContent = "[" + f.n + "] " + (f.medio || f.url);
@@ -456,16 +456,30 @@ function enlazar(s) {
   return s;
 }
 
+// Solo http/https son navegables de forma segura; cualquier otra cosa
+// (javascript:, data:, una URL ausente, etc.) se neutraliza a "#". Devuelve la
+// URL original sin normalizar para no alterar enlaces válidos; el cifrado de
+// caracteres se hace en el punto de uso (encodeURI / propiedad .href).
+function urlSegura(u) {
+  try {
+    const p = new URL(u);
+    return (p.protocol === "http:" || p.protocol === "https:") ? u : "#";
+  } catch (_) {
+    return "#";
+  }
+}
+
 // Convierte referencias [n] en la prosa (ya escapada y formateada) en enlaces
-// clicables a la fuente n. La URL se codifica con encodeURI para evitar
-// inyección de atributos si el modelo devolviera una URL con comillas.
+// clicables a la fuente n. La URL pasa por urlSegura (bloquea esquemas no
+// navegables) y encodeURI (evita inyección de atributos si llegara una URL con
+// comillas u otros caracteres). El [n] es numérico, así que es seguro inline.
 function enlazarCitas(texto, fuentes) {
   const porN = {};
   (fuentes || []).forEach((f) => { porN[f.n] = f; });
   return texto.replace(/\[(\d+)\]/g, (m, n) => {
     const f = porN[n];
     if (!f) return m;
-    return '<a class="cita" href="' + encodeURI(f.url) + '" target="_blank" rel="noopener">[' + n + "]</a>";
+    return '<a class="cita" href="' + encodeURI(urlSegura(f.url)) + '" target="_blank" rel="noopener">[' + n + "]</a>";
   });
 }
 
