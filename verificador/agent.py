@@ -13,12 +13,13 @@ import datetime as _dt
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 from openai import OpenAI
 
 from .config import Config, cargar_config
 from .prompts import SYSTEM_PROMPT
-from .search import TOOL_SCHEMAS, buscar_web, leer_pagina
+from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 
 
 @dataclass
@@ -27,7 +28,7 @@ class Verificador:
 
     config: Config = field(default_factory=lambda: _require_config())
     messages: list[dict] = field(default_factory=list)
-    max_pasos: int = 12
+    max_pasos: int = 8
     # Código de país ISO-3166 (p. ej. "AR") para sesgar la búsqueda, o None.
     country: str | None = None
     # Nivel de exigencia: "rapido" (menos fuentes, más veloz) o "riguroso".
@@ -53,8 +54,13 @@ class Verificador:
             }
         ]
 
-    def _ejecutar_tool(self, nombre: str, args: dict) -> str:
-        """Despacha una llamada de herramienta y devuelve el resultado serializado."""
+    def _ejecutar_tool(self, nombre: str, args: dict) -> Lectura:
+        """Despacha una llamada de herramienta y devuelve ``Lectura(texto, ok)``.
+
+        ``texto`` es lo que se le manda al modelo; ``ok`` decide el estado de la
+        traza. Las herramientas de lectura ya devuelven ``Lectura``; las demás
+        se envuelven aquí.
+        """
         if nombre == "buscar_web":
             tope = 4 if self.rigor == "rapido" else 8
             pedido = int(args.get("max_resultados", 6))
@@ -63,20 +69,23 @@ class Verificador:
                 max_resultados=max(1, min(pedido, tope)),
                 pais=self.country,
             )
-            return json.dumps(res, ensure_ascii=False)
+            return Lectura(json.dumps(res, ensure_ascii=False), True)
         if nombre == "leer_pagina":
             return leer_pagina(url=args.get("url", ""))
-        return f"[Herramienta desconocida: {nombre}]"
+        if nombre == "ver_video":
+            return ver_video(url=args.get("url", ""))
+        return Lectura(f"[Herramienta desconocida: {nombre}]", False)
 
-    def preguntar(self, pregunta: str, on_step: Callable[[str], None] | None = None) -> str:
+    def preguntar(self, pregunta: str, on_step: Callable[[dict], None] | None = None) -> str:
         """Procesa una pregunta y devuelve la respuesta final.
 
-        ``on_step`` (opcional) recibe líneas de progreso (qué busca, qué lee)
+        ``on_step`` (opcional) recibe un dict estructurado por cada herramienta
+        (evento de inicio con tipo y estado; evento de fin con estado y extracto)
         para mostrar la traza de investigación en vivo.
         """
         self.messages.append({"role": "user", "content": pregunta})
 
-        pasos = 6 if self.rigor == "rapido" else self.max_pasos
+        pasos = 4 if self.rigor == "rapido" else self.max_pasos
         for _ in range(pasos):
             resp = self._client.chat.completions.create(
                 model=self.config.model,
@@ -112,15 +121,21 @@ class Verificador:
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
                     args = {}
+                ev = _evento_inicio(tc.id, tc.function.name, args)
                 if on_step:
-                    on_step(_describir_paso(tc.function.name, args))
-                resultado = self._ejecutar_tool(tc.function.name, args)
+                    on_step(ev)
+                lectura = self._ejecutar_tool(tc.function.name, args)
+                if on_step:
+                    fin = {"id": ev["id"], "tipo": ev["tipo"],
+                           "estado": "ok" if lectura.ok else "fallo",
+                           "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
+                    # Solo en éxito guardamos el extracto: el texto de error
+                    # nunca debe llegar al visor "ver de dónde salió".
+                    if ev["tipo"] in ("pagina", "video") and lectura.ok:
+                        fin["extracto"] = lectura.texto[:1500]
+                    on_step(fin)
                 self.messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tc.id,
-                        "content": resultado,
-                    }
+                    {"role": "tool", "tool_call_id": tc.id, "content": lectura.texto}
                 )
 
         return (
@@ -133,12 +148,23 @@ class Verificador:
         self._reset_system()
 
 
-def _describir_paso(nombre: str, args: dict) -> str:
+def _dominio(url: str) -> str:
+    try:
+        host = urlparse(url).netloc.lower()
+    except Exception:  # noqa: BLE001
+        return ""
+    return host[4:] if host.startswith("www.") else host
+
+
+def _evento_inicio(_id: str, nombre: str, args: dict) -> dict:
     if nombre == "buscar_web":
-        return f"🔎 buscando: {args.get('query', '')}"
-    if nombre == "leer_pagina":
-        return f"📄 leyendo: {args.get('url', '')}"
-    return f"⚙️  {nombre}({args})"
+        return {"id": _id, "tipo": "busqueda", "estado": "buscando",
+                "titulo": args.get("query", ""), "url": None, "dominio": None}
+    tipo = "video" if nombre == "ver_video" else "pagina"
+    url = args.get("url", "")
+    dom = _dominio(url)
+    return {"id": _id, "tipo": tipo, "estado": "leyendo",
+            "titulo": dom or url, "url": url, "dominio": dom}
 
 
 def _require_config() -> Config:

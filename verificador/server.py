@@ -87,7 +87,7 @@ async def verificar(request: Request) -> StreamingResponse:
             try:
                 agente: Verificador = sesion["agente"]
                 agente.preguntar(
-                    pregunta, on_step=lambda s: cola.put(("paso", {"texto": s}))
+                    pregunta, on_step=lambda ev: cola.put(("traza", ev))
                 )
                 # La respuesta final ya está en el último mensaje del agente.
                 final = agente.messages[-1].get("content", "")
