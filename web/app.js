@@ -236,14 +236,27 @@ function pintarTrazaEvento(traza, ev) {
     card = document.createElement("div");
     card.className = "fuente-card";
     card.dataset.id = ev.id;
-    const icono = ev.tipo === "busqueda" ? "🔎" : ev.tipo === "video" ? "▶" : "📄";
-    const dom = ev.dominio
-      ? '<img class="fav" alt="" src="https://www.google.com/s2/favicons?domain=' + ev.dominio + '&sz=32" />'
-      : '<span class="fav fav--q">' + icono + "</span>";
-    card.innerHTML = dom +
-      '<span class="fuente-tit"></span>' +
-      '<span class="fuente-estado"></span>';
-    card.querySelector(".fuente-tit").textContent = ev.titulo || ev.dominio || "";
+
+    let fav;
+    if (ev.dominio) {
+      fav = document.createElement("img");
+      fav.className = "fav";
+      fav.alt = "";
+      fav.src = "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(ev.dominio) + "&sz=32";
+    } else {
+      fav = document.createElement("span");
+      fav.className = "fav fav--q";
+      fav.textContent = ev.tipo === "busqueda" ? "🔎" : ev.tipo === "video" ? "▶" : "📄";
+    }
+
+    const tit = document.createElement("span");
+    tit.className = "fuente-tit";
+    tit.textContent = ev.titulo || ev.dominio || "";
+
+    const estadoEl = document.createElement("span");
+    estadoEl.className = "fuente-estado";
+
+    card.append(fav, tit, estadoEl);
     traza.appendChild(card);
   }
   const est = card.querySelector(".fuente-estado");
