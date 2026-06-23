@@ -248,6 +248,16 @@ body {
   .msg-consulta p { font-size: 1.16rem; }
 }
 
+.cita { font-size: 0.82em; vertical-align: super; color: var(--tomas); text-decoration: none; padding: 0 1px; }
+.cita:hover { text-decoration: underline; }
+.fuentes-lista { list-style: none; padding: 0; margin: 1.2rem 0 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.fuentes-lista > li { font-family: var(--mono); font-size: 0.82rem; }
+.fuentes-lista a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.fuentes-lista a:hover { border-color: var(--tomas); }
+.prueba { margin-top: 0.3rem; }
+.prueba summary { cursor: pointer; color: var(--muted); font-size: 0.74rem; letter-spacing: 0.04em; }
+.prueba blockquote { margin: 0.5rem 0 0; padding: 0.6rem 0.8rem; border-left: 2px solid var(--tomas); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.92rem; color: var(--ink-2); white-space: pre-wrap; }
+
 @media (prefers-reduced-motion: reduce) {
   .avatar .ojos { animation: none !important; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
