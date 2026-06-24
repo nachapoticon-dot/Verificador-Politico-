@@ -23,3 +23,28 @@ def test_prompt_pide_concision_citas_y_n():
     assert "no guard" in p or "sin memoria" in p or "no construyas" in p
     # Ya NO debe imponer las secciones largas fijas:
     assert "Qué dicen las fuentes:" not in SYSTEM_PROMPT
+
+
+def test_instruccion_modo_textos_por_eje():
+    from verificador.prompts import instruccion_modo
+    corta = instruccion_modo("corta", "simple")
+    assert corta.startswith("[Modo de respuesta] ")
+    assert "1-2 frases" in corta
+    assert "lenguaje llano" in corta.lower()
+    det = instruccion_modo("detallada", "tecnico")
+    assert "varios párrafos" in det
+    assert "metodología" in det.lower()
+
+
+def test_instruccion_modo_cae_al_default_si_invalido():
+    from verificador.prompts import instruccion_modo
+    assert instruccion_modo("xxx", "yyy") == instruccion_modo("corta", "simple")
+
+
+def test_prompt_prohibe_encabezados_markdown():
+    from verificador.prompts import SYSTEM_PROMPT
+    pl = SYSTEM_PROMPT.lower()
+    assert "encabezados markdown" in pl
+    assert "###" in SYSTEM_PROMPT
+    # el largo ya no se hardcodea: se delega al modo de cada consulta
+    assert "modo de respuesta" in pl
