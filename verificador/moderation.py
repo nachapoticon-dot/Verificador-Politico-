@@ -55,18 +55,13 @@ def es_irrespetuoso(texto: str) -> bool:
 
 
 def mensaje_limite(strikes: int) -> str:
-    """Devuelve un límite amable que se endurece según los strikes acumulados."""
+    """Aviso firme al primer insulto; mensaje de cierre si se repite."""
     if strikes <= 1:
         return (
-            "Quiero ayudarte de verdad, pero así no. Hablemos con respeto y "
-            "encantado verifico lo que necesites. ¿Cuál es tu pregunta, en buena onda?"
-        )
-    if strikes == 2:
-        return (
-            "Te lo pido de nuevo: sin insultos. No voy a responder a la grosería, "
-            "pero sí a una pregunta hecha con respeto. Cuando quieras, retomamos."
+            "Aquí no se falta el respeto. No voy a responder a un insulto. "
+            "Si quieres que verifique algo, pídemelo con respeto y lo hago."
         )
     return (
-        "Voy a hacer una pausa aquí. Cuando vuelvas con respeto, seguimos sin "
-        "problema; mi trabajo es ayudarte a separar lo verdadero de lo falso, no discutir."
+        "Esto se termina aquí: ya te pedí respeto y seguiste. Cierro la "
+        "conversación. Si quieres retomar, empieza de nuevo y con buen trato."
     )

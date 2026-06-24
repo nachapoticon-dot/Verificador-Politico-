@@ -112,3 +112,26 @@ def test_on_step_ver_video_no_youtube_es_fallo(monkeypatch):
     assert leyendo and leyendo[0]["tipo"] == "video"
     assert fallo and fallo[0]["id"] == leyendo[0]["id"]
     assert "extracto" not in fallo[0]
+
+
+def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    import verificador.agent as agentmod
+    import verificador.fuentes as fuentes
+
+    ruta = tmp_path / "propuestas.jsonl"
+    monkeypatch.setattr(fuentes, "PROPUESTAS_PATH", ruta)
+
+    ver = agentmod.Verificador()
+    final = ('Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":'
+             '[{"n":1,"medio":"Raro","url":"https://diario-raro-xyz.tld/n",'
+             '"credibilidad":"media","tendencia":"centro"}]}\n```')
+    fake = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
+    )
+    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+
+    out = ver.preguntar("¿algo?")
+    assert out == final
+    assert ruta.exists()
+    assert "diario-raro-xyz.tld" in ruta.read_text(encoding="utf-8")
