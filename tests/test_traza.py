@@ -135,3 +135,55 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
     assert out == final
     assert ruta.exists()
     assert "diario-raro-xyz.tld" in ruta.read_text(encoding="utf-8")
+
+
+def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
+    from types import SimpleNamespace
+    import verificador.agent as agentmod
+
+    ver = agentmod.Verificador()
+    ver.largo = "detallada"
+    ver.detalle = "tecnico"
+    base_system = ver.messages[0]["content"]  # system base, no debe cambiar
+
+    final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
+    fake = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
+    )
+    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+
+    ver.preguntar("¿algo?")
+
+    # El system base (primer mensaje) queda intacto → caché del prompt a salvo.
+    assert ver.messages[0]["content"] == base_system
+    # Se inyectó un mensaje de modo (system) con el texto del modo elegido.
+    modos = [m for m in ver.messages
+             if m["role"] == "system" and "[Modo de respuesta]" in m["content"]]
+    assert modos, "no se inyectó la instrucción de modo"
+    assert "varios párrafos" in modos[-1]["content"]
+    # Va antes del turno del usuario.
+    idx_modo = ver.messages.index(modos[-1])
+    idx_user = next(i for i, m in enumerate(ver.messages) if m["role"] == "user")
+    assert idx_modo < idx_user
+
+
+def test_instruccion_de_modo_es_efimera_entre_turnos(monkeypatch):
+    from types import SimpleNamespace
+    import verificador.agent as agentmod
+
+    ver = agentmod.Verificador()
+    final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
+    fake = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
+    )
+    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+
+    ver.preguntar("primera")
+    ver.preguntar("segunda")
+
+    modos = [m for m in ver.messages
+             if m["role"] == "system" and m["content"].startswith("[Modo de respuesta]")]
+    assert len(modos) == 1  # solo la del turno actual, no se acumulan
+    # el system base sigue intacto en la posición 0
+    assert ver.messages[0]["role"] == "system"
+    assert not ver.messages[0]["content"].startswith("[Modo de respuesta]")

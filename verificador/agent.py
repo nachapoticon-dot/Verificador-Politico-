@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 from openai import OpenAI
 
 from .config import Config, cargar_config
-from .prompts import SYSTEM_PROMPT
+from .prompts import SYSTEM_PROMPT, instruccion_modo
 from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 from . import fuentes
 
@@ -34,6 +34,9 @@ class Verificador:
     country: str | None = None
     # Nivel de exigencia: "rapido" (menos fuentes, más veloz) o "riguroso".
     rigor: str = "riguroso"
+    # Modo de redacción de la respuesta (no afecta cuánto investiga; eso es rigor).
+    largo: str = "corta"      # corta | normal | detallada
+    detalle: str = "simple"   # simple | tecnico
     _client: OpenAI = field(init=False)
 
     def __post_init__(self) -> None:
@@ -84,6 +87,19 @@ class Verificador:
         (evento de inicio con tipo y estado; evento de fin con estado y extracto)
         para mostrar la traza de investigación en vivo.
         """
+        # Instrucción de modo: mensaje system efímero por turno. No toca el system
+        # base (messages[0]), así el prefijo cacheado del prompt no cambia.
+        # Mantén solo la instrucción de modo del turno actual (efímera): quita las
+        # de turnos previos. El system base (messages[0]) no empieza con esa
+        # etiqueta, así que el filtro startswith no lo toca.
+        self.messages = [
+            m for m in self.messages
+            if not (m.get("role") == "system"
+                    and m.get("content", "").startswith("[Modo de respuesta]"))
+        ]
+        self.messages.append(
+            {"role": "system", "content": instruccion_modo(self.largo, self.detalle)}
+        )
         self.messages.append({"role": "user", "content": pregunta})
 
         pasos = 4 if self.rigor == "rapido" else self.max_pasos

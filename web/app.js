@@ -16,6 +16,8 @@ const enviar = $("#enviar");
 const paisInput = $("#pais");
 
 let rigor = "riguroso";
+let largo = "corta";
+let detalle = "simple";
 let enCurso = false;
 let conversacionCerrada = false;
 
@@ -73,12 +75,16 @@ const MINI_AVATAR =
   '<circle cx="18" cy="24" r="6.4" class="lens"/><circle cx="31" cy="24" r="6.4" class="lens"/>' +
   '<circle cx="18" cy="24" r="1.7" class="eye"/><circle cx="31" cy="24" r="1.7" class="eye"/></svg>';
 
-/* ---------- Toggle de profundidad ---------- */
-document.querySelectorAll(".seg-opt").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".seg-opt").forEach((b) => b.classList.remove("is-on"));
-    btn.classList.add("is-on");
-    rigor = btn.dataset.rigor || "riguroso";
+/* ---------- Toggles segmentados (profundidad, largo, detalle) ---------- */
+document.querySelectorAll(".seg").forEach((grupo) => {
+  grupo.querySelectorAll(".seg-opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      grupo.querySelectorAll(".seg-opt").forEach((b) => b.classList.remove("is-on"));
+      btn.classList.add("is-on");
+      if (btn.dataset.rigor) rigor = btn.dataset.rigor;
+      else if (btn.dataset.largo) largo = btn.dataset.largo;
+      else if (btn.dataset.detalle) detalle = btn.dataset.detalle;
+    });
   });
 });
 
@@ -146,6 +152,8 @@ async function stream(pregunta, traza) {
       sid,
       pais: paisInput.value.trim() || null,
       rigor,
+      largo,
+      detalle,
     }),
   });
 
@@ -419,11 +427,36 @@ function selloDe(meta, prosa) {
   return null;
 }
 
-// Formateo ligero: párrafos, **negrita**, enlaces markdown y URLs sueltas.
+// Formateo ligero y XSS-seguro: párrafos, **negrita**, enlaces, viñetas, y
+// encabezados markdown degradados a negrita (nunca se muestran "###" crudos).
 function formatear(texto) {
-  const parrafos = texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-  return parrafos.map((p) => "<p>" + enlazar(negrita(escapar(p))).replace(/\n/g, "<br>") + "</p>").join("");
+  const bloques = texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  return bloques.map(formatearBloque).join("");
 }
+
+function formatearBloque(bloque) {
+  const lineas = bloque.split("\n").filter((l) => l.trim());
+  const esVinieta = (l) => /^[-*]\s+/.test(l.trim());
+  if (lineas.length && lineas.every(esVinieta)) {
+    const items = lineas
+      .map((l) => "<li>" + enLinea(l.trim().replace(/^[-*]\s+/, "")) + "</li>")
+      .join("");
+    return "<ul class='resp-lista'>" + items + "</ul>";
+  }
+  const html = lineas
+    .map((l) => {
+      const h = l.match(/^#{1,6}\s*(.+)$/);
+      return h ? "<strong>" + enLinea(h[1]) + "</strong>" : enLinea(l);
+    })
+    .join("<br>");
+  return "<p>" + html + "</p>";
+}
+
+// Transformaciones inline, siempre escapando primero (XSS).
+function enLinea(s) {
+  return enlazar(negrita(escapar(s)));
+}
+
 function escapar(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
