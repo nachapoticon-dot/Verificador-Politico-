@@ -46,18 +46,8 @@ const SELLOS = {
 const SELLO_POR_EMOJI = {
   "✅": "verdadero", "❌": "falso", "⚠": "enganoso",
   "🔀": "fuera_de_contexto", "🔮": "prediccion", "❓": "sin_evidencia",
+  "ℹ": "informativo",
 };
-
-// Posición de cada tendencia en el eje izquierda(0)–derecha(1) del medidor.
-const TEND_POS = {
-  "izquierda": 0.04,
-  "centro-izquierda": 0.27,
-  "centro": 0.5,
-  "centro-derecha": 0.73,
-  "derecha": 0.96,
-};
-// Estas no caen en el eje: son árbitros (verificadores, agencias).
-const ARBITROS = new Set(["verificador", "internacional"]);
 
 // Etiquetas legibles de credibilidad (clave del JSON → texto + clase de color).
 const CREDIBILIDAD = {

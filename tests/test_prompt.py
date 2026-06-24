@@ -2,7 +2,6 @@ from verificador.prompts import SYSTEM_PROMPT
 
 
 def test_prompt_clasifica_pregunta_y_pondera_credibilidad():
-    from verificador.prompts import SYSTEM_PROMPT
     p = SYSTEM_PROMPT
     pl = p.lower()
     # veredicto informativo para preguntas sin afirmación:

@@ -24,9 +24,6 @@ def test_sse_emite_traza_y_respuesta(monkeypatch):
 
 
 def test_segundo_insulto_cierra_la_sesion(monkeypatch):
-    from fastapi.testclient import TestClient
-    from verificador import server
-
     sesion = {"agente": None, "strikes": 0, "cerrada": False}
     monkeypatch.setattr(server, "_sesion", lambda sid, c, r: sesion)
     client = TestClient(server.app)
@@ -44,9 +41,6 @@ def test_segundo_insulto_cierra_la_sesion(monkeypatch):
 
 
 def test_sesion_cerrada_rechaza_sin_llamar_al_modelo(monkeypatch):
-    from fastapi.testclient import TestClient
-    from verificador import server
-
     class _Boom:
         def preguntar(self, *a, **k):
             raise AssertionError("no debe llamar al modelo en sesión cerrada")

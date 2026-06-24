@@ -72,7 +72,7 @@ async def verificar(request: Request) -> StreamingResponse:
 
         # 0) Sesión ya cerrada por faltas de respeto: no se procesa nada más.
         if sesion.get("cerrada"):
-            yield _sse("cerrada", {"mensaje": mensaje_limite(2)})
+            yield _sse("cerrada", {"mensaje": mensaje_limite(sesion.get("strikes", 2))})
             return
 
         # 1) Moderación: límite firme y cierre si se reincide, sin llamar al modelo.

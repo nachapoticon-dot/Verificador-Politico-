@@ -89,7 +89,11 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
         if texto:
             if len(texto) > max_chars:
                 texto = texto[:max_chars] + "\n…[transcripción truncada]"
-            return Lectura(f"{fuentes.anotar(url)}\n[Transcripción de {url}]\n{texto}", True)
+            try:
+                _pref = fuentes.anotar(url) + "\n"
+            except Exception:  # noqa: BLE001 — la anotación nunca rompe la respuesta
+                _pref = ""
+            return Lectura(f"{_pref}[Transcripción de {url}]\n{texto}", True)
         return Lectura(
             f"[{url}: sin transcripción disponible; no puedo leer su audio.]", False
         )
@@ -108,12 +112,16 @@ def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> 
         with DDGS() as ddgs:
             for r in ddgs.text(query, region=region, max_results=max_resultados):
                 url = r.get("href") or r.get("url", "")
+                try:
+                    _fiab = fuentes.anotar(url)
+                except Exception:  # noqa: BLE001
+                    _fiab = ""
                 resultados.append(
                     {
                         "titulo": r.get("title", ""),
                         "url": url,
                         "resumen": r.get("body", ""),
-                        "fiabilidad": fuentes.anotar(url),
+                        "fiabilidad": _fiab,
                     }
                 )
     except Exception as e:  # noqa: BLE001 — devolvemos el error al modelo
@@ -281,7 +289,11 @@ def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
         return Lectura(f"[No pude abrir ni extraer texto de {url}.]", False)
     if len(texto) > max_chars:
         texto = texto[:max_chars] + "\n…[texto truncado]"
-    return Lectura(f"{fuentes.anotar(url)}\n{texto}", True)
+    try:
+        _pref = fuentes.anotar(url) + "\n"
+    except Exception:  # noqa: BLE001 — la anotación nunca rompe la respuesta
+        _pref = ""
+    return Lectura(f"{_pref}{texto}", True)
 
 
 # Esquemas que se le pasan al modelo (formato de tools de OpenAI/DeepSeek).
