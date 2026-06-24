@@ -17,6 +17,7 @@ const paisInput = $("#pais");
 
 let rigor = "riguroso";
 let enCurso = false;
+let conversacionCerrada = false;
 
 // Identificador de sesión estable: mantiene la memoria de la conversación.
 const sid = (() => {
@@ -478,12 +479,14 @@ function enlazarCitas(texto, fuentes) {
 
 function setEnCurso(v) {
   enCurso = v;
+  if (!v && conversacionCerrada) return;   // never re-enable a closed composer
   enviar.disabled = v;
   entrada.readOnly = v;
 }
 
 // Cierre permanente por faltas de respeto: bloquea el composer para esta sesión.
 function cerrarConversacion() {
+  conversacionCerrada = true;
   enviar.disabled = true;
   entrada.readOnly = true;
   entrada.placeholder = "Conversación cerrada. Recarga la página para empezar de nuevo.";

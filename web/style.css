@@ -195,7 +195,6 @@ body {
 
 .aviso { font-family: var(--serif); font-style: italic; color: var(--false); padding: 0.9rem 1.1rem; border: 1px solid var(--false); border-radius: 10px; background: rgba(194, 58, 44, 0.05); }
 .aviso.limite { color: var(--ink-2); border-color: var(--line); background: var(--card); font-style: normal; }
-.composer.cerrada { opacity: 0.55; pointer-events: none; }
 
 /* ---------- Composer ---------- */
 .composer { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; padding: 1rem 1.4rem 1.3rem; background: linear-gradient(to top, var(--paper) 64%, rgba(244, 236, 221, 0)); }
@@ -216,6 +215,7 @@ body {
 .composer button:disabled { opacity: 0.4; cursor: progress; }
 .composer button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .composer button svg { display: block; }
+.composer.cerrada { opacity: 0.55; pointer-events: none; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
