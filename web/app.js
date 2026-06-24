@@ -16,6 +16,8 @@ const enviar = $("#enviar");
 const paisInput = $("#pais");
 
 let rigor = "riguroso";
+let largo = "corta";
+let detalle = "simple";
 let enCurso = false;
 let conversacionCerrada = false;
 
@@ -73,12 +75,16 @@ const MINI_AVATAR =
   '<circle cx="18" cy="24" r="6.4" class="lens"/><circle cx="31" cy="24" r="6.4" class="lens"/>' +
   '<circle cx="18" cy="24" r="1.7" class="eye"/><circle cx="31" cy="24" r="1.7" class="eye"/></svg>';
 
-/* ---------- Toggle de profundidad ---------- */
-document.querySelectorAll(".seg-opt").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".seg-opt").forEach((b) => b.classList.remove("is-on"));
-    btn.classList.add("is-on");
-    rigor = btn.dataset.rigor || "riguroso";
+/* ---------- Toggles segmentados (profundidad, largo, detalle) ---------- */
+document.querySelectorAll(".seg").forEach((grupo) => {
+  grupo.querySelectorAll(".seg-opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      grupo.querySelectorAll(".seg-opt").forEach((b) => b.classList.remove("is-on"));
+      btn.classList.add("is-on");
+      if (btn.dataset.rigor) rigor = btn.dataset.rigor;
+      else if (btn.dataset.largo) largo = btn.dataset.largo;
+      else if (btn.dataset.detalle) detalle = btn.dataset.detalle;
+    });
   });
 });
 
@@ -146,6 +152,8 @@ async function stream(pregunta, traza) {
       sid,
       pais: paisInput.value.trim() || null,
       rigor,
+      largo,
+      detalle,
     }),
   });
 
