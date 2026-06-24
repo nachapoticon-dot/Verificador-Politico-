@@ -192,18 +192,6 @@ body {
 .respuesta-cuerpo a:hover { text-decoration-thickness: 2px; }
 .respuesta-cuerpo strong { font-weight: 600; }
 
-.espectro { margin-top: 1.5rem; border: 1px solid var(--line); border-radius: 11px; padding: 1.2rem 1.3rem 1.1rem; background: var(--card); }
-.espectro-cab { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
-.espectro-eje { position: relative; height: 58px; margin: 1.6rem 0 0.3rem; }
-.espectro-linea { position: absolute; left: 2px; right: 2px; top: 50%; height: 1px; background: var(--rule); transform: translateY(-50%); }
-.espectro-centro { position: absolute; left: 50%; top: 50%; width: 1px; height: 18px; background: var(--ink); transform: translate(-50%, -50%); opacity: 0.4; }
-.espectro-dot { position: absolute; width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--tomas); background: var(--card); transform: translate(-50%, -50%); cursor: default; }
-.espectro-dot.coincide { background: var(--tomas); }
-.espectro-leyenda { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.espectro-arbitros { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin-top: 1rem; }
-.arb-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-.arb { font-family: var(--mono); font-size: 0.66rem; padding: 0.22rem 0.5rem; border: 1px solid var(--line); border-radius: 6px; color: var(--ink-2); text-decoration: none; }
-.arb:hover { border-color: var(--tomas); color: var(--ink); }
 
 .aviso { font-family: var(--serif); font-style: italic; color: var(--false); padding: 0.9rem 1.1rem; border: 1px solid var(--false); border-radius: 10px; background: rgba(194, 58, 44, 0.05); }
 .aviso.limite { color: var(--ink-2); border-color: var(--line); background: var(--card); font-style: normal; }
@@ -250,13 +238,28 @@ body {
 
 .cita { font-size: 0.82em; vertical-align: super; color: var(--tomas); text-decoration: none; padding: 0 1px; }
 .cita:hover { text-decoration: underline; }
-.fuentes-lista { list-style: none; padding: 0; margin: 1.2rem 0 0; display: flex; flex-direction: column; gap: 0.6rem; }
-.fuentes-lista > li { font-family: var(--mono); font-size: 0.82rem; }
-.fuentes-lista a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
-.fuentes-lista a:hover { border-color: var(--tomas); }
-.prueba { margin-top: 0.3rem; }
-.prueba summary { cursor: pointer; color: var(--muted); font-size: 0.74rem; letter-spacing: 0.04em; }
-.prueba blockquote { margin: 0.5rem 0 0; padding: 0.6rem 0.8rem; border-left: 2px solid var(--tomas); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.92rem; color: var(--ink-2); white-space: pre-wrap; }
+.fuentes-bloque { margin-top: 1.3rem; }
+.fuentes-cab { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
+.fuentes-lista { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.fuentes-lista > li { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-family: var(--mono); font-size: 0.8rem; }
+.chip-t { font-size: 0.62rem; padding: 0.12rem 0.45rem; border-radius: 5px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid; }
+.t-izq { color: #b5562a; border-color: #e3c3ad; background: #fbf1e9; }
+.t-cen { color: var(--ink-2); border-color: #ddd4c4; background: #f4efe5; }
+.t-der { color: #3a5a8a; border-color: #b9c8df; background: #eef2f8; }
+.t-ver { color: var(--true); border-color: #b9dcc6; background: #e8f3ec; }
+.t-int { color: var(--tomas); border-color: #b9cdd6; background: #e9f0f3; }
+.fuente-medio { flex: 1; min-width: 8rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.fuente-medio:hover { border-color: var(--tomas); }
+.fuente-rel { color: var(--muted); font-size: 0.72rem; }
+.badge-c { font-size: 0.62rem; padding: 0.12rem 0.5rem; border-radius: 999px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: bold; }
+.b-alta { color: var(--true); background: #e8f3ec; }
+.b-media { color: var(--tomas); background: #e9f0f3; }
+.b-baja { color: #9a7416; background: #f7efd9; }
+.b-no { color: var(--false); background: #fbeae8; }
+.prueba { flex-basis: 100%; margin-top: 0.2rem; }
+.prueba summary { cursor: pointer; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.04em; }
+.prueba blockquote { margin: 0.4rem 0 0; padding: 0.55rem 0.75rem; border-left: 2px solid var(--tomas); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--ink-2); white-space: pre-wrap; }
+.pill[data-v="info"] { color: var(--tomas); }
 
 @media (prefers-reduced-motion: reduce) {
   .avatar .ojos { animation: none !important; }
