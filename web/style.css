@@ -191,6 +191,8 @@ body {
 .respuesta-cuerpo a { color: var(--tomas); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .respuesta-cuerpo a:hover { text-decoration-thickness: 2px; }
 .respuesta-cuerpo strong { font-weight: 600; }
+.respuesta-cuerpo ul.resp-lista { margin: 0 0 0.95rem; padding-left: 1.4rem; }
+.respuesta-cuerpo ul.resp-lista li { margin-bottom: 0.3rem; }
 
 
 .aviso { font-family: var(--serif); font-style: italic; color: var(--false); padding: 0.9rem 1.1rem; border: 1px solid var(--false); border-radius: 10px; background: rgba(194, 58, 44, 0.05); }

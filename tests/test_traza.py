@@ -165,3 +165,25 @@ def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
     idx_modo = ver.messages.index(modos[-1])
     idx_user = next(i for i, m in enumerate(ver.messages) if m["role"] == "user")
     assert idx_modo < idx_user
+
+
+def test_instruccion_de_modo_es_efimera_entre_turnos(monkeypatch):
+    from types import SimpleNamespace
+    import verificador.agent as agentmod
+
+    ver = agentmod.Verificador()
+    final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
+    fake = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
+    )
+    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+
+    ver.preguntar("primera")
+    ver.preguntar("segunda")
+
+    modos = [m for m in ver.messages
+             if m["role"] == "system" and m["content"].startswith("[Modo de respuesta]")]
+    assert len(modos) == 1  # solo la del turno actual, no se acumulan
+    # el system base sigue intacto en la posición 0
+    assert ver.messages[0]["role"] == "system"
+    assert not ver.messages[0]["content"].startswith("[Modo de respuesta]")
