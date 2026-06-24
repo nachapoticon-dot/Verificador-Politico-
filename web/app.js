@@ -427,11 +427,36 @@ function selloDe(meta, prosa) {
   return null;
 }
 
-// Formateo ligero: párrafos, **negrita**, enlaces markdown y URLs sueltas.
+// Formateo ligero y XSS-seguro: párrafos, **negrita**, enlaces, viñetas, y
+// encabezados markdown degradados a negrita (nunca se muestran "###" crudos).
 function formatear(texto) {
-  const parrafos = texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-  return parrafos.map((p) => "<p>" + enlazar(negrita(escapar(p))).replace(/\n/g, "<br>") + "</p>").join("");
+  const bloques = texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  return bloques.map(formatearBloque).join("");
 }
+
+function formatearBloque(bloque) {
+  const lineas = bloque.split("\n").filter((l) => l.trim());
+  const esVinieta = (l) => /^[-*]\s+/.test(l.trim());
+  if (lineas.length && lineas.every(esVinieta)) {
+    const items = lineas
+      .map((l) => "<li>" + enLinea(l.trim().replace(/^[-*]\s+/, "")) + "</li>")
+      .join("");
+    return "<ul class='resp-lista'>" + items + "</ul>";
+  }
+  const html = lineas
+    .map((l) => {
+      const h = l.match(/^#{1,6}\s*(.+)$/);
+      return h ? "<strong>" + enLinea(h[1]) + "</strong>" : enLinea(l);
+    })
+    .join("<br>");
+  return "<p>" + html + "</p>";
+}
+
+// Transformaciones inline, siempre escapando primero (XSS).
+function enLinea(s) {
+  return enlazar(negrita(escapar(s)));
+}
+
 function escapar(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
