@@ -94,7 +94,7 @@ body {
 .brand-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; letter-spacing: -0.01em; }
 .brand-sub { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
 
-.controls { display: flex; align-items: flex-end; gap: 1rem; }
+.controls { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
 .ctrl { display: flex; flex-direction: column; gap: 0.34rem; }
 .ctrl-lbl { font-family: var(--mono); font-size: 0.54rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding-left: 0.05rem; }
 .ctrl input {
@@ -191,6 +191,8 @@ body {
 .respuesta-cuerpo a { color: var(--tomas); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .respuesta-cuerpo a:hover { text-decoration-thickness: 2px; }
 .respuesta-cuerpo strong { font-weight: 600; }
+.respuesta-cuerpo ul.resp-lista { margin: 0 0 0.95rem; padding-left: 1.4rem; }
+.respuesta-cuerpo ul.resp-lista li { margin-bottom: 0.3rem; }
 
 
 .aviso { font-family: var(--serif); font-style: italic; color: var(--false); padding: 0.9rem 1.1rem; border: 1px solid var(--false); border-radius: 10px; background: rgba(194, 58, 44, 0.05); }

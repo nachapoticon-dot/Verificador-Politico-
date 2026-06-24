@@ -34,14 +34,19 @@ def _sse(evento: str, dato) -> str:
     return f"event: {evento}\ndata: {json.dumps(dato, ensure_ascii=False)}\n\n"
 
 
-def _sesion(sid: str, country: str | None, rigor: str) -> dict:
+def _sesion(sid: str, country: str | None, rigor: str,
+            largo: str, detalle: str) -> dict:
     s = _SESIONES.get(sid)
     if s is None:
-        s = {"agente": Verificador(country=country, rigor=rigor), "strikes": 0, "cerrada": False}
+        s = {"agente": Verificador(country=country, rigor=rigor,
+                                   largo=largo, detalle=detalle),
+             "strikes": 0, "cerrada": False}
         _SESIONES[sid] = s
-    # Permite cambiar país/rigor sobre la marcha sin perder la conversación.
+    # Permite cambiar país/rigor/modo sobre la marcha sin perder la conversación.
     s["agente"].country = country
     s["agente"].rigor = rigor
+    s["agente"].largo = largo
+    s["agente"].detalle = detalle
     return s
 
 
@@ -62,8 +67,12 @@ async def verificar(request: Request) -> StreamingResponse:
     sid = body.get("sid") or "anon"
     country = (body.get("pais") or "").strip().upper() or None
     rigor = "rapido" if body.get("rigor") == "rapido" else "riguroso"
+    largo = body.get("largo")
+    largo = largo if largo in ("corta", "normal", "detallada") else "corta"
+    detalle = body.get("detalle")
+    detalle = detalle if detalle in ("simple", "tecnico") else "simple"
 
-    sesion = _sesion(sid, country, rigor)
+    sesion = _sesion(sid, country, rigor, largo, detalle)
 
     def gen():
         if not pregunta:
