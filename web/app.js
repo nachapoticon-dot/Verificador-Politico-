@@ -13,7 +13,6 @@ const hero = $("#hero");
 const form = $("#composer");
 const entrada = $("#entrada");
 const enviar = $("#enviar");
-const paisInput = $("#pais");
 
 let rigor = "riguroso";
 let largo = "corta";
@@ -88,21 +87,6 @@ document.querySelectorAll(".seg").forEach((grupo) => {
   });
 });
 
-/* ---------- País: solo letras, mayúsculas ---------- */
-paisInput.addEventListener("input", () => {
-  paisInput.value = paisInput.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 2);
-});
-
-/* ---------- Chips de ejemplo ---------- */
-document.querySelectorAll("#ejemplos .chip").forEach((chip) => {
-  chip.addEventListener("click", () => {
-    entrada.value = chip.textContent.trim();
-    autoGrow();
-    entrada.focus();
-    form.requestSubmit();
-  });
-});
-
 /* ---------- Autoajuste del textarea + Enter para enviar ---------- */
 function autoGrow() {
   entrada.style.height = "auto";
@@ -150,7 +134,6 @@ async function stream(pregunta, traza) {
     body: JSON.stringify({
       pregunta,
       sid,
-      pais: paisInput.value.trim() || null,
       rigor,
       largo,
       detalle,
