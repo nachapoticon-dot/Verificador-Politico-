@@ -89,6 +89,14 @@ class Verificador:
         """
         # Instrucción de modo: mensaje system efímero por turno. No toca el system
         # base (messages[0]), así el prefijo cacheado del prompt no cambia.
+        # Mantén solo la instrucción de modo del turno actual (efímera): quita las
+        # de turnos previos. El system base (messages[0]) no empieza con esa
+        # etiqueta, así que el filtro startswith no lo toca.
+        self.messages = [
+            m for m in self.messages
+            if not (m.get("role") == "system"
+                    and m.get("content", "").startswith("[Modo de respuesta]"))
+        ]
         self.messages.append(
             {"role": "system", "content": instruccion_modo(self.largo, self.detalle)}
         )
