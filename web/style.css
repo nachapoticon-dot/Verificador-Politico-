@@ -126,15 +126,6 @@ body {
 .retrato-disco { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: var(--paper-2); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; }
 .hero-retrato .avatar { position: relative; z-index: 1; max-width: 300px; }
 
-.hero-ejemplos { list-style: none; display: flex; flex-direction: column; align-items: flex-start; gap: 0.42rem; padding: 0; margin: 0; }
-.chip {
-  appearance: none; background: none; border: 0; padding: 0; text-align: left; cursor: pointer;
-  font-family: var(--serif); font-style: italic; font-size: 1.06rem; color: var(--tomas);
-  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
-}
-.chip:hover { text-decoration-thickness: 2px; }
-.chip:focus-visible { outline: 2px solid var(--tomas); outline-offset: 3px; border-radius: 2px; }
-
 /* ---------- Método ---------- */
 .metodo {
   list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr);
@@ -223,7 +214,6 @@ body {
 @media (max-width: 720px) {
   .hero { grid-template-columns: 1fr; gap: 1.4rem; min-height: auto; text-align: center; padding-top: 1rem; }
   .hero-lead { margin-left: auto; margin-right: auto; }
-  .hero-ejemplos { align-items: center; }
   .hero-retrato .avatar { max-width: 220px; }
   .retrato-disco { width: 220px; height: 220px; }
 }
