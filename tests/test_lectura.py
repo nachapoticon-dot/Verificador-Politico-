@@ -63,7 +63,8 @@ def test_leer_pagina_usa_ruta_rapida(monkeypatch):
         raise AssertionError("no debería usar el navegador")
     monkeypatch.setattr(search, "_leer_navegador", boom)
     out = search.leer_pagina("https://x.com")
-    assert out.texto == "Texto rápido legible"
+    assert "[fuente:" in out.texto
+    assert "Texto rápido legible" in out.texto
     assert out.ok is True
 
 
@@ -71,7 +72,8 @@ def test_leer_pagina_cae_al_navegador(monkeypatch):
     monkeypatch.setattr(search, "_leer_rapido", lambda url: None)
     monkeypatch.setattr(search, "_leer_navegador", lambda url: "Texto del navegador")
     out = search.leer_pagina("https://js-pesado.com")
-    assert out.texto == "Texto del navegador"
+    assert "[fuente:" in out.texto
+    assert "Texto del navegador" in out.texto
     assert out.ok is True
 
 
@@ -80,7 +82,7 @@ def test_leer_pagina_trunca(monkeypatch):
     monkeypatch.setattr(search, "_leer_navegador", lambda url: None)
     out = search.leer_pagina("https://x.com", max_chars=100)
     assert out.texto.endswith("…[texto truncado]")
-    assert len(out.texto) < 200
+    assert len(out.texto) < 300  # anotación más 100 chars más truncado
     assert out.ok is True
 
 
@@ -90,3 +92,26 @@ def test_leer_pagina_falla_todo(monkeypatch):
     out = search.leer_pagina("https://imposible.com")
     assert "no pude" in out.texto.lower()
     assert out.ok is False
+
+
+def test_leer_pagina_ok_antepone_anotacion(monkeypatch):
+    monkeypatch.setattr(search, "_leer_rapido", lambda url: "contenido leído")
+    out = search.leer_pagina("https://reuters.com/articulo")
+    assert out.ok is True
+    assert out.texto.startswith("[fuente:")
+    assert "fiabilidad ALTA" in out.texto
+    assert "contenido leído" in out.texto
+
+
+def test_buscar_web_anota_cada_resultado(monkeypatch):
+    import verificador.search as s
+
+    class _DDGS:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def text(self, *a, **k):
+            return [{"title": "t", "href": "https://es.wikipedia.org/wiki/X", "body": "b"}]
+
+    monkeypatch.setattr("ddgs.DDGS", _DDGS)
+    res = s.buscar_web("colombia")
+    assert "fiabilidad BAJA" in res[0]["fiabilidad"]

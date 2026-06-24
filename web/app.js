@@ -17,6 +17,7 @@ const paisInput = $("#pais");
 
 let rigor = "riguroso";
 let enCurso = false;
+let conversacionCerrada = false;
 
 // Identificador de sesión estable: mantiene la memoria de la conversación.
 const sid = (() => {
@@ -38,24 +39,29 @@ const SELLOS = {
   fuera_de_contexto:  { etiqueta: "Sacado de contexto", v: "warn", emoji: "🔀" },
   prediccion:         { etiqueta: "Predicción", v: "muted", emoji: "🔮" },
   sin_evidencia:      { etiqueta: "Sin evidencia", v: "muted", emoji: "❓" },
+  informativo:        { etiqueta: "Información", v: "info", emoji: "ℹ️" },
 };
 
 // Respaldo: si faltara el JSON, detectamos el sello por el emoji de la prosa.
 const SELLO_POR_EMOJI = {
   "✅": "verdadero", "❌": "falso", "⚠": "enganoso",
   "🔀": "fuera_de_contexto", "🔮": "prediccion", "❓": "sin_evidencia",
+  "ℹ": "informativo",
 };
 
-// Posición de cada tendencia en el eje izquierda(0)–derecha(1) del medidor.
-const TEND_POS = {
-  "izquierda": 0.04,
-  "centro-izquierda": 0.27,
-  "centro": 0.5,
-  "centro-derecha": 0.73,
-  "derecha": 0.96,
+// Etiquetas legibles de credibilidad (clave del JSON → texto + clase de color).
+const CREDIBILIDAD = {
+  alta:      { txt: "alta",      clase: "b-alta" },
+  media:     { txt: "media",     clase: "b-media" },
+  baja:      { txt: "baja",      clase: "b-baja" },
+  no_fiable: { txt: "no fiable", clase: "b-no" },
 };
-// Estas no caen en el eje: son árbitros (verificadores, agencias).
-const ARBITROS = new Set(["verificador", "internacional"]);
+// Bloque de color por tendencia.
+const TEND_CLASE = {
+  "izquierda": "t-izq", "centro-izquierda": "t-izq", "centro": "t-cen",
+  "centro-derecha": "t-der", "derecha": "t-der",
+  "verificador": "t-ver", "internacional": "t-int",
+};
 
 const EXTRACTOS = {}; // url -> { extracto, titulo } acumulado de la traza
 
@@ -187,6 +193,10 @@ function manejarEvento({ evento, dato }, traza) {
   } else if (evento === "moderacion") {
     cerrarTraza(traza, true);
     pintarAviso(dato.mensaje || "", true);
+  } else if (evento === "cerrada") {
+    cerrarTraza(traza, true);
+    pintarAviso(dato.mensaje || "Conversación cerrada.", true);
+    cerrarConversacion();
   } else if (evento === "error") {
     cerrarTraza(traza);
     pintarAviso(dato.mensaje || "Algo salió mal.");
@@ -296,7 +306,7 @@ function pintarRespuesta(texto) {
     pill.dataset.v = sello.v;
     pill.innerHTML = '<span class="pill-em">' + sello.emoji + "</span> " + sello.etiqueta;
     fila.appendChild(pill);
-    if (meta && Number.isFinite(meta.confianza)) {
+    if (meta && meta.veredicto !== "informativo" && Number.isFinite(meta.confianza)) {
       const conf = document.createElement("span");
       conf.className = "conf";
       const pct = Math.max(0, Math.min(100, Math.round(meta.confianza)));
@@ -311,98 +321,72 @@ function pintarRespuesta(texto) {
   body.innerHTML = enlazarCitas(formatear(prosa), fuentes);
   cont.appendChild(body);
 
-  if (meta && Array.isArray(meta.fuentes) && meta.fuentes.length) {
-    cont.appendChild(pintarEspectro(meta.fuentes));
-  }
-
-  // Lista textual de fuentes con extracto desplegable ("ver de dónde salió").
-  // Construida por DOM (no innerHTML) para que f.url, f.medio y ex.extracto
-  // nunca se concatenen en una cadena HTML — XSS-safe.
-  if (fuentes.length) {
-    const lista = document.createElement("ul");
-    lista.className = "fuentes-lista";
-    fuentes.forEach((f) => {
-      const li = document.createElement("li");
-      const a = document.createElement("a");
-      a.href = urlSegura(f.url);
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = "[" + f.n + "] " + (f.medio || f.url);
-      li.appendChild(a);
-      const ex = EXTRACTOS[f.url];
-      if (ex) {
-        const details = document.createElement("details");
-        details.className = "prueba";
-        const summary = document.createElement("summary");
-        summary.textContent = "ver de dónde salió";
-        const blockquote = document.createElement("blockquote");
-        blockquote.textContent = ex.extracto;
-        details.appendChild(summary);
-        details.appendChild(blockquote);
-        li.appendChild(details);
-      }
-      lista.appendChild(li);
-    });
-    cont.appendChild(lista);
+  const fuentesMeta = (meta && Array.isArray(meta.fuentes)) ? meta.fuentes : [];
+  if (fuentesMeta.length) {
+    cont.appendChild(pintarFuentes(fuentesMeta));
   }
 
   msg.appendChild(cont);
 }
 
-// Construye el medidor de espectro: las fuentes con tendencia caen en el eje
-// izquierda–derecha; los verificadores y agencias se listan aparte (árbitros).
-function pintarEspectro(fuentes) {
+// Lista ponderada de fuentes: tendencia + medio + respalda/matiza + credibilidad
+// + "ver de dónde salió". Sustituye al medidor político anterior.
+function pintarFuentes(fuentes) {
   const box = document.createElement("div");
-  box.className = "espectro";
-  box.innerHTML = '<div class="espectro-cab">espectro de fuentes contrastadas</div>';
+  box.className = "fuentes-bloque";
+  const cab = document.createElement("div");
+  cab.className = "fuentes-cab";
+  cab.textContent = "fuentes contrastadas";
+  box.appendChild(cab);
 
-  const enEje = fuentes.filter((f) => TEND_POS[(f.tendencia || "").toLowerCase()] !== undefined);
-  const arbitros = fuentes.filter((f) => ARBITROS.has((f.tendencia || "").toLowerCase()));
+  const lista = document.createElement("ul");
+  lista.className = "fuentes-lista";
+  fuentes.forEach((f) => {
+    const li = document.createElement("li");
 
-  if (enEje.length) {
-    const eje = document.createElement("div");
-    eje.className = "espectro-eje";
-    eje.innerHTML = '<span class="espectro-linea"></span><span class="espectro-centro"></span>';
+    const tend = document.createElement("span");
+    const tkey = (f.tendencia || "").toLowerCase();
+    tend.className = "chip-t " + (TEND_CLASE[tkey] || "t-cen");
+    tend.textContent = tkey || "—";
+    li.appendChild(tend);
 
-    // Agrupa por tendencia para repartir verticalmente las coincidentes.
-    const grupos = {};
-    enEje.forEach((f) => {
-      const t = f.tendencia.toLowerCase();
-      (grupos[t] = grupos[t] || []).push(f);
-    });
-    Object.entries(grupos).forEach(([t, lista]) => {
-      lista.forEach((f, i) => {
-        const dot = document.createElement("span");
-        dot.className = "espectro-dot" + (f.coincide ? " coincide" : "");
-        const offset = (i - (lista.length - 1) / 2) * 16;
-        dot.style.left = TEND_POS[t] * 100 + "%";
-        dot.style.top = "calc(50% + " + offset + "px)";
-        dot.title = (f.medio || "fuente") + " · " + t + (f.coincide ? " · respalda" : " · matiza");
-        eje.appendChild(dot);
-      });
-    });
-    box.appendChild(eje);
+    const a = document.createElement("a");
+    a.href = urlSegura(f.url);
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.className = "fuente-medio";
+    a.textContent = "[" + f.n + "] " + (f.medio || f.url || "fuente");
+    li.appendChild(a);
 
-    const ley = document.createElement("div");
-    ley.className = "espectro-leyenda";
-    ley.innerHTML = "<span>Izquierda</span><span>Centro</span><span>Derecha</span>";
-    box.appendChild(ley);
-  }
+    const rel = document.createElement("span");
+    rel.className = "fuente-rel";
+    rel.textContent = f.coincide ? "✓ respalda" : "· matiza";
+    li.appendChild(rel);
 
-  if (arbitros.length) {
-    const fila = document.createElement("div");
-    fila.className = "espectro-arbitros";
-    fila.innerHTML = '<span class="arb-label">árbitros</span>';
-    arbitros.forEach((f) => {
-      const el = f.url ? document.createElement("a") : document.createElement("span");
-      el.className = "arb";
-      el.textContent = f.medio || "verificador";
-      if (f.url) { el.href = f.url; el.target = "_blank"; el.rel = "noopener noreferrer"; }
-      fila.appendChild(el);
-    });
-    box.appendChild(fila);
-  }
+    const cred = CREDIBILIDAD[(f.credibilidad || "").toLowerCase()];
+    if (cred) {
+      const badge = document.createElement("span");
+      badge.className = "badge-c " + cred.clase;
+      badge.textContent = cred.txt;
+      li.appendChild(badge);
+    }
 
+    const ex = EXTRACTOS[f.url];
+    if (ex) {
+      const det = document.createElement("details");
+      det.className = "prueba";
+      const sum = document.createElement("summary");
+      sum.textContent = "ver de dónde salió";
+      const bq = document.createElement("blockquote");
+      bq.textContent = ex.extracto;
+      det.appendChild(sum);
+      det.appendChild(bq);
+      li.appendChild(det);
+    }
+
+    lista.appendChild(li);
+  });
+  box.appendChild(lista);
   return box;
 }
 
@@ -485,8 +469,18 @@ function enlazarCitas(texto, fuentes) {
 
 function setEnCurso(v) {
   enCurso = v;
+  if (!v && conversacionCerrada) return;   // never re-enable a closed composer
   enviar.disabled = v;
   entrada.readOnly = v;
+}
+
+// Cierre permanente por faltas de respeto: bloquea el composer para esta sesión.
+function cerrarConversacion() {
+  conversacionCerrada = true;
+  enviar.disabled = true;
+  entrada.readOnly = true;
+  entrada.placeholder = "Conversación cerrada. Recarga la página para empezar de nuevo.";
+  if (form) form.classList.add("cerrada");
 }
 
 function scrollAbajo() {

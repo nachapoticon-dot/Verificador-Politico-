@@ -20,6 +20,7 @@ from openai import OpenAI
 from .config import Config, cargar_config
 from .prompts import SYSTEM_PROMPT
 from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
+from . import fuentes
 
 
 @dataclass
@@ -113,7 +114,14 @@ class Verificador:
 
             # Sin llamadas a herramientas → es la respuesta final.
             if not msg.tool_calls:
-                return msg.content or ""
+                final = msg.content or ""
+                # Propone para revisión las fuentes citadas cuyo dominio no esté
+                # en el registro curado. Nunca debe romper la respuesta.
+                try:
+                    fuentes.capturar_propuestas(fuentes.extraer_meta(final))
+                except Exception:  # noqa: BLE001
+                    pass
+                return final
 
             # Ejecutar cada herramienta y devolver su resultado al modelo.
             for tc in msg.tool_calls:

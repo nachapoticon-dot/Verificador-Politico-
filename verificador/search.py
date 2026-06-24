@@ -20,6 +20,8 @@ from typing import NamedTuple
 import httpx
 import re
 
+from . import fuentes
+
 
 class Lectura(NamedTuple):
     """Resultado de una herramienta de lectura.
@@ -87,7 +89,11 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
         if texto:
             if len(texto) > max_chars:
                 texto = texto[:max_chars] + "\n…[transcripción truncada]"
-            return Lectura(f"[Transcripción de {url}]\n{texto}", True)
+            try:
+                _pref = fuentes.anotar(url) + "\n"
+            except Exception:  # noqa: BLE001 — la anotación nunca rompe la respuesta
+                _pref = ""
+            return Lectura(f"{_pref}[Transcripción de {url}]\n{texto}", True)
         return Lectura(
             f"[{url}: sin transcripción disponible; no puedo leer su audio.]", False
         )
@@ -97,7 +103,7 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
 
 
 def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> list[dict]:
-    """Busca en DuckDuckGo y devuelve [{titulo, url, resumen}]."""
+    """Busca en DuckDuckGo y devuelve [{titulo, url, resumen, fiabilidad}]."""
     from ddgs import DDGS  # import perezoso: acelera el arranque del CLI
 
     region = _REGION.get((pais or "").upper(), "wt-wt")
@@ -105,11 +111,17 @@ def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> 
     try:
         with DDGS() as ddgs:
             for r in ddgs.text(query, region=region, max_results=max_resultados):
+                url = r.get("href") or r.get("url", "")
+                try:
+                    _fiab = fuentes.anotar(url)
+                except Exception:  # noqa: BLE001
+                    _fiab = ""
                 resultados.append(
                     {
                         "titulo": r.get("title", ""),
-                        "url": r.get("href") or r.get("url", ""),
+                        "url": url,
                         "resumen": r.get("body", ""),
+                        "fiabilidad": _fiab,
                     }
                 )
     except Exception as e:  # noqa: BLE001 — devolvemos el error al modelo
@@ -277,7 +289,11 @@ def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
         return Lectura(f"[No pude abrir ni extraer texto de {url}.]", False)
     if len(texto) > max_chars:
         texto = texto[:max_chars] + "\n…[texto truncado]"
-    return Lectura(texto, True)
+    try:
+        _pref = fuentes.anotar(url) + "\n"
+    except Exception:  # noqa: BLE001 — la anotación nunca rompe la respuesta
+        _pref = ""
+    return Lectura(f"{_pref}{texto}", True)
 
 
 # Esquemas que se le pasan al modelo (formato de tools de OpenAI/DeepSeek).
