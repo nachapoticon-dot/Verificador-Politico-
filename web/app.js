@@ -202,6 +202,10 @@ function manejarEvento({ evento, dato }, traza) {
   } else if (evento === "moderacion") {
     cerrarTraza(traza, true);
     pintarAviso(dato.mensaje || "", true);
+  } else if (evento === "cerrada") {
+    cerrarTraza(traza, true);
+    pintarAviso(dato.mensaje || "Conversación cerrada.", true);
+    cerrarConversacion();
   } else if (evento === "error") {
     cerrarTraza(traza);
     pintarAviso(dato.mensaje || "Algo salió mal.");
@@ -476,6 +480,14 @@ function setEnCurso(v) {
   enCurso = v;
   enviar.disabled = v;
   entrada.readOnly = v;
+}
+
+// Cierre permanente por faltas de respeto: bloquea el composer para esta sesión.
+function cerrarConversacion() {
+  enviar.disabled = true;
+  entrada.readOnly = true;
+  entrada.placeholder = "Conversación cerrada. Recarga la página para empezar de nuevo.";
+  if (form) form.classList.add("cerrada");
 }
 
 function scrollAbajo() {
