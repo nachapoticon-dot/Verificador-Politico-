@@ -37,7 +37,7 @@ def _sse(evento: str, dato) -> str:
 def _sesion(sid: str, country: str | None, rigor: str) -> dict:
     s = _SESIONES.get(sid)
     if s is None:
-        s = {"agente": Verificador(country=country, rigor=rigor), "strikes": 0}
+        s = {"agente": Verificador(country=country, rigor=rigor), "strikes": 0, "cerrada": False}
         _SESIONES[sid] = s
     # Permite cambiar país/rigor sobre la marcha sin perder la conversación.
     s["agente"].country = country
@@ -70,14 +70,20 @@ async def verificar(request: Request) -> StreamingResponse:
             yield _sse("error", {"mensaje": "Escribe una pregunta."})
             return
 
-        # 1) Moderación: límite ante la falta de respeto, sin llamar al modelo.
+        # 0) Sesión ya cerrada por faltas de respeto: no se procesa nada más.
+        if sesion.get("cerrada"):
+            yield _sse("cerrada", {"mensaje": mensaje_limite(2)})
+            return
+
+        # 1) Moderación: límite firme y cierre si se reincide, sin llamar al modelo.
         if es_irrespetuoso(pregunta):
             sesion["strikes"] += 1
-            yield _sse("moderacion", {"mensaje": mensaje_limite(sesion["strikes"])})
+            if sesion["strikes"] >= 2:
+                sesion["cerrada"] = True
+                yield _sse("cerrada", {"mensaje": mensaje_limite(sesion["strikes"])})
+            else:
+                yield _sse("moderacion", {"mensaje": mensaje_limite(sesion["strikes"])})
             return
-        # Buen trato: la persona puede ir recuperando margen.
-        if sesion["strikes"] > 0:
-            sesion["strikes"] -= 1
 
         # 2) Verificación con traza en vivo (el agente bloquea; lo corremos en
         #    un hilo y pasamos los eventos por una cola).
