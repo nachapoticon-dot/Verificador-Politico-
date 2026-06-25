@@ -46,6 +46,13 @@ const CREDIBILIDAD = {
   baja:      { txt: "baja",      clase: "b-baja" },
   no_fiable: { txt: "no fiable", clase: "b-no" },
 };
+// Aviso de honestidad por fuente (clave del JSON → texto + clase). "ninguna" no
+// pinta nada: el badge solo aparece cuando hay algo que advertir.
+const MANIPULACION = {
+  sesgo:          { txt: "sesgo", clase: "m-sesgo" },
+  enganosa:       { txt: "engañosa", clase: "m-eng" },
+  desinformadora: { txt: "desinforma", clase: "m-desinfo" },
+};
 // Bloque de color por tendencia.
 const TEND_CLASE = {
   "izquierda": "t-izq", "centro-izquierda": "t-izq", "centro": "t-cen",
@@ -341,6 +348,15 @@ function pintarFuentes(fuentes) {
       badge.className = "badge-c " + cred.clase;
       badge.textContent = cred.txt;
       li.appendChild(badge);
+    }
+
+    const manip = MANIPULACION[(f.manipulacion || "").toLowerCase()];
+    if (manip) {
+      const mb = document.createElement("span");
+      mb.className = "badge-m " + manip.clase;
+      mb.textContent = "⚠ " + manip.txt;
+      mb.title = "Honestidad de la fuente: tiende a manipular la información";
+      li.appendChild(mb);
     }
 
     const ex = EXTRACTOS[f.url];
