@@ -18,13 +18,16 @@ import threading
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .agent import Verificador
 from .config import cargar_config
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+# El frontend es una app React (Vite) que se construye a frontend/dist. El
+# servidor sirve ese build; en desarrollo se usa `npm run dev` (proxy a /api).
+DIST_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+ASSETS_DIR = DIST_DIR / "assets"
 
 app = FastAPI(title="Verificador Político")
 
@@ -48,8 +51,16 @@ def _sse(evento: str, dato) -> str:
 
 
 @app.get("/")
-def index() -> FileResponse:
-    return FileResponse(WEB_DIR / "index.html")
+def index():
+    idx = DIST_DIR / "index.html"
+    if idx.is_file():
+        return FileResponse(idx)
+    return HTMLResponse(
+        "<h1>Falta construir el frontend</h1>"
+        "<p>Corre <code>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</code> "
+        "y recarga.</p>",
+        status_code=503,
+    )
 
 
 @app.get("/healthz")
@@ -103,5 +114,6 @@ async def verificar(request: Request) -> StreamingResponse:
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 
-# Archivos estáticos (style.css, app.js, fuentes locales si las hubiera).
-app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+# Activos del build (JS/CSS con hash). Solo si el frontend ya está construido.
+if ASSETS_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")

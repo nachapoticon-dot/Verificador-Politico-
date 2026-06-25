@@ -5,3 +5,7 @@ __pycache__/
 .pytest_cache/
 .superpowers/
 verificador/data/propuestas.jsonl
+
+# Frontend (React/Vite)
+node_modules/
+frontend/dist/
