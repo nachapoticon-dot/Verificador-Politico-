@@ -77,15 +77,21 @@ Dentro del chat: `/pais XX` fija el país por defecto, `/pais off` lo quita,
 Además del CLI hay una interfaz web —**Tomás**, un agente de análisis: le das una
 pregunta o una afirmación y devuelve una respuesta factual validada fuente por
 fuente. Transmite la traza de validación en vivo (qué busca, qué lee) y dibuja el
-veredicto y un **medidor de espectro** con las fuentes contrastadas.
+veredicto, las fuentes contrastadas y un **aviso de honestidad** por fuente. Es
+una app **React + Tailwind + shadcn** (en `frontend/`) que el servidor FastAPI
+sirve ya construida.
 
 ```bash
+# 1) construir el frontend (una vez, o tras cambiarlo)
+cd frontend && npm install && npm run build && cd ..
+# 2) levantar el servidor (sirve frontend/dist y la API en /api)
 uvicorn verificador.server:app --reload
 # abre http://127.0.0.1:8000
 ```
 
-Puedes fijar país (campo de 2 letras) y elegir rigor (rápido / riguroso) desde
-la propia página.
+Para desarrollar el frontend con recarga en caliente: `cd frontend && npm run
+dev` (Vite proxya `/api` al uvicorn del 8000). Eliges rigor (rápido / a fondo),
+largo y detalle desde la propia página.
 
 ## Estructura
 
@@ -93,17 +99,16 @@ la propia página.
 verificador-politico/
 ├── main.py                 # punto de entrada del CLI
 ├── verificador/
-│   ├── agent.py            # bucle de tool-calling sobre DeepSeek
-│   ├── search.py           # herramientas buscar_web / leer_pagina
-│   ├── prompts.py          # metodología, neutralidad, espectro de medios
+│   ├── agent.py            # bucle de tool-calling sobre DeepSeek (sin estado)
+│   ├── search.py           # herramientas buscar_web / leer_pagina / ver_video
+│   ├── prompts.py          # metodología, neutralidad, autenticidad
 │   ├── config.py           # carga de la clave (incl. desde EdifcIA)
 │   ├── fuentes.py          # registro de credibilidad/manipulación por fuente
-│   ├── server.py           # servidor web (FastAPI + SSE)
+│   ├── server.py           # servidor web (FastAPI + SSE), sirve frontend/dist
 │   └── cli.py              # interfaz de terminal
-├── web/                    # interfaz "El Fiel" (HTML/CSS/JS, sin build)
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
+├── frontend/               # interfaz "Tomás" (React + Tailwind + shadcn, Vite)
+│   ├── src/                # componentes, hook de SSE, tema de Tomás
+│   └── dist/               # build que sirve el servidor (npm run build)
 ├── requirements.txt
 └── .env.example
 ```
