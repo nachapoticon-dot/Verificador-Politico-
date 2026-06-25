@@ -93,7 +93,6 @@ function Hero() {
       </figure>
       <div className="hero-copy">
         <h1 className="hero-title">Cuéntame qué has&nbsp;oído.</h1>
-        <p className="hero-lead">Y te digo si es verdad —con las pruebas a la vista.</p>
       </div>
     </section>
   );
