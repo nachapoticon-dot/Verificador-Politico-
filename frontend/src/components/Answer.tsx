@@ -25,6 +25,7 @@ export function Answer({ turno }: { turno: Turno }) {
   const conf =
     meta &&
     meta.veredicto !== "informativo" &&
+    meta.veredicto !== "no_verificable" &&
     typeof meta.confianza === "number" &&
     Number.isFinite(meta.confianza)
       ? Math.max(0, Math.min(100, Math.round(meta.confianza)))
