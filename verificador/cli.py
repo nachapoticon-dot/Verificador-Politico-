@@ -1,4 +1,9 @@
-"""Interfaz de línea de comandos interactiva para el verificador."""
+"""Interfaz de línea de comandos interactiva para el verificador.
+
+Cada pregunta es independiente (el agente no tiene memoria). El REPL solo
+recuerda el país por defecto que fijes con `/pais`, para pasárselo a la
+siguiente consulta.
+"""
 
 from __future__ import annotations
 
@@ -23,7 +28,6 @@ verdad, qué es falso y qué está sacado de contexto.
 Comandos:
   /pais XX   fija un país (código ISO, p. ej. AR, MX, ES) para sesgar
              la búsqueda  ·  /pais off  para quitarlo
-  /nuevo     olvidar la conversación
   /salir
 """
 
@@ -65,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     if "--pais" in argv:
         i = argv.index("--pais")
         if i + 1 < len(argv):
-            country = argv[i + 1]
+            country = argv[i + 1].upper()
             del argv[i : i + 2]
 
     if cargar_config() is None:
@@ -78,11 +82,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    agente = Verificador(country=country)
+    agente = Verificador()
 
     # Modo pregunta única: verificador "¿es verdad que...?"
     if argv:
-        return _responder(agente, " ".join(argv))
+        return _responder(agente, " ".join(argv), country)
 
     # Modo interactivo
     print(BANNER)
@@ -95,33 +99,29 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if not pregunta:
             continue
-        if pregunta in {"/nuevo", "/new", "/reset"}:
-            agente.reiniciar()
-            print("Conversación reiniciada.")
-            continue
         if pregunta.startswith("/pais"):
             partes = pregunta.split()
             if len(partes) < 2:
-                actual = agente.country or "ninguno (global)"
+                actual = country or "ninguno (global)"
                 print(f"País actual: {actual}. Uso: /pais XX  ·  /pais off")
             elif partes[1].lower() in {"off", "global", "none"}:
-                agente.country = None
+                country = None
                 print("País quitado: búsqueda global.")
             else:
-                agente.country = partes[1].upper()
-                print(f"País fijado: {agente.country}.")
+                country = partes[1].upper()
+                print(f"País fijado: {country}.")
             continue
-        _responder(agente, pregunta)
+        _responder(agente, pregunta, country)
     return 0
 
 
-def _responder(agente: Verificador, pregunta: str) -> int:
+def _responder(agente: Verificador, pregunta: str, country: str | None) -> int:
     def on_step(ev: dict) -> None:
         print(f"{_DIM}  {_formatear_paso(ev)}{_RESET}", flush=True)
 
     print(f"\n{_BOLD}Verificador ›{_RESET} {_DIM}(investigando…){_RESET}")
     try:
-        respuesta = agente.preguntar(pregunta, on_step=on_step)
+        respuesta = agente.preguntar(pregunta, country=country, on_step=on_step)
     except openai.AuthenticationError:
         print("\n[Clave de DeepSeek inválida o sin permisos.]", file=sys.stderr)
         return 1
