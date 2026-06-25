@@ -1,4 +1,4 @@
-/* Estilos de componentes de Tomás, portados del diseño original (vanilla) al
+/* Estilos de componentes de Faro, portados del diseño original (vanilla) al
  * frontend React. Reutilizan las variables de :root (index.css). El :root, el
  * body y el grano viven en index.css; aquí va todo lo demás. */
 
@@ -6,8 +6,8 @@
 .avatar { width: 100%; max-width: 290px; height: auto; display: block; overflow: visible; }
 .avatar [class~="sk"] { fill: var(--skin); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
 .avatar .hair { fill: var(--hair); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
-.avatar .sweater { fill: var(--tomas); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
-.avatar .collar { fill: var(--tomas-2); stroke: none; }
+.avatar .sweater { fill: var(--faro); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+.avatar .collar { fill: var(--faro-2); stroke: none; }
 .avatar .lens { fill: rgba(47, 93, 114, 0.12); stroke: var(--ink); stroke-width: 3; }
 .avatar .frame { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
 .avatar .ceja { fill: none; stroke: var(--ink); stroke-width: 4.6; stroke-linecap: round; transition: transform 0.25s ease; }
@@ -18,7 +18,7 @@
 @keyframes parpadeo { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.12); } }
 .hero-retrato:hover .ceja--alta { transform: translateY(-3px) rotate(-3deg); }
 
-/* mini-Tomás de la marca */
+/* mini-Faro de la marca */
 .mini-avatar { width: 40px; height: 40px; display: block; overflow: visible; }
 .mini-avatar .sk { fill: var(--skin); stroke: var(--ink); stroke-width: 2.4; }
 .mini-avatar .hair { fill: var(--hair); }
@@ -46,8 +46,8 @@
 .seg-opt { appearance: none; border: 0; background: transparent; padding: 0 0.7rem; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); cursor: pointer; transition: color 0.12s; }
 .seg-opt + .seg-opt { border-left: 1px solid var(--line); }
 .seg-opt:hover { color: var(--ink); }
-.seg-opt.is-on { background: var(--tomas); color: #fff; }
-.seg-opt:focus-visible { outline: 2px solid var(--tomas); outline-offset: -3px; }
+.seg-opt.is-on { background: var(--faro); color: #fff; }
+.seg-opt:focus-visible { outline: 2px solid var(--faro); outline-offset: -3px; }
 
 /* ---------- Contenedor ---------- */
 .hilo { position: relative; z-index: 1; flex: 1; width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 2.2rem 1.4rem 2rem; }
@@ -74,7 +74,7 @@
 
 .traza { margin: 1.1rem 0 0; padding-left: 1rem; border-left: 1px solid var(--rule); }
 .traza-cab { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
-.traza-cab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tomas); animation: latido 1.1s ease-in-out infinite; }
+.traza-cab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faro); animation: latido 1.1s ease-in-out infinite; }
 @keyframes latido { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 .traza.cerrada .dot { animation: none; background: var(--muted); }
 .fuente-card { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); animation: surgir 0.3s ease both; }
@@ -82,12 +82,12 @@
 .fuente-card .fuente-tit { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fuente-card .fuente-estado { color: var(--muted); }
 .fuente-card[data-estado="buscando"] .fuente-estado,
-.fuente-card[data-estado="leyendo"] .fuente-estado { color: var(--tomas); animation: latido 1.1s ease-in-out infinite; }
+.fuente-card[data-estado="leyendo"] .fuente-estado { color: var(--faro); animation: latido 1.1s ease-in-out infinite; }
 .fuente-card[data-estado="ok"] .fuente-estado { color: var(--true); }
 .fuente-card[data-estado="fallo"] { opacity: 0.55; }
 .fuente-card[data-estado="fallo"] .fuente-estado { color: var(--false); }
 
-/* firma de Tomás sobre la respuesta */
+/* firma de Faro sobre la respuesta */
 .resp-firma { display: flex; align-items: center; gap: 0.5rem; margin: 1.4rem 0 0.9rem; }
 .resp-firma .mini-avatar { width: 30px; height: 30px; }
 .resp-firma b { font-family: var(--display); font-weight: 600; font-size: 0.96rem; }
@@ -100,15 +100,15 @@
 .pill[data-v="false"] { color: var(--false); }
 .pill[data-v="warn"]  { color: var(--warn); }
 .pill[data-v="muted"] { color: var(--muted-v); }
-.pill[data-v="info"]  { color: var(--tomas); }
+.pill[data-v="info"]  { color: var(--faro); }
 .pill .pill-em { font-size: 0.95rem; }
 .conf { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 0.45rem; }
 .conf-barra { width: 56px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
-.conf-barra i { display: block; height: 100%; background: var(--tomas); }
+.conf-barra i { display: block; height: 100%; background: var(--faro); }
 
 .respuesta-cuerpo p { margin: 0 0 0.95rem; }
 .respuesta-cuerpo p:last-child { margin-bottom: 0; }
-.respuesta-cuerpo a { color: var(--tomas); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.respuesta-cuerpo a { color: var(--faro); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .respuesta-cuerpo a:hover { text-decoration-thickness: 2px; }
 .respuesta-cuerpo strong { font-weight: 600; }
 .respuesta-cuerpo ul.resp-lista { margin: 0 0 0.95rem; padding-left: 1.4rem; }
@@ -125,7 +125,7 @@
   box-shadow: 0 10px 26px -22px rgba(42, 36, 32, 0.5);
 }
 .composer textarea::placeholder { color: var(--muted); }
-.composer textarea:focus-visible { outline: none; border-color: var(--tomas); box-shadow: 0 0 0 2px rgba(47, 93, 114, 0.18); }
+.composer textarea:focus-visible { outline: none; border-color: var(--faro); box-shadow: 0 0 0 2px rgba(47, 93, 114, 0.18); }
 .composer button {
   flex: none; display: inline-flex; align-items: center; gap: 0.4rem; height: 48px; padding: 0 1.15rem; border: 0; border-radius: 13px;
   background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.03em; cursor: pointer; transition: opacity 0.12s, transform 0.1s;
@@ -137,7 +137,7 @@
 .composer button svg { display: block; }
 
 /* ---------- Fuentes y citas ---------- */
-.cita { font-size: 0.82em; vertical-align: super; color: var(--tomas); text-decoration: none; padding: 0 1px; }
+.cita { font-size: 0.82em; vertical-align: super; color: var(--faro); text-decoration: none; padding: 0 1px; }
 .cita:hover { text-decoration: underline; }
 .fuentes-bloque { margin-top: 1.3rem; }
 .fuentes-cab { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
@@ -148,13 +148,13 @@
 .t-cen { color: var(--ink-2); border-color: #ddd4c4; background: #f4efe5; }
 .t-der { color: #3a5a8a; border-color: #b9c8df; background: #eef2f8; }
 .t-ver { color: var(--true); border-color: #b9dcc6; background: #e8f3ec; }
-.t-int { color: var(--tomas); border-color: #b9cdd6; background: #e9f0f3; }
+.t-int { color: var(--faro); border-color: #b9cdd6; background: #e9f0f3; }
 .fuente-medio { flex: 1; min-width: 8rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
-.fuente-medio:hover { border-color: var(--tomas); }
+.fuente-medio:hover { border-color: var(--faro); }
 .fuente-rel { color: var(--muted); font-size: 0.72rem; }
 .badge-c { font-size: 0.62rem; padding: 0.12rem 0.5rem; border-radius: 999px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: bold; }
 .b-alta { color: var(--true); background: #e8f3ec; }
-.b-media { color: var(--tomas); background: #e9f0f3; }
+.b-media { color: var(--faro); background: #e9f0f3; }
 .b-baja { color: #9a7416; background: #f7efd9; }
 .b-no { color: var(--false); background: #fbeae8; }
 /* Aviso de honestidad: solo aparece cuando la fuente tiende a manipular. */
@@ -164,7 +164,7 @@
 .m-desinfo { color: #fff; background: var(--false); border-color: var(--false); }
 .prueba { flex-basis: 100%; margin-top: 0.2rem; }
 .prueba summary { cursor: pointer; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.04em; }
-.prueba blockquote { margin: 0.4rem 0 0; padding: 0.55rem 0.75rem; border-left: 2px solid var(--tomas); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--ink-2); white-space: pre-wrap; }
+.prueba blockquote { margin: 0.4rem 0 0; padding: 0.55rem 0.75rem; border-left: 2px solid var(--faro); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--ink-2); white-space: pre-wrap; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
