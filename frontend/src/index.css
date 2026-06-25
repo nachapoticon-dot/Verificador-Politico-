@@ -1,0 +1,141 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Tomás — un verificador con cara y voz.
+ * Identidad cálida y editorial: papel manila, tinta templada, Fraunces con
+ * carácter. El color fuerte solo aparece en el veredicto. Mantiene la línea del
+ * diseño original, ahora sobre tokens de shadcn (React + Tailwind). */
+
+@theme {
+  /* Tipografías de la marca. font-sans = cuerpo (Newsreader). */
+  --font-sans: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Paleta cálida (papel manila + tinta templada). */
+  --color-paper: #f4ecdd;
+  --color-paper-2: #ebe0cb;
+  --color-ink: #2a2420;
+  --color-ink-2: #5a5044;
+  --color-line: #d7cab2;
+
+  /* Tomás (jersey, gafas) y su retrato. */
+  --color-tomas: #2f5d72;
+  --color-tomas-2: #3c7088;
+  --color-skin: #efc39a;
+  --color-hair: #3a2d23;
+
+  /* Color fuerte = solo veredicto. */
+  --color-true: #2e7b53;
+  --color-false: #c23a2c;
+  --color-warn: #a9791d;
+  --color-muted-v: #7c7768;
+}
+
+/* Mapeo de los tokens semánticos de shadcn a la paleta de Tomás. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.6rem;
+  --background: #f4ecdd;        /* papel manila */
+  --foreground: #2a2420;        /* tinta templada */
+  --card: #fbf6ec;             /* superficie elevada */
+  --card-foreground: #2a2420;
+  --popover: #fbf6ec;
+  --popover-foreground: #2a2420;
+  --primary: #2f5d72;          /* el azul de Tomás */
+  --primary-foreground: #fbf6ec;
+  --secondary: #ebe0cb;
+  --secondary-foreground: #2a2420;
+  --muted: #ebe0cb;
+  --muted-foreground: #978a76;  /* etiquetas */
+  --accent: #ebe0cb;
+  --accent-foreground: #2a2420;
+  --destructive: #c23a2c;
+  --border: #d7cab2;           /* filetes finos */
+  --input: #d7cab2;
+  --ring: #2f5d72;
+
+  /* Nombres heredados de Tomás, para que el CSS de componentes (tomas.css) los
+   * use tal cual sin reescribir cada regla. */
+  --paper: #f4ecdd;
+  --paper-2: #ebe0cb;
+  --ink: #2a2420;
+  --ink-2: #5a5044;
+  --line: #d7cab2;
+  --rule: #2a2420;
+  --tomas: #2f5d72;
+  --tomas-2: #3c7088;
+  --skin: #efc39a;
+  --hair: #3a2d23;
+  --true: #2e7b53;
+  --false: #c23a2c;
+  --warn: #a9791d;
+  --muted-v: #7c7768;
+  --display: "Fraunces", Georgia, serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono: "Space Mono", ui-monospace, "SFMono-Regular", monospace;
+  --wrap: 880px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 7rem;
+    font-size: 18px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Grano de papel: textura ambiente, fija, sin capturar clics. */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
