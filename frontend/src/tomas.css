@@ -1,61 +1,6 @@
-/* Tomás — un verificador con cara y voz.
- *
- * El personaje es el alma de la página: un escéptico amable de gafas que no se
- * cree nada sin pruebas (ceja alzada, parpadea). El diseño es cálido y
- * editorial —papel manila, tinta templada, Fraunces con su carácter— y sin
- * brillos: el color fuerte solo aparece en el veredicto de cada respuesta.
- */
-
-:root {
-  --paper:   #f4ecdd;  /* papel manila, cálido */
-  --paper-2: #ebe0cb;  /* discos, tarjetas, campos */
-  --card:    #fbf6ec;  /* superficie elevada */
-  --ink:     #2a2420;  /* tinta templada */
-  --ink-2:   #5a5044;  /* cuerpo */
-  --muted:   #978a76;  /* etiquetas */
-  --line:    #d7cab2;  /* filetes finos */
-  --rule:    #2a2420;  /* filetes fuertes */
-
-  --tomas:   #2f5d72;  /* el color de Tomás (jersey, gafas) */
-  --tomas-2: #3c7088;
-  --skin:    #efc39a;
-  --hair:    #3a2d23;
-
-  /* color fuerte = solo veredicto */
-  --true:    #2e7b53;
-  --false:   #c23a2c;
-  --warn:    #a9791d;
-  --muted-v: #7c7768;
-
-  --display: "Fraunces", Georgia, serif;
-  --serif: "Newsreader", Georgia, "Times New Roman", serif;
-  --mono: "Space Mono", ui-monospace, "SFMono-Regular", monospace;
-
-  --wrap: 880px;
-}
-
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--serif);
-  font-size: 18px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 7rem;
-}
-
-.grain {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.4; mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-}
+/* Estilos de componentes de Tomás, portados del diseño original (vanilla) al
+ * frontend React. Reutilizan las variables de :root (index.css). El :root, el
+ * body y el grano viven en index.css; aquí va todo lo demás. */
 
 /* ---------- Personaje (avatar grande) ---------- */
 .avatar { width: 100%; max-width: 290px; height: auto; display: block; overflow: visible; }
@@ -71,7 +16,6 @@ body {
 .avatar .boca { fill: none; stroke: var(--ink); stroke-width: 3.4; stroke-linecap: round; }
 .avatar .ojos { transform-box: fill-box; transform-origin: center; animation: parpadeo 5.5s infinite; }
 @keyframes parpadeo { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.12); } }
-/* micro-interacción: al pasar el ratón, alza más la ceja (más escéptico) */
 .hero-retrato:hover .ceja--alta { transform: translateY(-3px) rotate(-3deg); }
 
 /* mini-Tomás de la marca */
@@ -97,12 +41,6 @@ body {
 .controls { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
 .ctrl { display: flex; flex-direction: column; gap: 0.34rem; }
 .ctrl-lbl { font-family: var(--mono); font-size: 0.54rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding-left: 0.05rem; }
-.ctrl input {
-  width: 72px; height: 34px; padding: 0 0.55rem; border: 1px solid var(--line); border-radius: 9px;
-  background: var(--card); font-family: var(--mono); font-size: 0.84rem; text-transform: uppercase; color: var(--ink); text-align: center;
-}
-.ctrl input::placeholder { color: var(--muted); text-transform: none; letter-spacing: 0; }
-.ctrl input:focus-visible { outline: none; border-color: var(--tomas); box-shadow: 0 0 0 2px rgba(47, 93, 114, 0.18); }
 
 .seg { display: inline-flex; height: 34px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--card); }
 .seg-opt { appearance: none; border: 0; background: transparent; padding: 0 0.7rem; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); cursor: pointer; transition: color 0.12s; }
@@ -125,16 +63,6 @@ body {
 .hero-retrato { position: relative; display: flex; align-items: center; justify-content: center; }
 .retrato-disco { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: var(--paper-2); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; }
 .hero-retrato .avatar { position: relative; z-index: 1; max-width: 300px; }
-
-/* ---------- Método ---------- */
-.metodo {
-  list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
-}
-.metodo li { padding: 0.95rem 0.9rem 1.05rem; display: flex; flex-direction: column; gap: 0.5rem; border-left: 1px solid var(--line); }
-.metodo li:first-child { border-left: 0; padding-left: 0.1rem; }
-.metodo-n { font-family: var(--mono); font-size: 0.72rem; color: var(--tomas); }
-.metodo-t { font-family: var(--display); font-weight: 600; font-size: 0.96rem; line-height: 1.2; color: var(--ink); }
 
 /* ---------- Mensajes ---------- */
 .msg { margin: 0 0 1.9rem; animation: surgir 0.4s ease both; }
@@ -172,6 +100,7 @@ body {
 .pill[data-v="false"] { color: var(--false); }
 .pill[data-v="warn"]  { color: var(--warn); }
 .pill[data-v="muted"] { color: var(--muted-v); }
+.pill[data-v="info"]  { color: var(--tomas); }
 .pill .pill-em { font-size: 0.95rem; }
 .conf { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 0.45rem; }
 .conf-barra { width: 56px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
@@ -184,7 +113,6 @@ body {
 .respuesta-cuerpo strong { font-weight: 600; }
 .respuesta-cuerpo ul.resp-lista { margin: 0 0 0.95rem; padding-left: 1.4rem; }
 .respuesta-cuerpo ul.resp-lista li { margin-bottom: 0.3rem; }
-
 
 .aviso { font-family: var(--serif); font-style: italic; color: var(--false); padding: 0.9rem 1.1rem; border: 1px solid var(--false); border-radius: 10px; background: rgba(194, 58, 44, 0.05); }
 
@@ -208,25 +136,7 @@ body {
 .composer button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .composer button svg { display: block; }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 720px) {
-  .hero { grid-template-columns: 1fr; gap: 1.4rem; min-height: auto; text-align: center; padding-top: 1rem; }
-  .hero-lead { margin-left: auto; margin-right: auto; }
-  .hero-retrato .avatar { max-width: 220px; }
-  .retrato-disco { width: 220px; height: 220px; }
-}
-@media (max-width: 600px) {
-  body { font-size: 17px; }
-  .masthead { flex-wrap: wrap; gap: 1rem; padding-top: 1.2rem; }
-  .controls { width: 100%; justify-content: flex-start; gap: 1.2rem; }
-  .metodo { grid-template-columns: 1fr 1fr; }
-  .metodo li:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
-  .metodo li:nth-child(odd) { border-left: 0; padding-left: 0.1rem; }
-  .composer button span { display: none; }
-  .composer button { padding: 0 1rem; }
-  .msg-consulta p { font-size: 1.16rem; }
-}
-
+/* ---------- Fuentes y citas ---------- */
 .cita { font-size: 0.82em; vertical-align: super; color: var(--tomas); text-decoration: none; padding: 0 1px; }
 .cita:hover { text-decoration: underline; }
 .fuentes-bloque { margin-top: 1.3rem; }
@@ -255,9 +165,19 @@ body {
 .prueba { flex-basis: 100%; margin-top: 0.2rem; }
 .prueba summary { cursor: pointer; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.04em; }
 .prueba blockquote { margin: 0.4rem 0 0; padding: 0.55rem 0.75rem; border-left: 2px solid var(--tomas); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--ink-2); white-space: pre-wrap; }
-.pill[data-v="info"] { color: var(--tomas); }
 
-@media (prefers-reduced-motion: reduce) {
-  .avatar .ojos { animation: none !important; }
-  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .hero { grid-template-columns: 1fr; gap: 1.4rem; min-height: auto; text-align: center; padding-top: 1rem; }
+  .hero-lead { margin-left: auto; margin-right: auto; }
+  .hero-retrato .avatar { max-width: 220px; }
+  .retrato-disco { width: 220px; height: 220px; }
+}
+@media (max-width: 600px) {
+  body { font-size: 17px; }
+  .masthead { flex-wrap: wrap; gap: 1rem; padding-top: 1.2rem; }
+  .controls { width: 100%; justify-content: flex-start; gap: 1.2rem; }
+  .composer button span { display: none; }
+  .composer button { padding: 0 1rem; }
+  .msg-consulta p { font-size: 1.16rem; }
 }
