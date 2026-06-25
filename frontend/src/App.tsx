@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { TomasAvatar, MiniAvatar } from "./components/avatars";
+import { FaroAvatar, MiniAvatar } from "./components/avatars";
 import { Trace } from "./components/Trace";
 import { Answer } from "./components/Answer";
 import { useVerificador } from "./hooks/useVerificador";
@@ -45,13 +45,18 @@ const CONTROLES: { clave: keyof Opciones; etiqueta: string; aria: string; opcion
 function Masthead({ modo, setModo }: { modo: Opciones; setModo: (m: Opciones) => void }) {
   return (
     <header className="masthead">
-      <a className="brand" href="/" aria-label="Tomás, inicio">
+      <a
+        className="brand"
+        href="/"
+        aria-label="Faro, inicio"
+        title="Faro — Frente A la Réplica de lo falsO"
+      >
         <span className="brand-face" aria-hidden="true">
           <MiniAvatar />
         </span>
         <span className="brand-text">
-          <span className="brand-name">Tomás</span>
-          <span className="brand-sub">análisis factual</span>
+          <span className="brand-name">Faro</span>
+          <span className="brand-sub">frente a lo falso</span>
         </span>
       </a>
       <div className="controls">
@@ -84,7 +89,7 @@ function Hero() {
     <section className="hero">
       <figure className="hero-retrato">
         <span className="retrato-disco" aria-hidden="true" />
-        <TomasAvatar />
+        <FaroAvatar />
       </figure>
       <div className="hero-copy">
         <h1 className="hero-title">Cuéntame qué has&nbsp;oído.</h1>

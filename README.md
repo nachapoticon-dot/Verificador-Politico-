@@ -72,9 +72,10 @@ Cada pregunta es independiente (el agente no guarda memoria entre consultas).
 Dentro del chat: `/pais XX` fija el país por defecto, `/pais off` lo quita,
 `/salir` cierra.
 
-### Interfaz web ("Tomás")
+### Interfaz web ("Faro")
 
-Además del CLI hay una interfaz web —**Tomás**, un agente de análisis: le das una
+Además del CLI hay una interfaz web —**Faro** (Frente A la Réplica de lo falsO),
+un agente de análisis: le das una
 pregunta o una afirmación y devuelve una respuesta factual validada fuente por
 fuente. Transmite la traza de validación en vivo (qué busca, qué lee) y dibuja el
 veredicto, las fuentes contrastadas y un **aviso de honestidad** por fuente. Es
@@ -106,8 +107,8 @@ verificador-politico/
 │   ├── fuentes.py          # registro de credibilidad/manipulación por fuente
 │   ├── server.py           # servidor web (FastAPI + SSE), sirve frontend/dist
 │   └── cli.py              # interfaz de terminal
-├── frontend/               # interfaz "Tomás" (React + Tailwind + shadcn, Vite)
-│   ├── src/                # componentes, hook de SSE, tema de Tomás
+├── frontend/               # interfaz "Faro" (React + Tailwind + shadcn, Vite)
+│   ├── src/                # componentes, hook de SSE, tema de Faro
 │   └── dist/               # build que sirve el servidor (npm run build)
 ├── requirements.txt
 └── .env.example

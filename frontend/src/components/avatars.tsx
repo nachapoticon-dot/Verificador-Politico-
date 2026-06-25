@@ -1,13 +1,13 @@
-// Tomás, el personaje: un escéptico amable de gafas. El retrato grande preside
+// Faro, el personaje: un escéptico amable de gafas. El retrato grande preside
 // el hero; la mini-cara firma la marca y cada respuesta.
 
-export function TomasAvatar() {
+export function FaroAvatar() {
   return (
     <svg
       viewBox="0 0 200 220"
       className="avatar"
       role="img"
-      aria-label="Retrato de Tomás, un verificador de hechos con gafas y una ceja alzada."
+      aria-label="Retrato de Faro, un verificador de hechos con gafas y una ceja alzada."
     >
       <path className="sweater" d="M40 220 Q40 158 100 158 Q160 158 160 220 Z" />
       <path className="collar" d="M84 162 Q100 178 116 162 L116 158 L84 158 Z" />

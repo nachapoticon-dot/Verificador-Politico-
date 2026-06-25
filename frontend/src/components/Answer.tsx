@@ -1,4 +1,4 @@
-// Una respuesta de Tomás: firma + sello del veredicto (+ confianza) + prosa con
+// Una respuesta de Faro: firma + sello del veredicto (+ confianza) + prosa con
 // citas enlazadas + fuentes contrastadas. Si el turno falló, muestra el aviso.
 
 import { enlazarCitas, formatear, partirRespuesta } from "../lib/format";
@@ -34,7 +34,7 @@ export function Answer({ turno }: { turno: Turno }) {
     <div className="veredicto">
       <div className="resp-firma">
         <MiniAvatar />
-        <b>Tomás</b>
+        <b>Faro</b>
         <span>verifica</span>
       </div>
 
