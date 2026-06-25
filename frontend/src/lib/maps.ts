@@ -17,6 +17,7 @@ export const SELLOS: Record<string, Sello> = {
   prediccion: { etiqueta: "Predicción", v: "muted", emoji: "🔮" },
   sin_evidencia: { etiqueta: "Sin evidencia", v: "muted", emoji: "❓" },
   informativo: { etiqueta: "Información", v: "info", emoji: "ℹ️" },
+  no_verificable: { etiqueta: "No verificable", v: "muted", emoji: "💬" },
 };
 
 // Respaldo: si faltara el JSON, detectamos el sello por el emoji de la prosa.
