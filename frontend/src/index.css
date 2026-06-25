@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Tomás — un verificador con cara y voz.
+/* Faro — un verificador con cara y voz.
  * Identidad cálida y editorial: papel manila, tinta templada, Fraunces con
  * carácter. El color fuerte solo aparece en el veredicto. Mantiene la línea del
  * diseño original, ahora sobre tokens de shadcn (React + Tailwind). */
@@ -20,9 +20,9 @@
   --color-ink-2: #5a5044;
   --color-line: #d7cab2;
 
-  /* Tomás (jersey, gafas) y su retrato. */
-  --color-tomas: #2f5d72;
-  --color-tomas-2: #3c7088;
+  /* Faro (jersey, gafas) y su retrato. */
+  --color-faro: #2f5d72;
+  --color-faro-2: #3c7088;
   --color-skin: #efc39a;
   --color-hair: #3a2d23;
 
@@ -33,7 +33,7 @@
   --color-muted-v: #7c7768;
 }
 
-/* Mapeo de los tokens semánticos de shadcn a la paleta de Tomás. */
+/* Mapeo de los tokens semánticos de shadcn a la paleta de Faro. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -67,7 +67,7 @@
   --card-foreground: #2a2420;
   --popover: #fbf6ec;
   --popover-foreground: #2a2420;
-  --primary: #2f5d72;          /* el azul de Tomás */
+  --primary: #2f5d72;          /* el azul de Faro */
   --primary-foreground: #fbf6ec;
   --secondary: #ebe0cb;
   --secondary-foreground: #2a2420;
@@ -80,7 +80,7 @@
   --input: #d7cab2;
   --ring: #2f5d72;
 
-  /* Nombres heredados de Tomás, para que el CSS de componentes (tomas.css) los
+  /* Nombres heredados de Faro, para que el CSS de componentes (faro.css) los
    * use tal cual sin reescribir cada regla. */
   --paper: #f4ecdd;
   --paper-2: #ebe0cb;
@@ -88,8 +88,8 @@
   --ink-2: #5a5044;
   --line: #d7cab2;
   --rule: #2a2420;
-  --tomas: #2f5d72;
-  --tomas-2: #3c7088;
+  --faro: #2f5d72;
+  --faro-2: #3c7088;
   --skin: #efc39a;
   --hair: #3a2d23;
   --true: #2e7b53;
