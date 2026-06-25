@@ -1,10 +1,18 @@
 """Registro curado de fuentes y su credibilidad.
 
-Dos ejes independientes por fuente: tendencia política y credibilidad (alta,
-media, baja, no_fiable). El registro vive en `data/fuentes.json` (curado a mano)
-y se aplica por auto-anotación: cada fuente que el modelo ve va etiquetada con su
-fiabilidad, para que pondere lo que lee. Las fuentes no registradas se proponen
-para revisión humana (no se aplican solas).
+Tres ejes independientes por fuente:
+  - tendencia política (izquierda … derecha, verificador, internacional);
+  - credibilidad: qué tan fiable/preciso es (alta, media, baja, no_fiable);
+  - manipulación: qué tan honesto es, con independencia de su calidad
+    (ninguna, sesgo, enganosa, desinformadora). Un medio puede ser de
+    credibilidad media por descuidado pero honesto, y otro tener buena
+    producción pero ser propaganda que distorsiona a propósito.
+
+El registro vive en `data/fuentes.json` (curado a mano) y se aplica por
+auto-anotación: cada fuente que el modelo ve va etiquetada con su fiabilidad y su
+nivel de manipulación, para que pondere lo que lee. Las fuentes no registradas se
+proponen para revisión humana (no se aplican solas). Si a una fuente registrada
+le falta el campo `manipulacion`, se asume `ninguna`.
 """
 
 from __future__ import annotations
@@ -22,10 +30,11 @@ _FUENTES_PATH = _DATA_DIR / "fuentes.json"
 
 class Fuente(NamedTuple):
     dominio: str
-    credibilidad: str  # alta | media | baja | no_fiable
+    credibilidad: str    # alta | media | baja | no_fiable
     tendencia: str
     tipo: str
     nota: str | None
+    manipulacion: str    # ninguna | sesgo | enganosa | desinformadora
 
 
 def _cargar_registro() -> dict[str, dict]:
@@ -39,6 +48,10 @@ def _cargar_registro() -> dict[str, dict]:
 _REGISTRO: dict[str, dict] = _cargar_registro()
 
 _ETIQ_CRED = {"alta": "ALTA", "media": "MEDIA", "baja": "BAJA", "no_fiable": "NO FIABLE"}
+_ETIQ_MANIP = {
+    "ninguna": "NINGUNA", "sesgo": "SESGO",
+    "enganosa": "ENGAÑOSA", "desinformadora": "DESINFORMADORA",
+}
 
 
 def dominio_registrable(url: str) -> str:
@@ -64,7 +77,8 @@ def clasificar(url: str) -> Fuente | None:
     for dom, ficha in _REGISTRO.items():
         if host == dom or host.endswith("." + dom):
             return Fuente(dom, ficha["credibilidad"], ficha["tendencia"],
-                          ficha["tipo"], ficha.get("nota"))
+                          ficha["tipo"], ficha.get("nota"),
+                          ficha.get("manipulacion", "ninguna"))
     return None
 
 
@@ -75,8 +89,10 @@ def anotar(url: str) -> str:
         return ("[fuente: dominio no registrado — clasifícala tú en el JSON de "
                 "cierre; quedará como propuesta de revisión]")
     nota = f" ({f.nota})" if f.nota else ""
+    manip = _ETIQ_MANIP.get(f.manipulacion, f.manipulacion.upper())
     return (f"[fuente: {f.dominio} · fiabilidad "
             f"{_ETIQ_CRED.get(f.credibilidad, f.credibilidad.upper())}"
+            f" · manipulación {manip}"
             f"{nota} · tendencia {f.tendencia}]")
 
 
@@ -137,6 +153,7 @@ def capturar_propuestas(meta: dict | None, ruta: Path | None = None) -> int:
                 "dominio": dom,
                 "credibilidad": f.get("credibilidad"),
                 "tendencia": f.get("tendencia"),
+                "manipulacion": f.get("manipulacion", "ninguna"),
                 "ejemplo_url": url,
                 "ts": datetime.now(timezone.utc).isoformat(),
             }
@@ -168,7 +185,8 @@ def _revisar() -> int:
     print(f"{len(filas)} dominio(s) propuesto(s) (no en el registro curado):\n")
     for dom, d in sorted(filas.items()):
         print(f'  "{dom}": {{"credibilidad": "{d.get("credibilidad")}", '
-              f'"tendencia": "{d.get("tendencia")}", "tipo": "?"}}'
+              f'"tendencia": "{d.get("tendencia")}", "tipo": "?", '
+              f'"manipulacion": "{d.get("manipulacion", "ninguna")}"}}'
               f'   # ej: {d.get("ejemplo_url")}')
     print("\nCopia las aprobadas a verificador/data/fuentes.json.")
     return 0
