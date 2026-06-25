@@ -35,6 +35,32 @@ def test_prompt_pide_concision_citas_y_n():
     assert "Qué dicen las fuentes:" not in SYSTEM_PROMPT
 
 
+def test_prompt_distingue_eco_de_confirmacion_independiente():
+    # Bloque B: no contar copias del mismo cable como pruebas distintas.
+    pl = SYSTEM_PROMPT.lower()
+    assert "ecos" in pl or "eco" in pl
+    assert "cable de agencia" in pl or "republic" in pl
+    assert "independient" in pl
+
+
+def test_prompt_autentica_contenido_concreto():
+    # Bloque C: señales de manipulación de contenido.
+    pl = SYSTEM_PROMPT.lower()
+    assert "cita recortada" in pl or "editada" in pl
+    assert "fabricad" in pl  # dato/cifra fabricados
+    assert "fuera de contexto" in pl
+    assert "reciclad" in pl or "otro evento" in pl or "otra fecha" in pl
+
+
+def test_prompt_rastrea_origen_de_virales():
+    # Bloque D: rastreo de origen de cadenas/capturas/virales.
+    pl = SYSTEM_PROMPT.lower()
+    assert "cadena" in pl
+    assert "captura" in pl
+    assert "origen" in pl
+    assert "primera aparición" in pl or "de dónde salió primero" in pl
+
+
 def test_instruccion_modo_textos_por_eje():
     from verificador.prompts import instruccion_modo
     corta = instruccion_modo("corta", "simple")
