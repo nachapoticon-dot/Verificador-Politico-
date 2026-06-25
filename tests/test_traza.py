@@ -142,48 +142,61 @@ def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
     import verificador.agent as agentmod
 
     ver = agentmod.Verificador()
-    ver.largo = "detallada"
-    ver.detalle = "tecnico"
-    base_system = ver.messages[0]["content"]  # system base, no debe cambiar
-
     final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
-    fake = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
-    )
-    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+    capturado = {}
 
-    ver.preguntar("¿algo?")
+    def fake_create(**k):
+        capturado["messages"] = k["messages"]
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
+        )
 
-    # El system base (primer mensaje) queda intacto → caché del prompt a salvo.
-    assert ver.messages[0]["content"] == base_system
+    monkeypatch.setattr(ver._client.chat.completions, "create", fake_create)
+
+    ver.preguntar("¿algo?", largo="detallada", detalle="tecnico")
+
+    msgs = capturado["messages"]
+    # El system base va primero y no es la instrucción de modo.
+    assert msgs[0]["role"] == "system"
+    assert not msgs[0]["content"].startswith("[Modo de respuesta]")
     # Se inyectó un mensaje de modo (system) con el texto del modo elegido.
-    modos = [m for m in ver.messages
-             if m["role"] == "system" and "[Modo de respuesta]" in m["content"]]
+    modos = [m for m in msgs
+             if m["role"] == "system" and m["content"].startswith("[Modo de respuesta]")]
     assert modos, "no se inyectó la instrucción de modo"
     assert "varios párrafos" in modos[-1]["content"]
     # Va antes del turno del usuario.
-    idx_modo = ver.messages.index(modos[-1])
-    idx_user = next(i for i, m in enumerate(ver.messages) if m["role"] == "user")
+    idx_modo = msgs.index(modos[-1])
+    idx_user = next(i for i, m in enumerate(msgs) if m["role"] == "user")
     assert idx_modo < idx_user
 
 
-def test_instruccion_de_modo_es_efimera_entre_turnos(monkeypatch):
+def test_cada_consulta_es_independiente(monkeypatch):
+    """Sin estado: cada preguntar() arranca de cero, sin arrastrar la anterior."""
     from types import SimpleNamespace
     import verificador.agent as agentmod
 
     ver = agentmod.Verificador()
     final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
-    fake = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
-    )
-    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+    capturas = []
+
+    def fake_create(**k):
+        capturas.append(k["messages"])
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
+        )
+
+    monkeypatch.setattr(ver._client.chat.completions, "create", fake_create)
 
     ver.preguntar("primera")
     ver.preguntar("segunda")
 
-    modos = [m for m in ver.messages
-             if m["role"] == "system" and m["content"].startswith("[Modo de respuesta]")]
-    assert len(modos) == 1  # solo la del turno actual, no se acumulan
-    # el system base sigue intacto en la posición 0
-    assert ver.messages[0]["role"] == "system"
-    assert not ver.messages[0]["content"].startswith("[Modo de respuesta]")
+    assert len(capturas) == 2
+    for msgs in capturas:
+        modos = [m for m in msgs
+                 if m["role"] == "system" and m["content"].startswith("[Modo de respuesta]")]
+        assert len(modos) == 1  # exactamente una, no se acumulan
+        usuarios = [m for m in msgs if m["role"] == "user"]
+        assert len(usuarios) == 1
+    # La segunda consulta no contiene rastro de la primera.
+    assert all(m.get("content") != "primera" for m in capturas[1])
+    assert any(m.get("content") == "segunda" for m in capturas[1])

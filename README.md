@@ -19,6 +19,10 @@ institucionalmente en ese país.
 - **Contrasta tendencias.** Busca cómo cubren el mismo hecho medios de derecha y
   de izquierda, y prioriza verificadores de la red IFCN (ColombiaCheck,
   Chequeado, Maldita, PolitiFact, AFP Factual…).
+- **Recuerda la veracidad de cada sitio.** Lleva un registro curado con dos ejes
+  por fuente: su **credibilidad** (qué tan precisa) y su **manipulación** (qué tan
+  honesta: ninguna, sesgo, engañosa, desinformadora). Pondera lo que lee con
+  ambos y nunca sostiene un veredicto sobre una fuente desinformadora.
 - **Va a la fuente primaria.** Para declaraciones busca la cita completa, no el
   titular, y detecta lo sacado de contexto.
 - **Evalúa lo que "va a pasar".** Explica si una promesa o un miedo de campaña es
@@ -64,17 +68,16 @@ python main.py --pais AR "¿es verdad que Milei eliminó el Banco Central?"
 python main.py "¿es verdad que el candidato X va a privatizar la educación?"
 ```
 
-Dentro del chat: `/pais XX` fija país, `/pais off` lo quita, `/nuevo` olvida la
-conversación, `/salir` cierra.
+Cada pregunta es independiente (el agente no guarda memoria entre consultas).
+Dentro del chat: `/pais XX` fija el país por defecto, `/pais off` lo quita,
+`/salir` cierra.
 
 ### Interfaz web ("Tomás")
 
 Además del CLI hay una interfaz web —**Tomás**, un agente de análisis: le das una
 pregunta o una afirmación y devuelve una respuesta factual validada fuente por
 fuente. Transmite la traza de validación en vivo (qué busca, qué lee) y dibuja el
-veredicto y un **medidor de espectro** con las fuentes contrastadas. Incluye una
-capa de moderación que pone límites con respeto antes de gastar una llamada al
-modelo.
+veredicto y un **medidor de espectro** con las fuentes contrastadas.
 
 ```bash
 uvicorn verificador.server:app --reload
@@ -94,7 +97,7 @@ verificador-politico/
 │   ├── search.py           # herramientas buscar_web / leer_pagina
 │   ├── prompts.py          # metodología, neutralidad, espectro de medios
 │   ├── config.py           # carga de la clave (incl. desde EdifcIA)
-│   ├── moderation.py       # límites de respeto (sin coste de modelo)
+│   ├── fuentes.py          # registro de credibilidad/manipulación por fuente
 │   ├── server.py           # servidor web (FastAPI + SSE)
 │   └── cli.py              # interfaz de terminal
 ├── web/                    # interfaz "El Fiel" (HTML/CSS/JS, sin build)

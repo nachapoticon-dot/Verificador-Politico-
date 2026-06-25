@@ -38,6 +38,17 @@ def test_anotar_conocida_incluye_credibilidad_y_tendencia():
     assert "wikipedia.org" in a
 
 
+def test_clasificar_incluye_manipulacion_default_ninguna():
+    # Ninguna fuente del registro trae el campo todavía → cae a "ninguna".
+    f = clasificar("https://reuters.com/a")
+    assert f.manipulacion == "ninguna"
+
+
+def test_anotar_incluye_eje_manipulacion():
+    a = anotar("https://reuters.com/a")
+    assert "manipulación NINGUNA" in a
+
+
 def test_anotar_desconocida_pide_clasificar():
     a = anotar("https://un-dominio-rarisimo-xyz.tld/nota")
     assert "no registrado" in a
@@ -70,7 +81,8 @@ def test_capturar_propuestas_solo_desconocidas_y_dedupe(tmp_path):
     ruta = tmp_path / "propuestas.jsonl"
     meta = {"fuentes": [
         {"medio": "Reuters", "url": "https://reuters.com/a", "credibilidad": "alta", "tendencia": "centro"},
-        {"medio": "Diario Raro", "url": "https://diario-raro-xyz.tld/n", "credibilidad": "media", "tendencia": "centro"},
+        {"medio": "Diario Raro", "url": "https://diario-raro-xyz.tld/n", "credibilidad": "media",
+         "tendencia": "centro", "manipulacion": "enganosa"},
     ]}
     assert capturar_propuestas(meta, ruta) == 1  # reuters ya está en el registro
     # repetir el mismo dominio no añade otra línea
@@ -80,6 +92,18 @@ def test_capturar_propuestas_solo_desconocidas_y_dedupe(tmp_path):
     fila = _json.loads(lineas[0])
     assert fila["dominio"] == "diario-raro-xyz.tld"
     assert fila["credibilidad"] == "media"
+    assert fila["manipulacion"] == "enganosa"  # se captura el eje de honestidad
+
+
+def test_capturar_propuestas_manipulacion_default_ninguna(tmp_path):
+    ruta = tmp_path / "p.jsonl"
+    meta = {"fuentes": [
+        {"medio": "Otro", "url": "https://otro-dominio-xyz.tld/n",
+         "credibilidad": "baja", "tendencia": "centro"},  # sin manipulacion
+    ]}
+    assert capturar_propuestas(meta, ruta) == 1
+    fila = _json.loads(ruta.read_text(encoding="utf-8").splitlines()[0])
+    assert fila["manipulacion"] == "ninguna"
 
 
 def test_capturar_propuestas_meta_vacia_no_rompe(tmp_path):

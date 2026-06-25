@@ -15,6 +15,16 @@ def test_prompt_clasifica_pregunta_y_pondera_credibilidad():
     assert '"credibilidad"' in p
 
 
+def test_prompt_pondera_manipulacion():
+    p = SYSTEM_PROMPT
+    pl = p.lower()
+    # eje de honestidad, distinto de la credibilidad:
+    assert "manipulaci" in pl
+    assert "desinformadora" in pl
+    # regla dura sobre fuentes desinformadoras y campo en el JSON de cierre:
+    assert '"manipulacion"' in p
+
+
 def test_prompt_pide_concision_citas_y_n():
     p = SYSTEM_PROMPT.lower()
     assert "concis" in p or "breve" in p
