@@ -38,15 +38,16 @@
 .brand-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; letter-spacing: -0.01em; }
 .brand-sub { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
 
-.controls { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
-.ctrl { display: flex; flex-direction: column; gap: 0.34rem; }
-.ctrl-lbl { font-family: var(--mono); font-size: 0.54rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding-left: 0.05rem; }
+.controls { display: flex; align-items: flex-end; gap: 1.2rem; flex-wrap: wrap; }
+.ctrl { display: flex; flex-direction: column; gap: 0.38rem; }
+.ctrl-lbl { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); padding-left: 0.05rem; }
 
-.seg { display: inline-flex; height: 34px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--card); }
-.seg-opt { appearance: none; border: 0; background: transparent; padding: 0 0.7rem; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); cursor: pointer; transition: color 0.12s; }
+.seg { display: inline-flex; height: 36px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--card); }
+.seg-opt { appearance: none; border: 0; background: transparent; padding: 0 0.85rem; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); cursor: pointer; transition: color 0.12s, background 0.12s; }
 .seg-opt + .seg-opt { border-left: 1px solid var(--line); }
-.seg-opt:hover { color: var(--ink); }
-.seg-opt.is-on { background: var(--faro); color: #fff; }
+.seg-opt:hover { color: var(--ink); background: var(--paper-2); }
+.seg-opt.is-on { background: var(--faro); color: #fff; font-weight: 700; }
+.seg-opt.is-on:hover { background: var(--faro); color: #fff; }
 .seg-opt:focus-visible { outline: 2px solid var(--faro); outline-offset: -3px; }
 
 /* ---------- Contenedor ---------- */
@@ -94,17 +95,17 @@
 .resp-firma span { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 
 .veredicto { margin-top: 0; }
-.sello-fila { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 1rem; }
-.pill { display: inline-flex; align-items: center; gap: 0.45rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.4rem 0.75rem; border-radius: 8px; border: 1.5px solid currentColor; }
-.pill[data-v="true"]  { color: var(--true); }
-.pill[data-v="false"] { color: var(--false); }
-.pill[data-v="warn"]  { color: var(--warn); }
-.pill[data-v="muted"] { color: var(--muted-v); }
-.pill[data-v="info"]  { color: var(--faro); }
-.pill .pill-em { font-size: 0.95rem; }
-.conf { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 0.45rem; }
-.conf-barra { width: 56px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
-.conf-barra i { display: block; height: 100%; background: var(--faro); }
+.sello-fila { display: flex; align-items: center; flex-wrap: wrap; gap: 0.9rem; margin-bottom: 1.2rem; }
+.pill { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-weight: 700; font-size: 0.92rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.5rem 1rem; border-radius: 10px; border: 1.5px solid currentColor; box-shadow: 0 6px 18px -12px currentColor; }
+.pill[data-v="true"]  { color: var(--true);    background: #e8f3ec; }
+.pill[data-v="false"] { color: var(--false);   background: #fbeae8; }
+.pill[data-v="warn"]  { color: var(--warn);    background: #f7efd9; }
+.pill[data-v="muted"] { color: var(--muted-v); background: #f0ece2; }
+.pill[data-v="info"]  { color: var(--faro);    background: #e9f0f3; }
+.pill .pill-em { font-size: 1.18rem; }
+.conf { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-2); display: inline-flex; align-items: center; gap: 0.5rem; }
+.conf-barra { width: 92px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.conf-barra i { display: block; height: 100%; background: var(--faro); border-radius: 4px; }
 
 .respuesta-cuerpo p { margin: 0 0 0.95rem; }
 .respuesta-cuerpo p:last-child { margin-bottom: 0; }
