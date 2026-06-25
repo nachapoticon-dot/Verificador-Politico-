@@ -18,17 +18,6 @@ let rigor = "riguroso";
 let largo = "corta";
 let detalle = "simple";
 let enCurso = false;
-let conversacionCerrada = false;
-
-// Identificador de sesión estable: mantiene la memoria de la conversación.
-const sid = (() => {
-  let s = localStorage.getItem("elfiel_sid");
-  if (!s) {
-    s = "s_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem("elfiel_sid", s);
-  }
-  return s;
-})();
 
 // El modelo cierra cada respuesta con un bloque JSON (campo `veredicto`, etc.)
 // que alimenta el sello y el medidor; el usuario no lo ve como texto. Mapeamos
@@ -133,7 +122,6 @@ async function stream(pregunta, traza) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       pregunta,
-      sid,
       rigor,
       largo,
       detalle,
@@ -181,13 +169,6 @@ function manejarEvento({ evento, dato }, traza) {
   } else if (evento === "respuesta") {
     cerrarTraza(traza);
     pintarRespuesta(dato.texto || "");
-  } else if (evento === "moderacion") {
-    cerrarTraza(traza, true);
-    pintarAviso(dato.mensaje || "", true);
-  } else if (evento === "cerrada") {
-    cerrarTraza(traza, true);
-    pintarAviso(dato.mensaje || "Conversación cerrada.", true);
-    cerrarConversacion();
   } else if (evento === "error") {
     cerrarTraza(traza);
     pintarAviso(dato.mensaje || "Algo salió mal.");
@@ -381,10 +362,10 @@ function pintarFuentes(fuentes) {
   return box;
 }
 
-function pintarAviso(texto, esLimite) {
+function pintarAviso(texto) {
   const msg = nuevoMsg();
   const div = document.createElement("div");
-  div.className = "aviso" + (esLimite ? " limite" : "");
+  div.className = "aviso";
   div.textContent = texto;
   msg.appendChild(div);
 }
@@ -485,18 +466,8 @@ function enlazarCitas(texto, fuentes) {
 
 function setEnCurso(v) {
   enCurso = v;
-  if (!v && conversacionCerrada) return;   // never re-enable a closed composer
   enviar.disabled = v;
   entrada.readOnly = v;
-}
-
-// Cierre permanente por faltas de respeto: bloquea el composer para esta sesión.
-function cerrarConversacion() {
-  conversacionCerrada = true;
-  enviar.disabled = true;
-  entrada.readOnly = true;
-  entrada.placeholder = "Conversación cerrada. Recarga la página para empezar de nuevo.";
-  if (form) form.classList.add("cerrada");
 }
 
 function scrollAbajo() {
