@@ -163,31 +163,31 @@
 .cita:hover { border-color: var(--faro); }
 .fuentes-bloque { margin-top: 1.5rem; }
 .fuentes-cab { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 0.7rem; }
-.fuentes-lista { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.55rem; }
-.fuentes-lista > li { display: flex; align-items: center; flex-wrap: wrap; gap: 0.55rem; font-family: var(--mono); font-size: 0.86rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 9px; background: var(--card); }
-.chip-t { font-size: 0.66rem; padding: 0.16rem 0.5rem; border-radius: 5px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid; }
-.t-izq { color: #b5562a; border-color: #e3c3ad; background: #fbf1e9; }
-.t-cen { color: var(--ink-2); border-color: #ddd4c4; background: #f4efe5; }
-.t-der { color: #3a5a8a; border-color: #b9c8df; background: #eef2f8; }
-.t-ver { color: var(--true); border-color: #b9dcc6; background: #e8f3ec; }
-.t-int { color: var(--faro); border-color: #b9cdd6; background: #e9f0f3; }
-.fuente-medio { flex: 1; min-width: 8rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
-.fuente-medio:hover { border-color: var(--faro); }
-.fuente-rel { color: var(--muted); font-size: 0.76rem; }
-.badge-c { font-size: 0.66rem; padding: 0.18rem 0.55rem; border-radius: 999px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: bold; }
 .b-alta { color: var(--true); background: #e8f3ec; }
 .b-media { color: var(--faro); background: #e9f0f3; }
 .b-baja { color: #9a7416; background: #f7efd9; }
 .b-no { color: var(--false); background: #fbeae8; }
-/* Aviso de honestidad: solo aparece cuando la fuente tiende a manipular.
- * Es un rasgo diferencial de Faro, así que cuenta más que el resto de chips. */
-.badge-m { font-size: 0.68rem; padding: 0.2rem 0.6rem; border-radius: 999px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: bold; border: 1.5px solid currentColor; }
+.fuentes-lista { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--ink); }
+.f-fila { border-bottom: 1px solid var(--line); }
+.f-fila.no-citada { opacity: 0.55; }
+.f-linea { display: flex; align-items: center; flex-wrap: wrap; gap: 0.55rem; padding: 0.52rem 0.1rem; font-family: var(--mono); font-size: 0.84rem; }
+.f-n { flex: none; min-width: 1.9rem; color: var(--muted); }
+.f-linea .fav { width: 18px; height: 18px; border-radius: 4px; flex: none; }
+.fuente-medio { flex: 1; min-width: 8rem; color: var(--ink); text-decoration: none; }
+.fuente-medio:hover { color: var(--faro); text-decoration: underline; text-underline-offset: 3px; }
+.f-tend { flex: none; color: var(--ink-2); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.f-aviso { flex: none; font-size: 0.64rem; padding: 0.16rem 0.5rem; border-radius: 999px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .m-sesgo { color: var(--warn); background: #f7efd9; }
 .m-eng { color: var(--false); background: #fbeae8; }
-.m-desinfo { color: #fff; background: var(--false); border-color: var(--false); box-shadow: 0 2px 8px -3px rgba(194, 58, 44, 0.6); }
-.prueba { flex-basis: 100%; margin-top: 0.2rem; }
-.prueba summary { cursor: pointer; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.04em; }
-.prueba blockquote { margin: 0.4rem 0 0; padding: 0.55rem 0.75rem; border-left: 2px solid var(--faro); background: var(--card); font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--ink-2); white-space: pre-wrap; }
+.m-desinfo { color: #fff; background: var(--false); box-shadow: 0 2px 8px -3px rgba(194, 58, 44, 0.6); }
+.fuente-rel { flex: none; color: var(--muted); font-size: 0.74rem; }
+.fuente-rel.si { color: var(--true); }
+.f-toggle { flex: none; appearance: none; border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 0.9rem; padding: 0 0.2rem; transition: transform 0.15s ease; }
+.f-toggle:hover { color: var(--faro); }
+.f-toggle[aria-expanded="true"] { transform: rotate(180deg); }
+.f-toggle:focus-visible { outline: 2px solid var(--faro); outline-offset: 1px; border-radius: 4px; }
+.f-extracto { margin: 0 0 0.7rem 2.45rem; padding: 0.55rem 0.75rem; border-left: 2px solid var(--faro); font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--ink-2); white-space: pre-wrap; }
+.f-abrir { display: inline-block; margin-left: 0.5rem; font-family: var(--mono); font-style: normal; font-size: 0.72rem; color: var(--faro); }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
@@ -202,4 +202,7 @@
   .composer .enviar span { display: none; }
   .composer .enviar { padding: 0 0.9rem; }
   .msg-consulta p { font-size: 1.16rem; }
+  .f-linea { row-gap: 0.15rem; }
+  .fuente-medio { min-width: 55%; }
+  .f-extracto { margin-left: 0.5rem; }
 }

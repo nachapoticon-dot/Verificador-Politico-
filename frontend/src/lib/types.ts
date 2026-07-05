@@ -21,6 +21,8 @@ export interface FuenteMeta {
   manipulacion?: string;
   url?: string;
   coincide?: boolean;
+  extracto?: string;
+  citada?: boolean;
 }
 
 export interface Meta {
