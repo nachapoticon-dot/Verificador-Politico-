@@ -1,5 +1,5 @@
 # tests/test_veredicto.py
-from verificador.veredicto import partir, validar_meta, marcar_citas
+from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro
 
 
 def test_partir_separa_prosa_y_meta():
@@ -95,3 +95,36 @@ def test_marcar_citas_huerfanas_se_loguean_sin_romper(caplog):
 def test_marcar_citas_sin_fuentes_no_rompe():
     meta = {"fuentes": []}
     assert marcar_citas("Texto [1].", meta) == {"fuentes": []}
+
+
+def test_aplicar_registro_sobreescribe_dominios_curados():
+    # reuters.com está en el registro con credibilidad alta (ver test_fuentes).
+    meta = {"fuentes": [
+        {"n": 1, "url": "https://www.reuters.com/a", "credibilidad": "baja",
+         "manipulacion": "sesgo", "tendencia": "derecha"},
+        {"n": 2, "url": "https://dominio-no-registrado-xyz.tld/n",
+         "credibilidad": "media"},
+    ]}
+    aplicar_registro(meta)
+    f1, f2 = meta["fuentes"]
+    assert f1["credibilidad"] == "alta"          # manda el registro curado
+    assert f1["manipulacion"] == "ninguna"
+    assert f2["credibilidad"] == "media"          # no registrado: queda el del modelo
+
+
+def test_adjuntar_extractos_casa_por_url_normalizada():
+    meta = {"fuentes": [
+        {"n": 1, "url": "https://elpais.com/nota?utm_source=tw"},
+        {"n": 2, "url": "https://otro.com/x"},
+    ]}
+    extractos = {"https://www.elpais.com/nota/": "TEXTO LEÍDO"}
+    adjuntar_extractos(meta, extractos)
+    assert meta["fuentes"][0]["extracto"] == "TEXTO LEÍDO"
+    assert "extracto" not in meta["fuentes"][1]
+
+
+def test_adjuntar_extractos_sin_datos_no_rompe():
+    meta = {"fuentes": [{"n": 1}]}
+    adjuntar_extractos(meta, None)
+    adjuntar_extractos(meta, {})
+    assert "extracto" not in meta["fuentes"][0]
