@@ -91,8 +91,12 @@ uvicorn verificador.server:app --reload
 ```
 
 Para desarrollar el frontend con recarga en caliente: `cd frontend && npm run
-dev` (Vite proxya `/api` al uvicorn del 8000). Eliges rigor (rápido / a fondo),
-largo y detalle desde la propia página.
+dev` (Vite proxya `/api` al uvicorn del 8000). Eliges el modo desde el propio
+composer (Esencial / Normal / A fondo) y la respuesta llega en streaming:
+primero la traza de validación, luego la prosa palabra a palabra y al final
+el veredicto con su confianza —calculada a partir de las fuentes reales que
+coinciden, no autodeclarada— y la ficha de fuentes contrastadas con su
+extracto.
 
 ## Estructura
 
