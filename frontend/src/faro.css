@@ -29,7 +29,7 @@
 /* ---------- Masthead ---------- */
 .masthead {
   position: relative; z-index: 2; width: 100%; max-width: var(--wrap); margin: 0 auto;
-  display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
   padding: 1.5rem 1.4rem 1.1rem; border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: inherit; }
@@ -37,10 +37,6 @@
 .brand-text { display: flex; flex-direction: column; }
 .brand-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; letter-spacing: -0.01em; }
 .brand-sub { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
-
-.controls { display: flex; align-items: flex-end; gap: 1.2rem; flex-wrap: wrap; }
-.ctrl { display: flex; flex-direction: column; gap: 0.38rem; }
-.ctrl-lbl { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); padding-left: 0.05rem; }
 
 .seg { display: inline-flex; height: 36px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--card); }
 .seg-opt { appearance: none; border: 0; background: transparent; padding: 0 0.85rem; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); cursor: pointer; transition: color 0.12s, background 0.12s; }
@@ -119,23 +115,29 @@
 
 /* ---------- Composer ---------- */
 .composer { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; padding: 1rem 1.4rem 1.3rem; background: linear-gradient(to top, var(--paper) 64%, rgba(244, 236, 221, 0)); }
-.composer-inner { width: 100%; max-width: var(--wrap); margin: 0 auto; display: flex; gap: 0.6rem; align-items: flex-end; }
-.composer textarea {
-  flex: 1; resize: none; max-height: 40vh; padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 13px;
-  background: var(--card); font-family: var(--serif); font-size: 1.04rem; line-height: 1.45; color: var(--ink);
+.composer-inner {
+  width: 100%; max-width: var(--wrap); margin: 0 auto; display: flex; flex-direction: column;
+  background: var(--card); border: 1px solid var(--line); border-radius: 15px;
   box-shadow: 0 10px 26px -22px rgba(42, 36, 32, 0.5);
 }
+.composer-inner:focus-within { border-color: var(--faro); box-shadow: 0 0 0 2px rgba(47, 93, 114, 0.18); }
+.composer textarea {
+  resize: none; max-height: 40vh; padding: 0.9rem 1rem 0.55rem; border: 0; border-radius: 15px 15px 0 0;
+  background: transparent; font-family: var(--serif); font-size: 1.04rem; line-height: 1.45; color: var(--ink);
+}
 .composer textarea::placeholder { color: var(--muted); }
-.composer textarea:focus-visible { outline: none; border-color: var(--faro); box-shadow: 0 0 0 2px rgba(47, 93, 114, 0.18); }
-.composer button {
-  flex: none; display: inline-flex; align-items: center; gap: 0.4rem; height: 48px; padding: 0 1.15rem; border: 0; border-radius: 13px;
+.composer textarea:focus-visible { outline: none; }
+.composer-pie { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.35rem 0.55rem 0.55rem; }
+.composer-pie .seg { height: 34px; }
+.composer .enviar {
+  flex: none; display: inline-flex; align-items: center; gap: 0.4rem; height: 38px; padding: 0 1.05rem; border: 0; border-radius: 10px;
   background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.03em; cursor: pointer; transition: opacity 0.12s, transform 0.1s;
 }
-.composer button:hover { opacity: 0.88; }
-.composer button:active { transform: translateY(1px); }
-.composer button:disabled { opacity: 0.4; cursor: progress; }
-.composer button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.composer button svg { display: block; }
+.composer .enviar:hover { opacity: 0.88; }
+.composer .enviar:active { transform: translateY(1px); }
+.composer .enviar:disabled { opacity: 0.4; cursor: progress; }
+.composer .enviar:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.composer .enviar svg { display: block; }
 
 /* ---------- Fuentes y citas ---------- */
 .cita { font-size: 0.82em; vertical-align: super; color: var(--faro); text-decoration: none; padding: 0 1px; }
@@ -178,8 +180,7 @@
 @media (max-width: 600px) {
   body { font-size: 17px; }
   .masthead { flex-wrap: wrap; gap: 1rem; padding-top: 1.2rem; }
-  .controls { width: 100%; justify-content: flex-start; gap: 1.2rem; }
-  .composer button span { display: none; }
-  .composer button { padding: 0 1rem; }
+  .composer .enviar span { display: none; }
+  .composer .enviar { padding: 0 0.9rem; }
   .msg-consulta p { font-size: 1.16rem; }
 }
