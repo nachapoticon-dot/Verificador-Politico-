@@ -1,5 +1,5 @@
 # tests/test_veredicto.py
-from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro, calcular_confianza
+from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro, calcular_confianza, Procesado, procesar
 
 
 def test_partir_separa_prosa_y_meta():
@@ -195,3 +195,53 @@ def test_sin_tendencia_no_cuenta_como_contraste():
         {"n": 2, "tendencia": "centro", **base},
     ]})
     assert dos_reales > sin_tendencia
+
+
+def test_procesar_pipeline_completo():
+    texto = ('Es falso [1].\n\n```json\n'
+             '{"veredicto": "falso", "confianza": 90, "resumen": "Inventado.",'
+             ' "pais": "CO", "fuentes": [{"n": 1, "medio": "Reuters",'
+             ' "url": "https://www.reuters.com/a?utm_source=x",'
+             ' "credibilidad": "baja", "tendencia": "derecha", "coincide": true}]}'
+             '\n```')
+    p = procesar(texto, extractos={"https://reuters.com/a": "LO QUE LEYÓ"})
+    assert isinstance(p, Procesado)
+    assert p.prosa == "Es falso [1]."
+    f = p.meta["fuentes"][0]
+    assert f["credibilidad"] == "alta"        # registro curado manda
+    assert f["extracto"] == "LO QUE LEYÓ"     # casó por URL normalizada
+    assert f["citada"] is True
+    assert p.meta["confianza_modelo"] == 90
+    assert p.meta["confianza"] != 90           # recalculada (1 fuente alta ≈ 48)
+    assert p.texto.startswith("Es falso [1].")
+    assert '"confianza_modelo": 90' in p.texto
+
+
+def test_procesar_repara_una_vez_si_falta_el_json():
+    llamadas = []
+
+    def reparar(prosa):
+        llamadas.append(prosa)
+        return '```json\n{"veredicto": "informativo", "fuentes": []}\n```'
+
+    p = procesar("Solo prosa sin bloque.", reparar=reparar)
+    assert llamadas == ["Solo prosa sin bloque."]
+    assert p.meta["veredicto"] == "informativo"
+
+
+def test_procesar_acepta_reparacion_con_json_pelado():
+    p = procesar("Prosa.", reparar=lambda _: '{"veredicto": "falso", "fuentes": []}')
+    assert p.meta["veredicto"] == "falso"
+
+
+def test_procesar_degrada_si_la_reparacion_falla():
+    p = procesar("Prosa.", reparar=lambda _: None)
+    assert p.meta is None
+    assert p.texto == "Prosa."
+    p2 = procesar("Prosa.", reparar=lambda _: (_ for _ in ()).throw(RuntimeError()))
+    assert p2.meta is None
+
+
+def test_procesar_sin_reparador_devuelve_prosa():
+    p = procesar("Prosa sin json.")
+    assert p == Procesado("Prosa sin json.", "Prosa sin json.", None)
