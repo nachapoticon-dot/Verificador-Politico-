@@ -151,7 +151,9 @@ def calcular_confianza(meta: dict) -> int:
         if not f.get("coincide"):
             continue
         peso += _PESO_CRED.get((f.get("credibilidad") or "").lower(), 0.25)
-        tendencias.add((f.get("tendencia") or "").lower())
+        t = (f.get("tendencia") or "").lower()
+        if t:
+            tendencias.add(t)
     contraste = bool(
         (tendencias & _IZQ and tendencias & _DER)
         or ("verificador" in tendencias and len(tendencias) > 1)
