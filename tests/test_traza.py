@@ -183,12 +183,21 @@ def test_preguntar_enriquece_meta(monkeypatch):
     ]
     it = iter(flujos)
     monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: next(it))
-    monkeypatch.setattr(agentmod, "leer_pagina", lambda url, **k: Lectura("LO QUE LEYÓ", True))
+    monkeypatch.setattr(
+        agentmod,
+        "leer_pagina",
+        lambda url, **k: Lectura(
+            "[fuente: reuters.com · fiabilidad ALTA · manipulación NINGUNA · "
+            "tendencia centro]\nLO QUE LEYÓ",
+            True,
+        ),
+    )
 
     out = a.preguntar("¿es verdad X?")
     _, meta = veredicto.partir(out)
     f = meta["fuentes"][0]
     assert f["credibilidad"] == "alta"         # registro curado manda
     assert f["extracto"] == "LO QUE LEYÓ"      # www./utm no impiden el casado
+    assert not f["extracto"].startswith("[fuente:")  # sin la anotación interna
     assert meta["confianza_modelo"] == 90
     assert 40 <= meta["confianza"] <= 55        # recalculada: 1 fuente alta

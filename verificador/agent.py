@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -27,6 +28,14 @@ from .prompts import PROMPT_REPARACION, SYSTEM_PROMPT, instruccion_modo
 from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 from . import fuentes
 from . import veredicto
+
+_ANOTACION_RE = re.compile(r"^(?:\[(?:fuente:|Transcripción de )[^\n]*\]\s*\n?)+")
+
+
+def _extracto_de(texto: str, tope: int = 1500) -> str:
+    """Extracto de cara al usuario: sin las líneas de anotación internas
+    ([fuente: …], [Transcripción de …]) que se anteponen para el modelo."""
+    return _ANOTACION_RE.sub("", texto)[:tope]
 
 
 @dataclass
@@ -220,7 +229,7 @@ class Verificador:
                     resultados[tid] = lectura
                     con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
                     if con_extracto and ev["url"]:
-                        extractos[ev["url"]] = lectura.texto[:1500]
+                        extractos[ev["url"]] = _extracto_de(lectura.texto)
                     if on_step:
                         fin = {"id": ev["id"], "tipo": ev["tipo"],
                                "estado": "ok" if lectura.ok else "fallo",
@@ -229,7 +238,7 @@ class Verificador:
                         # Solo en éxito guardamos el extracto: el texto de error
                         # nunca debe llegar al visor "ver de dónde salió".
                         if con_extracto:
-                            fin["extracto"] = lectura.texto[:1500]
+                            fin["extracto"] = _extracto_de(lectura.texto)
                         on_step(fin)
             for t in tool_calls:
                 messages.append({"role": "tool", "tool_call_id": t["id"],
