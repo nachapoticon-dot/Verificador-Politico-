@@ -43,4 +43,29 @@ const sinUrl = enlazarCitas("vacío [1]", [{ n: 1 }]);
 assert.ok(sinUrl.includes('href="#"'));
 assert.ok(!sinUrl.includes("undefined"));
 
+// partirRespuesta — copia de frontend/src/lib/format.ts (mantener idéntica).
+function partirRespuesta(texto) {
+  const m = texto.match(/```json\s*([\s\S]*?)```\s*$/i);
+  if (m) {
+    let meta = null;
+    try { meta = JSON.parse(m[1].trim()); } catch { /* JSON inválido */ }
+    return { prosa: texto.slice(0, m.index).trim(), meta };
+  }
+  // Bloque aún abierto (streaming): se oculta desde donde empieza.
+  const abierto = texto.search(/```json/i);
+  if (abierto !== -1) return { prosa: texto.slice(0, abierto).trim(), meta: null };
+  return { prosa: texto.trim(), meta: null };
+}
+
+const pCompleta = partirRespuesta('Hola [1].\n\n```json\n{"veredicto":"falso"}\n```');
+assert.equal(pCompleta.prosa, "Hola [1].");
+assert.equal(pCompleta.meta.veredicto, "falso");
+
+const pAbierta = partirRespuesta('Hola en curso\n\n```json\n{"vered');
+assert.equal(pAbierta.prosa, "Hola en curso");
+assert.equal(pAbierta.meta, null);
+
+const pSinJson = partirRespuesta("Solo prosa");
+assert.equal(pSinJson.prosa, "Solo prosa");
+
 console.log("ok");

@@ -41,7 +41,7 @@ export interface Turno {
   id: string;
   pregunta: string;
   eventos: TrazaEvento[];
-  estado: "investigando" | "listo" | "error";
+  estado: "investigando" | "respondiendo" | "listo" | "error";
   respuesta?: string;
   error?: string;
 }

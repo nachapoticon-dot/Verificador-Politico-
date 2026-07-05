@@ -10,6 +10,7 @@ import type { Turno } from "../lib/types";
 export function Answer({ turno }: { turno: Turno }) {
   if (turno.error) return <div className="aviso">{turno.error}</div>;
   if (!turno.respuesta) return null;
+  const escribiendo = turno.estado === "respondiendo";
 
   const { prosa, meta } = partirRespuesta(turno.respuesta);
   const fuentes = meta?.fuentes ?? [];
@@ -39,7 +40,7 @@ export function Answer({ turno }: { turno: Turno }) {
         <span>verifica</span>
       </div>
 
-      {sello && (
+      {sello && !escribiendo && (
         <div className="sello-fila">
           <span className="pill" data-v={sello.v}>
             <span className="pill-em">{sello.emoji}</span> {sello.etiqueta}
@@ -56,8 +57,9 @@ export function Answer({ turno }: { turno: Turno }) {
       )}
 
       <div className="respuesta-cuerpo" dangerouslySetInnerHTML={{ __html: cuerpoHtml }} />
+      {escribiendo && <span className="escribiendo" aria-hidden="true" />}
 
-      <Sources fuentes={fuentes} extractos={extractos} />
+      {!escribiendo && <Sources fuentes={fuentes} extractos={extractos} />}
     </div>
   );
 }
