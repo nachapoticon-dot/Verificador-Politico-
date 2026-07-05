@@ -67,3 +67,19 @@ export function selloDe(meta: Meta | null, prosa: string): Sello | null {
   }
   return null;
 }
+
+// Nombre legible de un país por su código ISO (los más citados); si no está,
+// se muestra el valor tal cual (puede venir ya como nombre).
+const PAISES: Record<string, string> = {
+  CO: "Colombia", MX: "México", AR: "Argentina", ES: "España", CL: "Chile",
+  PE: "Perú", VE: "Venezuela", US: "EE. UU.", UY: "Uruguay", EC: "Ecuador",
+  BO: "Bolivia", PY: "Paraguay", CR: "Costa Rica", GT: "Guatemala",
+  BR: "Brasil", FR: "Francia", DE: "Alemania", IT: "Italia",
+  GB: "Reino Unido", PT: "Portugal",
+};
+
+export function nombrePais(codigo: string | undefined): string | null {
+  if (!codigo || !codigo.trim()) return null;
+  const c = codigo.trim();
+  return PAISES[c.toUpperCase()] ?? c;
+}

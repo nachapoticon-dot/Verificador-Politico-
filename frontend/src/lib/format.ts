@@ -97,10 +97,11 @@ export function enlazarCitas(texto: string, fuentes: FuenteMeta[]): string {
   return texto.replace(/\[(\d+)\]/g, (m, n) => {
     const f = porN[Number(n)];
     if (!f) return m;
+    const titulo = f.medio ? ' title="' + String(f.medio).replace(/"/g, "&quot;") + '"' : "";
     return (
       '<a class="cita" href="' +
       encodeURI(urlSegura(f.url)) +
-      '" target="_blank" rel="noopener">[' +
+      '"' + titulo + ' target="_blank" rel="noopener">[' +
       n +
       "]</a>"
     );
