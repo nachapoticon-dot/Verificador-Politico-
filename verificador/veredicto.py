@@ -124,3 +124,40 @@ def adjuntar_extractos(meta: dict, extractos: dict[str, str] | None) -> dict:
         if x:
             f["extracto"] = x
     return meta
+
+
+_PESO_CRED = {"alta": 1.0, "media": 0.6, "baja": 0.25, "no_fiable": 0.0}
+_IZQ = {"izquierda", "centro-izquierda"}
+_DER = {"derecha", "centro-derecha"}
+
+
+def calcular_confianza(meta: dict) -> int:
+    """Confianza 0-100 calculada de las fuentes reales, no autodeclarada.
+
+    Suman las fuentes que coinciden, ponderadas por credibilidad; el contraste
+    real (tendencias opuestas o verificador + otra) da un bono; las fuentes
+    deshonestas nunca suman y, si "apoyan", restan solidez. Techo asintótico:
+    ni un aluvión de fuentes llega a 100.
+    """
+    peso = 0.0
+    penal = 0.0
+    tendencias: set[str] = set()
+    for f in meta.get("fuentes") or []:
+        manip = (f.get("manipulacion") or "ninguna").lower()
+        if manip in ("enganosa", "desinformadora"):
+            if f.get("coincide"):
+                penal += 0.15
+            continue
+        if not f.get("coincide"):
+            continue
+        peso += _PESO_CRED.get((f.get("credibilidad") or "").lower(), 0.25)
+        tendencias.add((f.get("tendencia") or "").lower())
+    contraste = bool(
+        (tendencias & _IZQ and tendencias & _DER)
+        or ("verificador" in tendencias and len(tendencias) > 1)
+    )
+    if contraste:
+        peso *= 1.25
+    conf = 95.0 * (1.0 - math.exp(-0.7 * peso))
+    conf *= max(0.0, 1.0 - penal)
+    return int(round(conf))

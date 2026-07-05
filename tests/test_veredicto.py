@@ -1,5 +1,5 @@
 # tests/test_veredicto.py
-from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro
+from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro, calcular_confianza
 
 
 def test_partir_separa_prosa_y_meta():
@@ -128,3 +128,56 @@ def test_adjuntar_extractos_sin_datos_no_rompe():
     adjuntar_extractos(meta, None)
     adjuntar_extractos(meta, {})
     assert "extracto" not in meta["fuentes"][0]
+
+
+def test_confianza_cero_sin_fuentes_que_coincidan():
+    assert calcular_confianza({"fuentes": []}) == 0
+    assert calcular_confianza({"fuentes": [
+        {"n": 1, "coincide": False, "credibilidad": "alta"},
+    ]}) == 0
+
+
+def test_confianza_una_fuente_alta_es_media():
+    c = calcular_confianza({"fuentes": [
+        {"n": 1, "coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"},
+    ]})
+    assert 40 <= c <= 55
+
+
+def test_confianza_contraste_izq_der_sube():
+    base = {"coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"}
+    sin_contraste = calcular_confianza({"fuentes": [
+        {"n": 1, "tendencia": "izquierda", **base},
+        {"n": 2, "tendencia": "centro-izquierda", **base},
+    ]})
+    con_contraste = calcular_confianza({"fuentes": [
+        {"n": 1, "tendencia": "izquierda", **base},
+        {"n": 2, "tendencia": "derecha", **base},
+    ]})
+    assert con_contraste > sin_contraste
+
+
+def test_confianza_tres_buenas_contrastadas_ronda_90_y_nunca_100():
+    base = {"coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"}
+    c = calcular_confianza({"fuentes": [
+        {"n": 1, "tendencia": "izquierda", **base},
+        {"n": 2, "tendencia": "derecha", **base},
+        {"n": 3, "tendencia": "verificador", **base},
+    ]})
+    assert 85 <= c < 100
+
+
+def test_fuentes_deshonestas_no_suman_y_penalizan():
+    solo_desinfo = calcular_confianza({"fuentes": [
+        {"n": 1, "coincide": True, "credibilidad": "alta",
+         "manipulacion": "desinformadora"},
+    ]})
+    assert solo_desinfo == 0
+    limpia = calcular_confianza({"fuentes": [
+        {"n": 1, "coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"},
+    ]})
+    con_lastre = calcular_confianza({"fuentes": [
+        {"n": 1, "coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"},
+        {"n": 2, "coincide": True, "credibilidad": "alta", "manipulacion": "enganosa"},
+    ]})
+    assert con_lastre < limpia
