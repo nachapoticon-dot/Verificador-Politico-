@@ -5,16 +5,21 @@
 import type { FuenteMeta, Meta } from "./types";
 
 // Separa la prosa del bloque ```json final (el contrato de datos del medidor).
+// Durante el streaming el bloque puede llegar a medias: también se oculta.
 export function partirRespuesta(texto: string): { prosa: string; meta: Meta | null } {
   const m = texto.match(/```json\s*([\s\S]*?)```\s*$/i);
-  if (!m) return { prosa: texto.trim(), meta: null };
-  let meta: Meta | null = null;
-  try {
-    meta = JSON.parse(m[1].trim());
-  } catch {
-    /* JSON inválido: lo ignoramos */
+  if (m) {
+    let meta: Meta | null = null;
+    try {
+      meta = JSON.parse(m[1].trim());
+    } catch {
+      /* JSON inválido: lo ignoramos */
+    }
+    return { prosa: texto.slice(0, m.index).trim(), meta };
   }
-  return { prosa: texto.slice(0, m.index).trim(), meta };
+  const abierto = texto.search(/```json/i);
+  if (abierto !== -1) return { prosa: texto.slice(0, abierto).trim(), meta: null };
+  return { prosa: texto.trim(), meta: null };
 }
 
 function escapar(s: string): string {

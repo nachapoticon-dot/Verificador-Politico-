@@ -37,6 +37,14 @@ export function useVerificador() {
       await streamVerificar(pregunta, opts, (evento, dato) => {
         if (evento === "traza") {
           parchar((t) => aplicarTraza(t, dato as TrazaEvento));
+        } else if (evento === "delta") {
+          parchar((t) => ({
+            ...t,
+            estado: "respondiendo",
+            respuesta: (t.respuesta ?? "") + (dato.texto || ""),
+          }));
+        } else if (evento === "delta_reset") {
+          parchar((t) => ({ ...t, estado: "investigando", respuesta: undefined }));
         } else if (evento === "respuesta") {
           parchar((t) => ({ ...t, estado: "listo", respuesta: dato.texto || "" }));
         } else if (evento === "error") {
