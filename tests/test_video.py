@@ -1,6 +1,10 @@
 from verificador import search
 
 
+def setup_function(_f):
+    search._cache.clear()
+
+
 def test_id_youtube_formas():
     assert search._id_youtube("https://www.youtube.com/watch?v=abc123DEF45") == "abc123DEF45"
     assert search._id_youtube("https://youtu.be/abc123DEF45") == "abc123DEF45"
