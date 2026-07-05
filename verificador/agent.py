@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
@@ -190,32 +191,49 @@ class Verificador:
                     pass
                 return procesado.texto
 
-            # Ejecutar cada herramienta y devolver su resultado al modelo.
+            # Ejecutar las herramientas (en paralelo si hay varias) y devolver
+            # su resultado al modelo. Los eventos de inicio salen todos antes;
+            # los de fin, según cada una termina; los mensajes `tool` se anexan
+            # en el orden original de las tool_calls.
+            llamadas = []
             for t in tool_calls:
                 try:
                     args = json.loads(t["arguments"] or "{}")
                 except json.JSONDecodeError:
                     args = {}
-                ev = _evento_inicio(t["id"], t["name"], args)
-                if on_step:
+                llamadas.append((t["id"], t["name"], args,
+                                 _evento_inicio(t["id"], t["name"], args)))
+            if on_step:
+                for _tid, _nom, _args, ev in llamadas:
                     on_step(ev)
-                lectura = self._ejecutar_tool(t["name"], args,
-                                              country=country, rigor=rigor)
-                con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
-                if con_extracto and ev["url"]:
-                    extractos[ev["url"]] = lectura.texto[:1500]
-                if on_step:
-                    fin = {"id": ev["id"], "tipo": ev["tipo"],
-                           "estado": "ok" if lectura.ok else "fallo",
-                           "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
-                    # Solo en éxito guardamos el extracto: el texto de error
-                    # nunca debe llegar al visor "ver de dónde salió".
-                    if con_extracto:
-                        fin["extracto"] = lectura.texto[:1500]
-                    on_step(fin)
-                messages.append(
-                    {"role": "tool", "tool_call_id": t["id"], "content": lectura.texto}
-                )
+
+            def _correr(item):
+                tid, nombre, args, ev = item
+                return tid, ev, self._ejecutar_tool(nombre, args,
+                                                    country=country, rigor=rigor)
+
+            resultados: dict[str, Lectura] = {}
+            with ThreadPoolExecutor(max_workers=min(4, len(llamadas))) as pool:
+                futuros = [pool.submit(_correr, item) for item in llamadas]
+                for futuro in as_completed(futuros):
+                    tid, ev, lectura = futuro.result()
+                    resultados[tid] = lectura
+                    con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
+                    if con_extracto and ev["url"]:
+                        extractos[ev["url"]] = lectura.texto[:1500]
+                    if on_step:
+                        fin = {"id": ev["id"], "tipo": ev["tipo"],
+                               "estado": "ok" if lectura.ok else "fallo",
+                               "titulo": ev["titulo"], "url": ev["url"],
+                               "dominio": ev["dominio"]}
+                        # Solo en éxito guardamos el extracto: el texto de error
+                        # nunca debe llegar al visor "ver de dónde salió".
+                        if con_extracto:
+                            fin["extracto"] = lectura.texto[:1500]
+                        on_step(fin)
+            for t in tool_calls:
+                messages.append({"role": "tool", "tool_call_id": t["id"],
+                                 "content": resultados[t["id"]].texto})
 
         return (
             "[Alcancé el límite de pasos de investigación sin concluir. "
