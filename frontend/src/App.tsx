@@ -5,44 +5,36 @@ import { Answer } from "./components/Answer";
 import { useVerificador } from "./hooks/useVerificador";
 import type { Opciones, Turno } from "./lib/types";
 
-interface OpcionSeg {
+interface Preset {
   valor: string;
   texto: string;
   titulo: string;
+  opciones: Opciones;
 }
 
-const CONTROLES: { clave: keyof Opciones; etiqueta: string; aria: string; opciones: OpcionSeg[] }[] = [
+// Un solo eje de modo: cada preset fija rigor + largo + detalle de la API.
+const PRESETS: Preset[] = [
   {
-    clave: "rigor",
-    etiqueta: "Profundidad",
-    aria: "Profundidad del análisis",
-    opciones: [
-      { valor: "rapido", texto: "Rápido", titulo: "Menos fuentes, respuesta más rápida." },
-      { valor: "riguroso", texto: "A fondo", titulo: "Más fuentes y contraste." },
-    ],
+    valor: "esencial",
+    texto: "Esencial",
+    titulo: "Menos fuentes, respuesta en segundos.",
+    opciones: { rigor: "rapido", largo: "corta", detalle: "simple" },
   },
   {
-    clave: "largo",
-    etiqueta: "Respuesta",
-    aria: "Largo de la respuesta",
-    opciones: [
-      { valor: "corta", texto: "Corta", titulo: "1-2 frases." },
-      { valor: "normal", texto: "Normal", titulo: "Un párrafo." },
-      { valor: "detallada", texto: "Detallada", titulo: "Con contexto y matices." },
-    ],
+    valor: "normal",
+    texto: "Normal",
+    titulo: "Contraste completo, un párrafo.",
+    opciones: { rigor: "riguroso", largo: "normal", detalle: "simple" },
   },
   {
-    clave: "detalle",
-    etiqueta: "Detalle",
-    aria: "Nivel de detalle",
-    opciones: [
-      { valor: "simple", texto: "Simple", titulo: "Lenguaje llano." },
-      { valor: "tecnico", texto: "Técnico", titulo: "Cifras y metodología." },
-    ],
+    valor: "afondo",
+    texto: "A fondo",
+    titulo: "Contexto, matices y cifras.",
+    opciones: { rigor: "riguroso", largo: "detallada", detalle: "tecnico" },
   },
 ];
 
-function Masthead({ modo, setModo }: { modo: Opciones; setModo: (m: Opciones) => void }) {
+function Masthead() {
   return (
     <header className="masthead">
       <a
@@ -59,27 +51,6 @@ function Masthead({ modo, setModo }: { modo: Opciones; setModo: (m: Opciones) =>
           <span className="brand-sub">frente a lo falso</span>
         </span>
       </a>
-      <div className="controls">
-        {CONTROLES.map((ctrl) => (
-          <div className="ctrl" key={ctrl.clave}>
-            <span className="ctrl-lbl">{ctrl.etiqueta}</span>
-            <div className="seg" role="group" aria-label={ctrl.aria}>
-              {ctrl.opciones.map((op) => (
-                <button
-                  key={op.valor}
-                  type="button"
-                  title={op.titulo}
-                  className={"seg-opt" + (modo[ctrl.clave] === op.valor ? " is-on" : "")}
-                  aria-pressed={modo[ctrl.clave] === op.valor}
-                  onClick={() => setModo({ ...modo, [ctrl.clave]: op.valor })}
-                >
-                  {op.texto}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
     </header>
   );
 }
@@ -113,7 +84,17 @@ function TurnoView({ turno }: { turno: Turno }) {
   );
 }
 
-function Composer({ enCurso, onEnviar }: { enCurso: boolean; onEnviar: (texto: string) => void }) {
+function Composer({
+  enCurso,
+  preset,
+  setPreset,
+  onEnviar,
+}: {
+  enCurso: boolean;
+  preset: string;
+  setPreset: (p: string) => void;
+  onEnviar: (texto: string) => void;
+}) {
   const [texto, setTexto] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -155,19 +136,35 @@ function Composer({ enCurso, onEnviar }: { enCurso: boolean; onEnviar: (texto: s
             }
           }}
         />
-        <button type="submit" aria-label="Validar" disabled={enCurso}>
-          <span>Validar</span>
-          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-            <path
-              d="M5 12h14M13 6l6 6-6 6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+        <div className="composer-pie">
+          <div className="seg" role="group" aria-label="Modo de respuesta">
+            {PRESETS.map((p) => (
+              <button
+                key={p.valor}
+                type="button"
+                title={p.titulo}
+                className={"seg-opt" + (preset === p.valor ? " is-on" : "")}
+                aria-pressed={preset === p.valor}
+                onClick={() => setPreset(p.valor)}
+              >
+                {p.texto}
+              </button>
+            ))}
+          </div>
+          <button className="enviar" type="submit" aria-label="Validar" disabled={enCurso}>
+            <span>Validar</span>
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <path
+                d="M5 12h14M13 6l6 6-6 6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -175,21 +172,18 @@ function Composer({ enCurso, onEnviar }: { enCurso: boolean; onEnviar: (texto: s
 
 export default function App() {
   const { turnos, enCurso, preguntar } = useVerificador();
-  const [modo, setModo] = useState<Opciones>({
-    rigor: "riguroso",
-    largo: "corta",
-    detalle: "simple",
-  });
+  const [preset, setPreset] = useState("normal");
   const finRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [turnos]);
 
+  const opciones = (PRESETS.find((p) => p.valor === preset) ?? PRESETS[1]).opciones;
   return (
     <>
       <div className="grain" aria-hidden="true" />
-      <Masthead modo={modo} setModo={setModo} />
+      <Masthead />
       <main className="hilo">
         {turnos.length === 0 && <Hero />}
         {turnos.map((t) => (
@@ -197,7 +191,8 @@ export default function App() {
         ))}
         <div ref={finRef} />
       </main>
-      <Composer enCurso={enCurso} onEnviar={(q) => preguntar(q, modo)} />
+      <Composer enCurso={enCurso} preset={preset} setPreset={setPreset}
+                onEnviar={(q) => preguntar(q, opciones)} />
     </>
   );
 }

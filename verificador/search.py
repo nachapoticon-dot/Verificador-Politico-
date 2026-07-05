@@ -15,12 +15,14 @@ from __future__ import annotations
 import atexit
 import queue
 import threading
+import time
 from typing import NamedTuple
 
 import httpx
 import re
 
 from . import fuentes
+from .urls import normalizar_url
 
 
 class Lectura(NamedTuple):
@@ -34,6 +36,39 @@ class Lectura(NamedTuple):
 
     texto: str
     ok: bool
+
+
+# --- Caché en memoria de lecturas (solo éxitos) -------------------------------
+# Clave: URL canónica (urls.normalizar_url). Evita re-descargar la misma página
+# dentro de una consulta "a fondo" y entre consultas cercanas en el tiempo.
+_CACHE_TTL = 900.0   # 15 min
+_CACHE_MAX = 64
+_cache: dict[str, tuple[float, Lectura]] = {}
+_cache_lock = threading.Lock()
+
+
+def _cache_get(clave: str) -> Lectura | None:
+    if not clave:
+        return None
+    with _cache_lock:
+        hit = _cache.get(clave)
+        if hit is None:
+            return None
+        ts, lectura = hit
+        if time.monotonic() - ts > _CACHE_TTL:
+            del _cache[clave]
+            return None
+        return lectura
+
+
+def _cache_put(clave: str, lectura: Lectura) -> None:
+    if not clave:
+        return
+    with _cache_lock:
+        if len(_cache) >= _CACHE_MAX:
+            _cache.pop(min(_cache, key=lambda k: _cache[k][0]))  # la más vieja
+        _cache[clave] = (time.monotonic(), lectura)
+
 
 # Mapa mínimo de país ISO-3166 → región de DuckDuckGo, para sesgar resultados.
 _REGION = {
@@ -81,8 +116,12 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
     Verifica lo que se DICE en el vídeo, no la imagen. Para otras plataformas
     sin transcripción, devuelve un aviso (TikTok se cubre vía leer_pagina/navegador).
     Devuelve ``Lectura(texto, ok)``: ``ok`` es False si no hay transcripción
-    accesible (no es YouTube, o no la hay).
+    accesible (no es YouTube, o no la hay). Solo los éxitos se cachean.
     """
+    clave = "video:" + normalizar_url(url)
+    cacheada = _cache_get(clave)
+    if cacheada is not None:
+        return cacheada
     vid = _id_youtube(url)
     if vid:
         texto = _fetch_transcripcion(vid)
@@ -93,7 +132,9 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
                 _pref = fuentes.anotar(url) + "\n"
             except Exception:  # noqa: BLE001 — la anotación nunca rompe la respuesta
                 _pref = ""
-            return Lectura(f"{_pref}[Transcripción de {url}]\n{texto}", True)
+            lectura = Lectura(f"{_pref}[Transcripción de {url}]\n{texto}", True)
+            _cache_put(clave, lectura)
+            return lectura
         return Lectura(
             f"[{url}: sin transcripción disponible; no puedo leer su audio.]", False
         )
@@ -102,30 +143,44 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
     )
 
 
-def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> list[dict]:
-    """Busca en DuckDuckGo y devuelve [{titulo, url, resumen, fiabilidad}]."""
+def _ddgs_texto(query: str, region: str, max_resultados: int) -> list[dict]:
+    """Llamada cruda a DuckDuckGo. Separada para poder reintentar y testear."""
     from ddgs import DDGS  # import perezoso: acelera el arranque del CLI
 
+    with DDGS() as ddgs:
+        return list(ddgs.text(query, region=region, max_results=max_resultados))
+
+
+def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> list[dict]:
+    """Busca en DuckDuckGo (con reintentos) y devuelve [{titulo, url, resumen, fiabilidad}]."""
     region = _REGION.get((pais or "").upper(), "wt-wt")
+    ultimo: Exception | None = None
+    for intento in range(3):
+        try:
+            filas = _ddgs_texto(query, region, max_resultados)
+            break
+        except Exception as e:  # noqa: BLE001 — ddgs es frágil: reintentamos
+            ultimo = e
+            if intento < 2:
+                time.sleep(0.5 * (intento + 1))
+    else:
+        return [{"error": f"Fallo la búsqueda: {ultimo}"}]
+
     resultados: list[dict] = []
-    try:
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, region=region, max_results=max_resultados):
-                url = r.get("href") or r.get("url", "")
-                try:
-                    _fiab = fuentes.anotar(url)
-                except Exception:  # noqa: BLE001
-                    _fiab = ""
-                resultados.append(
-                    {
-                        "titulo": r.get("title", ""),
-                        "url": url,
-                        "resumen": r.get("body", ""),
-                        "fiabilidad": _fiab,
-                    }
-                )
-    except Exception as e:  # noqa: BLE001 — devolvemos el error al modelo
-        return [{"error": f"Fallo la búsqueda: {e}"}]
+    for r in filas:
+        url = r.get("href") or r.get("url", "")
+        try:
+            _fiab = fuentes.anotar(url)
+        except Exception:  # noqa: BLE001
+            _fiab = ""
+        resultados.append(
+            {
+                "titulo": r.get("title", ""),
+                "url": url,
+                "resumen": r.get("body", ""),
+                "fiabilidad": _fiab,
+            }
+        )
     return resultados or [{"aviso": "Sin resultados para esa búsqueda."}]
 
 
@@ -232,14 +287,24 @@ def _extraer(html: str) -> str | None:
 
 
 def _leer_rapido(url: str) -> str | None:
-    """Ruta rápida: httpx + trafilatura. None si falla o sale vacío."""
-    try:
-        resp = httpx.get(url, headers=_HEADERS, timeout=8.0, follow_redirects=True)
-        resp.raise_for_status()
-    except Exception:  # noqa: BLE001
-        return None
-    texto = _extraer(resp.text)
-    return texto or None
+    """Ruta rápida: httpx + trafilatura, con un reintento ante fallo de red o
+    5xx (nunca ante 4xx). None si falla o sale vacío."""
+    for intento in range(2):
+        try:
+            resp = httpx.get(url, headers=_HEADERS, timeout=8.0, follow_redirects=True)
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code < 500 or intento == 1:
+                return None
+            time.sleep(0.4)
+            continue
+        except Exception:  # noqa: BLE001 — red caída, timeout, DNS
+            if intento == 1:
+                return None
+            time.sleep(0.4)
+            continue
+        return _extraer(resp.text) or None
+    return None
 
 
 def _leer_navegador(url: str, timeout: float = 30.0) -> str | None:
@@ -279,11 +344,16 @@ atexit.register(cerrar_navegador)
 
 
 def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
-    """Descarga una URL y devuelve su texto principal (rápido → navegador).
+    """Descarga una URL y devuelve su texto principal (caché → rápido → navegador).
 
     Devuelve ``Lectura(texto, ok)``: ``ok`` es False si no se pudo abrir ni
-    extraer texto (el aviso no debe llegar al visor de evidencias).
+    extraer texto (el aviso no debe llegar al visor de evidencias). Solo los
+    éxitos se cachean.
     """
+    clave = "pagina:" + normalizar_url(url)
+    cacheada = _cache_get(clave)
+    if cacheada is not None:
+        return cacheada
     texto = _leer_rapido(url) or _leer_navegador(url)
     if not texto:
         return Lectura(f"[No pude abrir ni extraer texto de {url}.]", False)
@@ -293,7 +363,9 @@ def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
         _pref = fuentes.anotar(url) + "\n"
     except Exception:  # noqa: BLE001 — la anotación nunca rompe la respuesta
         _pref = ""
-    return Lectura(f"{_pref}{texto}", True)
+    lectura = Lectura(f"{_pref}{texto}", True)
+    _cache_put(clave, lectura)
+    return lectura
 
 
 # Esquemas que se le pasan al modelo (formato de tools de OpenAI/DeepSeek).

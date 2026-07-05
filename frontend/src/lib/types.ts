@@ -21,6 +21,8 @@ export interface FuenteMeta {
   manipulacion?: string;
   url?: string;
   coincide?: boolean;
+  extracto?: string;
+  citada?: boolean;
 }
 
 export interface Meta {
@@ -41,7 +43,7 @@ export interface Turno {
   id: string;
   pregunta: string;
   eventos: TrazaEvento[];
-  estado: "investigando" | "listo" | "error";
+  estado: "investigando" | "respondiendo" | "listo" | "error";
   respuesta?: string;
   error?: string;
 }

@@ -15,16 +15,27 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
 from openai import OpenAI
 
 from .config import Config, cargar_config
-from .prompts import SYSTEM_PROMPT, instruccion_modo
+from .prompts import PROMPT_REPARACION, SYSTEM_PROMPT, instruccion_modo
 from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 from . import fuentes
+from . import veredicto
+
+_ANOTACION_RE = re.compile(r"^(?:\[(?:fuente:|Transcripción de )[^\n]*\]\s*\n?)+")
+
+
+def _extracto_de(texto: str, tope: int = 1500) -> str:
+    """Extracto de cara al usuario: sin las líneas de anotación internas
+    ([fuente: …], [Transcripción de …]) que se anteponen para el modelo."""
+    return _ANOTACION_RE.sub("", texto)[:tope]
 
 
 @dataclass
@@ -78,6 +89,65 @@ class Verificador:
             return ver_video(url=args.get("url", ""))
         return Lectura(f"[Herramienta desconocida: {nombre}]", False)
 
+    def _reparar_json(self, prosa: str) -> str | None:
+        """Pide al modelo SOLO el bloque JSON de cierre para una respuesta que
+        llegó sin él (una única llamada; si falla, se degrada sin meta)."""
+        try:
+            resp = self._client.chat.completions.create(
+                model=self.config.model,
+                messages=[
+                    {"role": "system", "content": PROMPT_REPARACION},
+                    {"role": "user", "content": prosa},
+                ],
+                temperature=0.0,
+            )
+            return resp.choices[0].message.content or None
+        except Exception:  # noqa: BLE001 — la reparación jamás rompe la respuesta
+            return None
+
+    def _completar(self, messages: list[dict],
+                   on_step: Callable[[dict], None] | None = None) -> tuple[str, list[dict]]:
+        """Una vuelta del modelo, en streaming.
+
+        Devuelve ``(content, tool_calls)`` con las tool_calls reconstruidas de
+        los deltas (``[{"id", "name", "arguments"}]``). Mientras la vuelta no
+        pida herramientas, cada fragmento de texto se reenvía por ``on_step``
+        como ``{"tipo": "delta", "texto": ...}``; si a mitad aparecen tools,
+        se emite un único ``{"tipo": "delta_reset"}`` para descartar lo emitido.
+        """
+        stream = self._client.chat.completions.create(
+            model=self.config.model,
+            messages=messages,
+            tools=TOOL_SCHEMAS,
+            tool_choice="auto",
+            temperature=0.2,
+            stream=True,
+        )
+        partes: list[str] = []
+        tcs: dict[int, dict] = {}
+        for chunk in stream:
+            if not getattr(chunk, "choices", None):
+                continue
+            delta = chunk.choices[0].delta
+            texto = getattr(delta, "content", None)
+            if texto:
+                partes.append(texto)
+                if not tcs and on_step:
+                    on_step({"tipo": "delta", "texto": texto})
+            for td in getattr(delta, "tool_calls", None) or []:
+                if not tcs and partes and on_step:
+                    on_step({"tipo": "delta_reset"})
+                hueco = tcs.setdefault(td.index, {"id": "", "name": "", "arguments": ""})
+                if getattr(td, "id", None):
+                    hueco["id"] = td.id
+                fn = getattr(td, "function", None)
+                if fn is not None:
+                    if getattr(fn, "name", None):
+                        hueco["name"] = fn.name
+                    if getattr(fn, "arguments", None):
+                        hueco["arguments"] += fn.arguments
+        return "".join(partes), [tcs[i] for i in sorted(tcs)]
+
     def preguntar(
         self,
         pregunta: str,
@@ -99,67 +169,80 @@ class Verificador:
         """
         messages = self._system_messages(country, largo, detalle)
         messages.append({"role": "user", "content": pregunta})
+        extractos: dict[str, str] = {}
 
         pasos = 4 if rigor == "rapido" else self.max_pasos
         for _ in range(pasos):
-            resp = self._client.chat.completions.create(
-                model=self.config.model,
-                messages=messages,
-                tools=TOOL_SCHEMAS,
-                tool_choice="auto",
-                temperature=0.2,
-            )
-            msg = resp.choices[0].message
+            content, tool_calls = self._completar(messages, on_step)
 
-            assistant: dict = {"role": "assistant", "content": msg.content or ""}
-            if msg.tool_calls:
+            assistant: dict = {"role": "assistant", "content": content}
+            if tool_calls:
                 assistant["tool_calls"] = [
                     {
-                        "id": tc.id,
+                        "id": t["id"],
                         "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
+                        "function": {"name": t["name"], "arguments": t["arguments"]},
                     }
-                    for tc in msg.tool_calls
+                    for t in tool_calls
                 ]
             messages.append(assistant)
 
-            # Sin llamadas a herramientas → es la respuesta final.
-            if not msg.tool_calls:
-                final = msg.content or ""
-                # Propone para revisión las fuentes citadas cuyo dominio no esté
-                # en el registro curado. Nunca debe romper la respuesta.
+            # Sin llamadas a herramientas → es la respuesta final. Se valida y
+            # enriquece el meta (citas, registro, extractos, confianza) antes
+            # de devolverla; nada de esto puede romper la respuesta.
+            if not tool_calls:
+                procesado = veredicto.procesar(
+                    content, extractos=extractos, reparar=self._reparar_json
+                )
                 try:
-                    fuentes.capturar_propuestas(fuentes.extraer_meta(final))
+                    fuentes.capturar_propuestas(procesado.meta)
                 except Exception:  # noqa: BLE001
                     pass
-                return final
+                return procesado.texto
 
-            # Ejecutar cada herramienta y devolver su resultado al modelo.
-            for tc in msg.tool_calls:
+            # Ejecutar las herramientas (en paralelo si hay varias) y devolver
+            # su resultado al modelo. Los eventos de inicio salen todos antes;
+            # los de fin, según cada una termina; los mensajes `tool` se anexan
+            # en el orden original de las tool_calls.
+            llamadas = []
+            for t in tool_calls:
                 try:
-                    args = json.loads(tc.function.arguments or "{}")
+                    args = json.loads(t["arguments"] or "{}")
                 except json.JSONDecodeError:
                     args = {}
-                ev = _evento_inicio(tc.id, tc.function.name, args)
-                if on_step:
+                llamadas.append((t["id"], t["name"], args,
+                                 _evento_inicio(t["id"], t["name"], args)))
+            if on_step:
+                for _tid, _nom, _args, ev in llamadas:
                     on_step(ev)
-                lectura = self._ejecutar_tool(tc.function.name, args,
-                                              country=country, rigor=rigor)
-                if on_step:
-                    fin = {"id": ev["id"], "tipo": ev["tipo"],
-                           "estado": "ok" if lectura.ok else "fallo",
-                           "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
-                    # Solo en éxito guardamos el extracto: el texto de error
-                    # nunca debe llegar al visor "ver de dónde salió".
-                    if ev["tipo"] in ("pagina", "video") and lectura.ok:
-                        fin["extracto"] = lectura.texto[:1500]
-                    on_step(fin)
-                messages.append(
-                    {"role": "tool", "tool_call_id": tc.id, "content": lectura.texto}
-                )
+
+            def _correr(item):
+                tid, nombre, args, ev = item
+                return tid, ev, self._ejecutar_tool(nombre, args,
+                                                    country=country, rigor=rigor)
+
+            resultados: dict[str, Lectura] = {}
+            with ThreadPoolExecutor(max_workers=min(4, len(llamadas))) as pool:
+                futuros = [pool.submit(_correr, item) for item in llamadas]
+                for futuro in as_completed(futuros):
+                    tid, ev, lectura = futuro.result()
+                    resultados[tid] = lectura
+                    con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
+                    if con_extracto and ev["url"]:
+                        extractos[ev["url"]] = _extracto_de(lectura.texto)
+                    if on_step:
+                        fin = {"id": ev["id"], "tipo": ev["tipo"],
+                               "estado": "ok" if lectura.ok else "fallo",
+                               "titulo": ev["titulo"], "url": ev["url"],
+                               "dominio": ev["dominio"]}
+                        # Solo en éxito guardamos el extracto: el texto de error
+                        # nunca debe llegar al visor "ver de dónde salió".
+                        if con_extracto:
+                            fin["extracto"] = _extracto_de(lectura.texto)
+                        on_step(fin)
+            for t in tool_calls:
+                messages.append({"role": "tool", "tool_call_id": t["id"],
+                                 "content": resultados[t["id"]].texto})
 
         return (
             "[Alcancé el límite de pasos de investigación sin concluir. "

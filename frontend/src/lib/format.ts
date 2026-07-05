@@ -5,16 +5,21 @@
 import type { FuenteMeta, Meta } from "./types";
 
 // Separa la prosa del bloque ```json final (el contrato de datos del medidor).
+// Durante el streaming el bloque puede llegar a medias: también se oculta.
 export function partirRespuesta(texto: string): { prosa: string; meta: Meta | null } {
   const m = texto.match(/```json\s*([\s\S]*?)```\s*$/i);
-  if (!m) return { prosa: texto.trim(), meta: null };
-  let meta: Meta | null = null;
-  try {
-    meta = JSON.parse(m[1].trim());
-  } catch {
-    /* JSON inválido: lo ignoramos */
+  if (m) {
+    let meta: Meta | null = null;
+    try {
+      meta = JSON.parse(m[1].trim());
+    } catch {
+      /* JSON inválido: lo ignoramos */
+    }
+    return { prosa: texto.slice(0, m.index).trim(), meta };
   }
-  return { prosa: texto.slice(0, m.index).trim(), meta };
+  const abierto = texto.search(/```json/i);
+  if (abierto !== -1) return { prosa: texto.slice(0, abierto).trim(), meta: null };
+  return { prosa: texto.trim(), meta: null };
 }
 
 function escapar(s: string): string {
@@ -92,12 +97,47 @@ export function enlazarCitas(texto: string, fuentes: FuenteMeta[]): string {
   return texto.replace(/\[(\d+)\]/g, (m, n) => {
     const f = porN[Number(n)];
     if (!f) return m;
+    const titulo = f.medio ? ' title="' + String(f.medio).replace(/"/g, "&quot;") + '"' : "";
     return (
       '<a class="cita" href="' +
       encodeURI(urlSegura(f.url)) +
-      '" target="_blank" rel="noopener">[' +
+      '"' + titulo + ' target="_blank" rel="noopener">[' +
       n +
       "]</a>"
     );
   });
+}
+
+// Clave canónica de una URL (port de verificador/urls.py): sin esquema, sin
+// www., sin parámetros de tracking, sin barra final ni fragmento.
+const TRACKING = new Set(["fbclid", "gclid", "igshid", "mc_cid", "mc_eid"]);
+
+export function normalizarUrl(u: string | undefined): string {
+  if (!u || !u.trim()) return "";
+  const crudo = u.trim();
+  let p: URL;
+  try {
+    p = new URL(crudo.includes("://") ? crudo : "http://" + crudo);
+  } catch {
+    return crudo.toLowerCase();
+  }
+  let host = p.hostname.toLowerCase();
+  if (host.startsWith("www.")) host = host.slice(4);
+  const ruta = p.pathname.replace(/\/+$/, "");
+  const pares: string[] = [];
+  p.searchParams.forEach((v, k) => {
+    const kl = k.toLowerCase();
+    if (kl.startsWith("utm_") || TRACKING.has(kl)) return;
+    pares.push(encodeURIComponent(k) + "=" + encodeURIComponent(v));
+  });
+  return host + ruta + (pares.length ? "?" + pares.join("&") : "");
+}
+
+export function dominioDe(u: string | undefined): string {
+  try {
+    const host = new URL(u ?? "").hostname.toLowerCase();
+    return host.startsWith("www.") ? host.slice(4) : host;
+  } catch {
+    return "";
+  }
 }

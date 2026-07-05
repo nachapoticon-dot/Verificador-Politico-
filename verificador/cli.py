@@ -117,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
 
 def _responder(agente: Verificador, pregunta: str, country: str | None) -> int:
     def on_step(ev: dict) -> None:
+        if isinstance(ev, dict) and ev.get("tipo") in ("delta", "delta_reset"):
+            return  # los deltas son para la web; el CLI imprime la respuesta entera
         print(f"{_DIM}  {_formatear_paso(ev)}{_RESET}", flush=True)
 
     print(f"\n{_BOLD}Verificador ›{_RESET} {_DIM}(investigando…){_RESET}")
