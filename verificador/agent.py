@@ -22,9 +22,10 @@ from urllib.parse import urlparse
 from openai import OpenAI
 
 from .config import Config, cargar_config
-from .prompts import SYSTEM_PROMPT, instruccion_modo
+from .prompts import PROMPT_REPARACION, SYSTEM_PROMPT, instruccion_modo
 from .search import Lectura, TOOL_SCHEMAS, buscar_web, leer_pagina, ver_video
 from . import fuentes
+from . import veredicto
 
 
 @dataclass
@@ -78,6 +79,22 @@ class Verificador:
             return ver_video(url=args.get("url", ""))
         return Lectura(f"[Herramienta desconocida: {nombre}]", False)
 
+    def _reparar_json(self, prosa: str) -> str | None:
+        """Pide al modelo SOLO el bloque JSON de cierre para una respuesta que
+        llegó sin él (una única llamada; si falla, se degrada sin meta)."""
+        try:
+            resp = self._client.chat.completions.create(
+                model=self.config.model,
+                messages=[
+                    {"role": "system", "content": PROMPT_REPARACION},
+                    {"role": "user", "content": prosa},
+                ],
+                temperature=0.0,
+            )
+            return resp.choices[0].message.content or None
+        except Exception:  # noqa: BLE001 — la reparación jamás rompe la respuesta
+            return None
+
     def preguntar(
         self,
         pregunta: str,
@@ -99,6 +116,7 @@ class Verificador:
         """
         messages = self._system_messages(country, largo, detalle)
         messages.append({"role": "user", "content": pregunta})
+        extractos: dict[str, str] = {}
 
         pasos = 4 if rigor == "rapido" else self.max_pasos
         for _ in range(pasos):
@@ -126,16 +144,18 @@ class Verificador:
                 ]
             messages.append(assistant)
 
-            # Sin llamadas a herramientas → es la respuesta final.
+            # Sin llamadas a herramientas → es la respuesta final. Se valida y
+            # enriquece el meta (citas, registro, extractos, confianza) antes
+            # de devolverla; nada de esto puede romper la respuesta.
             if not msg.tool_calls:
-                final = msg.content or ""
-                # Propone para revisión las fuentes citadas cuyo dominio no esté
-                # en el registro curado. Nunca debe romper la respuesta.
+                procesado = veredicto.procesar(
+                    msg.content or "", extractos=extractos, reparar=self._reparar_json
+                )
                 try:
-                    fuentes.capturar_propuestas(fuentes.extraer_meta(final))
+                    fuentes.capturar_propuestas(procesado.meta)
                 except Exception:  # noqa: BLE001
                     pass
-                return final
+                return procesado.texto
 
             # Ejecutar cada herramienta y devolver su resultado al modelo.
             for tc in msg.tool_calls:
@@ -148,13 +168,16 @@ class Verificador:
                     on_step(ev)
                 lectura = self._ejecutar_tool(tc.function.name, args,
                                               country=country, rigor=rigor)
+                con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
+                if con_extracto and ev["url"]:
+                    extractos[ev["url"]] = lectura.texto[:1500]
                 if on_step:
                     fin = {"id": ev["id"], "tipo": ev["tipo"],
                            "estado": "ok" if lectura.ok else "fallo",
                            "titulo": ev["titulo"], "url": ev["url"], "dominio": ev["dominio"]}
                     # Solo en éxito guardamos el extracto: el texto de error
                     # nunca debe llegar al visor "ver de dónde salió".
-                    if ev["tipo"] in ("pagina", "video") and lectura.ok:
+                    if con_extracto:
                         fin["extracto"] = lectura.texto[:1500]
                     on_step(fin)
                 messages.append(
