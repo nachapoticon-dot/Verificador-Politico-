@@ -5,6 +5,10 @@ import pytest
 from verificador import search
 
 
+def setup_function(_f):
+    search._cache.clear()
+
+
 def _chromium_disponible() -> bool:
     """Sonda barata: ¿podemos importar Playwright y lanzar Chromium?"""
     try:
