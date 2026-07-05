@@ -181,3 +181,17 @@ def test_fuentes_deshonestas_no_suman_y_penalizan():
         {"n": 2, "coincide": True, "credibilidad": "alta", "manipulacion": "enganosa"},
     ]})
     assert con_lastre < limpia
+
+
+def test_sin_tendencia_no_cuenta_como_contraste():
+    """Una fuente sin tendencia no es "otra tendencia": no dispara el bono."""
+    base = {"coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"}
+    sin_tendencia = calcular_confianza({"fuentes": [
+        {"n": 1, "tendencia": "verificador", **base},
+        {"n": 2, **base},
+    ]})
+    dos_reales = calcular_confianza({"fuentes": [
+        {"n": 1, "tendencia": "verificador", **base},
+        {"n": 2, "tendencia": "centro", **base},
+    ]})
+    assert dos_reales > sin_tendencia
