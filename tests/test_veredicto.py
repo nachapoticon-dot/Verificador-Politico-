@@ -1,5 +1,5 @@
 # tests/test_veredicto.py
-from verificador.veredicto import partir, validar_meta
+from verificador.veredicto import partir, validar_meta, marcar_citas
 
 
 def test_partir_separa_prosa_y_meta():
@@ -75,3 +75,23 @@ def test_validar_meta_no_dict_es_none():
     assert validar_meta(None) is None
     assert validar_meta([1]) is None
     assert validar_meta("x") is None
+
+
+def test_marcar_citas_pone_citada_por_fuente():
+    meta = {"fuentes": [{"n": 1}, {"n": 2}, {"n": 3}]}
+    marcar_citas("Según [1] y también [3].", meta)
+    assert [f["citada"] for f in meta["fuentes"]] == [True, False, True]
+
+
+def test_marcar_citas_huerfanas_se_loguean_sin_romper(caplog):
+    import logging
+    meta = {"fuentes": [{"n": 1}]}
+    with caplog.at_level(logging.WARNING, logger="verificador.veredicto"):
+        marcar_citas("Dato [1] y dato [7].", meta)
+    assert "7" in caplog.text
+    assert meta["fuentes"][0]["citada"] is True
+
+
+def test_marcar_citas_sin_fuentes_no_rompe():
+    meta = {"fuentes": []}
+    assert marcar_citas("Texto [1].", meta) == {"fuentes": []}

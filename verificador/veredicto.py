@@ -30,6 +30,7 @@ CREDIBILIDADES = {"alta", "media", "baja", "no_fiable"}
 MANIPULACIONES = {"ninguna", "sesgo", "enganosa", "desinformadora"}
 
 _JSON_RE = re.compile(r"```json\s*([\s\S]*?)```\s*$", re.IGNORECASE)
+_CITA_RE = re.compile(r"\[(\d+)\]")
 
 
 def partir(texto: str) -> tuple[str, dict | None]:
@@ -87,3 +88,15 @@ def validar_meta(meta) -> dict | None:
             fu["tendencia"] = t.lower().strip()
         out["fuentes"].append(fu)
     return out
+
+
+def marcar_citas(prosa: str, meta: dict) -> dict:
+    """Marca cada fuente con ``citada`` y avisa (log) de citas sin fuente."""
+    citadas = {int(n) for n in _CITA_RE.findall(prosa or "")}
+    enumeradas = {f["n"] for f in meta.get("fuentes") or []}
+    huerfanas = citadas - enumeradas
+    if huerfanas:
+        _log.warning("citas sin fuente en el JSON de cierre: %s", sorted(huerfanas))
+    for f in meta.get("fuentes") or []:
+        f["citada"] = f["n"] in citadas
+    return meta
