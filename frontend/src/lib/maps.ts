@@ -31,11 +31,13 @@ const SELLO_POR_EMOJI: Record<string, string> = {
   ℹ: "informativo",
 };
 
-export const CREDIBILIDAD: Record<string, { txt: string; clase: string }> = {
-  alta: { txt: "alta", clase: "b-alta" },
-  media: { txt: "media", clase: "b-media" },
-  baja: { txt: "baja", clase: "b-baja" },
-  no_fiable: { txt: "no fiable", clase: "b-no" },
+// Credibilidad: solo se anuncia lo anómalo (baja / no fiable); lo normal no
+// ensucia la fila.
+export const CREDIBILIDAD: Record<string, { txt: string; clase: string; aviso: boolean }> = {
+  alta: { txt: "alta", clase: "b-alta", aviso: false },
+  media: { txt: "media", clase: "b-media", aviso: false },
+  baja: { txt: "cred. baja", clase: "b-baja", aviso: true },
+  no_fiable: { txt: "no fiable", clase: "b-no", aviso: true },
 };
 
 // Aviso de honestidad por fuente. "ninguna" no pinta nada: el badge solo aparece
@@ -46,14 +48,14 @@ export const MANIPULACION: Record<string, { txt: string; clase: string }> = {
   desinformadora: { txt: "desinforma", clase: "m-desinfo" },
 };
 
-export const TEND_CLASE: Record<string, string> = {
-  izquierda: "t-izq",
-  "centro-izquierda": "t-izq",
-  centro: "t-cen",
-  "centro-derecha": "t-der",
-  derecha: "t-der",
-  verificador: "t-ver",
-  internacional: "t-int",
+export const TEND_ABREV: Record<string, string> = {
+  izquierda: "izq",
+  "centro-izquierda": "c-izq",
+  centro: "centro",
+  "centro-derecha": "c-der",
+  derecha: "der",
+  verificador: "verif.",
+  internacional: "int.",
 };
 
 // Determina el sello: primero por el campo `veredicto` del JSON; si falta, por

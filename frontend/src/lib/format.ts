@@ -107,3 +107,37 @@ export function enlazarCitas(texto: string, fuentes: FuenteMeta[]): string {
     );
   });
 }
+
+// Clave canónica de una URL (port de verificador/urls.py): sin esquema, sin
+// www., sin parámetros de tracking, sin barra final ni fragmento.
+const TRACKING = new Set(["fbclid", "gclid", "igshid", "mc_cid", "mc_eid"]);
+
+export function normalizarUrl(u: string | undefined): string {
+  if (!u || !u.trim()) return "";
+  const crudo = u.trim();
+  let p: URL;
+  try {
+    p = new URL(crudo.includes("://") ? crudo : "http://" + crudo);
+  } catch {
+    return crudo.toLowerCase();
+  }
+  let host = p.hostname.toLowerCase();
+  if (host.startsWith("www.")) host = host.slice(4);
+  const ruta = p.pathname.replace(/\/+$/, "");
+  const pares: string[] = [];
+  p.searchParams.forEach((v, k) => {
+    const kl = k.toLowerCase();
+    if (kl.startsWith("utm_") || TRACKING.has(kl)) return;
+    pares.push(encodeURIComponent(k) + "=" + encodeURIComponent(v));
+  });
+  return host + ruta + (pares.length ? "?" + pares.join("&") : "");
+}
+
+export function dominioDe(u: string | undefined): string {
+  try {
+    const host = new URL(u ?? "").hostname.toLowerCase();
+    return host.startsWith("www.") ? host.slice(4) : host;
+  } catch {
+    return "";
+  }
+}
