@@ -37,6 +37,24 @@ def test_pregunta_vacia_no_llama_al_agente(monkeypatch):
     assert llamado["v"] is False
 
 
+def test_sse_emite_delta_y_reset(monkeypatch):
+    class _FakeAgente:
+        def preguntar(self, pregunta, *, country=None, rigor="riguroso",
+                      largo="corta", detalle="simple", on_step=None):
+            on_step({"tipo": "delta", "texto": "Hola "})
+            on_step({"tipo": "delta_reset"})
+            on_step({"tipo": "delta", "texto": "Veredicto"})
+            return "Veredicto"
+
+    monkeypatch.setattr(server, "_agente", lambda: _FakeAgente())
+    client = TestClient(server.app)
+    with client.stream("POST", "/api/verificar", json={"pregunta": "x"}) as r:
+        cuerpo = "".join(chunk for chunk in r.iter_text())
+    assert "event: delta" in cuerpo
+    assert "event: delta_reset" in cuerpo
+    assert "event: respuesta" in cuerpo
+
+
 def test_endpoint_valida_largo_detalle_pais_rigor(monkeypatch):
     capturado = {}
 

@@ -95,6 +95,49 @@ class Verificador:
         except Exception:  # noqa: BLE001 — la reparación jamás rompe la respuesta
             return None
 
+    def _completar(self, messages: list[dict],
+                   on_step: Callable[[dict], None] | None = None) -> tuple[str, list[dict]]:
+        """Una vuelta del modelo, en streaming.
+
+        Devuelve ``(content, tool_calls)`` con las tool_calls reconstruidas de
+        los deltas (``[{"id", "name", "arguments"}]``). Mientras la vuelta no
+        pida herramientas, cada fragmento de texto se reenvía por ``on_step``
+        como ``{"tipo": "delta", "texto": ...}``; si a mitad aparecen tools,
+        se emite un único ``{"tipo": "delta_reset"}`` para descartar lo emitido.
+        """
+        stream = self._client.chat.completions.create(
+            model=self.config.model,
+            messages=messages,
+            tools=TOOL_SCHEMAS,
+            tool_choice="auto",
+            temperature=0.2,
+            stream=True,
+        )
+        partes: list[str] = []
+        tcs: dict[int, dict] = {}
+        for chunk in stream:
+            if not getattr(chunk, "choices", None):
+                continue
+            delta = chunk.choices[0].delta
+            texto = getattr(delta, "content", None)
+            if texto:
+                partes.append(texto)
+                if not tcs and on_step:
+                    on_step({"tipo": "delta", "texto": texto})
+            for td in getattr(delta, "tool_calls", None) or []:
+                if not tcs and partes and on_step:
+                    on_step({"tipo": "delta_reset"})
+                hueco = tcs.setdefault(td.index, {"id": "", "name": "", "arguments": ""})
+                if getattr(td, "id", None):
+                    hueco["id"] = td.id
+                fn = getattr(td, "function", None)
+                if fn is not None:
+                    if getattr(fn, "name", None):
+                        hueco["name"] = fn.name
+                    if getattr(fn, "arguments", None):
+                        hueco["arguments"] += fn.arguments
+        return "".join(partes), [tcs[i] for i in sorted(tcs)]
+
     def preguntar(
         self,
         pregunta: str,
@@ -120,36 +163,26 @@ class Verificador:
 
         pasos = 4 if rigor == "rapido" else self.max_pasos
         for _ in range(pasos):
-            resp = self._client.chat.completions.create(
-                model=self.config.model,
-                messages=messages,
-                tools=TOOL_SCHEMAS,
-                tool_choice="auto",
-                temperature=0.2,
-            )
-            msg = resp.choices[0].message
+            content, tool_calls = self._completar(messages, on_step)
 
-            assistant: dict = {"role": "assistant", "content": msg.content or ""}
-            if msg.tool_calls:
+            assistant: dict = {"role": "assistant", "content": content}
+            if tool_calls:
                 assistant["tool_calls"] = [
                     {
-                        "id": tc.id,
+                        "id": t["id"],
                         "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
+                        "function": {"name": t["name"], "arguments": t["arguments"]},
                     }
-                    for tc in msg.tool_calls
+                    for t in tool_calls
                 ]
             messages.append(assistant)
 
             # Sin llamadas a herramientas → es la respuesta final. Se valida y
             # enriquece el meta (citas, registro, extractos, confianza) antes
             # de devolverla; nada de esto puede romper la respuesta.
-            if not msg.tool_calls:
+            if not tool_calls:
                 procesado = veredicto.procesar(
-                    msg.content or "", extractos=extractos, reparar=self._reparar_json
+                    content, extractos=extractos, reparar=self._reparar_json
                 )
                 try:
                     fuentes.capturar_propuestas(procesado.meta)
@@ -158,15 +191,15 @@ class Verificador:
                 return procesado.texto
 
             # Ejecutar cada herramienta y devolver su resultado al modelo.
-            for tc in msg.tool_calls:
+            for t in tool_calls:
                 try:
-                    args = json.loads(tc.function.arguments or "{}")
+                    args = json.loads(t["arguments"] or "{}")
                 except json.JSONDecodeError:
                     args = {}
-                ev = _evento_inicio(tc.id, tc.function.name, args)
+                ev = _evento_inicio(t["id"], t["name"], args)
                 if on_step:
                     on_step(ev)
-                lectura = self._ejecutar_tool(tc.function.name, args,
+                lectura = self._ejecutar_tool(t["name"], args,
                                               country=country, rigor=rigor)
                 con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
                 if con_extracto and ev["url"]:
@@ -181,7 +214,7 @@ class Verificador:
                         fin["extracto"] = lectura.texto[:1500]
                     on_step(fin)
                 messages.append(
-                    {"role": "tool", "tool_call_id": tc.id, "content": lectura.texto}
+                    {"role": "tool", "tool_call_id": t["id"], "content": lectura.texto}
                 )
 
         return (

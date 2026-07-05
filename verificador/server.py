@@ -50,6 +50,16 @@ def _sse(evento: str, dato) -> str:
     return f"event: {evento}\ndata: {json.dumps(dato, ensure_ascii=False)}\n\n"
 
 
+def _evento_cola(ev: dict) -> tuple[str, dict]:
+    """Mapea un evento de on_step a su evento SSE (delta, delta_reset o traza)."""
+    tipo = ev.get("tipo")
+    if tipo == "delta":
+        return "delta", {"texto": ev.get("texto", "")}
+    if tipo == "delta_reset":
+        return "delta_reset", {}
+    return "traza", ev
+
+
 @app.get("/")
 def index():
     idx = DIST_DIR / "index.html"
@@ -96,7 +106,7 @@ async def verificar(request: Request) -> StreamingResponse:
                     rigor=rigor,
                     largo=largo,
                     detalle=detalle,
-                    on_step=lambda ev: cola.put(("traza", ev)),
+                    on_step=lambda ev: cola.put(_evento_cola(ev)),
                 )
                 cola.put(("respuesta", {"texto": final}))
             except Exception as e:  # noqa: BLE001

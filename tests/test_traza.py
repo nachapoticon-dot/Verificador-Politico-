@@ -2,18 +2,7 @@ from verificador import agent as agentmod
 from verificador.agent import Verificador, _dominio
 from verificador.search import Lectura
 
-
-class _FakeMsg:
-    def __init__(self, content, tool_calls=None):
-        self.content = content
-        self.tool_calls = tool_calls
-
-
-class _FakeTC:
-    def __init__(self, _id, name, args):
-        self.id = _id
-        self.type = "function"
-        self.function = type("F", (), {"name": name, "arguments": args})()
+from tests.helpers import stream_de
 
 
 def test_dominio():
@@ -25,26 +14,19 @@ def test_on_step_estructurado(monkeypatch):
     from verificador.config import Config
     a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
 
-    # Primera respuesta: pide leer_pagina; segunda: responde sin tools.
-    respuestas = [
-        _FakeMsg("", [_FakeTC("t1", "leer_pagina", '{"url": "https://www.elpais.com/n"}')]),
-        _FakeMsg("Veredicto final"),
+    flujos = [
+        stream_de(tool_calls=[("t1", "leer_pagina", '{"url": "https://www.elpais.com/n"}')]),
+        stream_de(content="Veredicto final"),
     ]
-
-    class _Choices:
-        def __init__(self, m): self.choices = [type("C", (), {"message": m})()]
-
-    it = iter(respuestas)
-    monkeypatch.setattr(
-        a._client.chat.completions, "create", lambda **k: _Choices(next(it))
-    )
+    it = iter(flujos)
+    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: next(it))
     monkeypatch.setattr(agentmod, "leer_pagina", lambda url, **k: Lectura("EXTRACTO LEGIBLE", True))
 
     eventos = []
     a.preguntar("¿es verdad X?", on_step=eventos.append)
 
-    leyendo = [e for e in eventos if e["estado"] == "leyendo"]
-    ok = [e for e in eventos if e["estado"] == "ok"]
+    leyendo = [e for e in eventos if e.get("estado") == "leyendo"]
+    ok = [e for e in eventos if e.get("estado") == "ok"]
     assert leyendo and leyendo[0]["tipo"] == "pagina"
     assert leyendo[0]["dominio"] == "elpais.com"
     assert ok and ok[0]["extracto"] == "EXTRACTO LEGIBLE"
@@ -55,19 +37,12 @@ def test_on_step_fallo(monkeypatch):
     from verificador.config import Config
     a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
 
-    # Primera respuesta: pide leer_pagina; segunda: responde sin tools.
-    respuestas = [
-        _FakeMsg("", [_FakeTC("t1", "leer_pagina", '{"url": "https://www.elpais.com/n"}')]),
-        _FakeMsg("Veredicto final"),
+    flujos = [
+        stream_de(tool_calls=[("t1", "leer_pagina", '{"url": "https://www.elpais.com/n"}')]),
+        stream_de(content="Veredicto final"),
     ]
-
-    class _Choices:
-        def __init__(self, m): self.choices = [type("C", (), {"message": m})()]
-
-    it = iter(respuestas)
-    monkeypatch.setattr(
-        a._client.chat.completions, "create", lambda **k: _Choices(next(it))
-    )
+    it = iter(flujos)
+    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: next(it))
     monkeypatch.setattr(
         agentmod, "leer_pagina",
         lambda url, **k: Lectura(
@@ -78,8 +53,8 @@ def test_on_step_fallo(monkeypatch):
     eventos = []
     a.preguntar("¿es verdad X?", on_step=eventos.append)
 
-    leyendo = [e for e in eventos if e["estado"] == "leyendo"]
-    fallo = [e for e in eventos if e["estado"] == "fallo"]
+    leyendo = [e for e in eventos if e.get("estado") == "leyendo"]
+    fallo = [e for e in eventos if e.get("estado") == "fallo"]
     assert leyendo and leyendo[0]["tipo"] == "pagina"
     assert fallo and fallo[0]["id"] == leyendo[0]["id"]
     # En fallo NUNCA se emite extracto (no debe llegar al visor de evidencias).
@@ -90,32 +65,25 @@ def test_on_step_ver_video_no_youtube_es_fallo(monkeypatch):
     from verificador.config import Config
     a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
 
-    respuestas = [
-        _FakeMsg("", [_FakeTC("v1", "ver_video", '{"url": "https://www.tiktok.com/@x/video/1"}')]),
-        _FakeMsg("Veredicto final"),
+    flujos = [
+        stream_de(tool_calls=[("v1", "ver_video", '{"url": "https://www.tiktok.com/@x/video/1"}')]),
+        stream_de(content="Veredicto final"),
     ]
-
-    class _Choices:
-        def __init__(self, m): self.choices = [type("C", (), {"message": m})()]
-
-    it = iter(respuestas)
-    monkeypatch.setattr(
-        a._client.chat.completions, "create", lambda **k: _Choices(next(it))
-    )
+    it = iter(flujos)
+    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: next(it))
     # No mockeamos ver_video: el caso real no-YouTube debe dar ok=False.
 
     eventos = []
     a.preguntar("¿es verdad X?", on_step=eventos.append)
 
-    leyendo = [e for e in eventos if e["estado"] == "leyendo"]
-    fallo = [e for e in eventos if e["estado"] == "fallo"]
+    leyendo = [e for e in eventos if e.get("estado") == "leyendo"]
+    fallo = [e for e in eventos if e.get("estado") == "fallo"]
     assert leyendo and leyendo[0]["tipo"] == "video"
     assert fallo and fallo[0]["id"] == leyendo[0]["id"]
     assert "extracto" not in fallo[0]
 
 
 def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
-    from types import SimpleNamespace
     import verificador.agent as agentmod
     import verificador.fuentes as fuentes
 
@@ -126,10 +94,8 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
     final = ('Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":'
              '[{"n":1,"medio":"Raro","url":"https://diario-raro-xyz.tld/n",'
              '"credibilidad":"media","tendencia":"centro"}]}\n```')
-    fake = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
-    )
-    monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
+    monkeypatch.setattr(ver._client.chat.completions, "create",
+                        lambda **k: stream_de(content=final))
 
     out = ver.preguntar("¿algo?")
     assert out.startswith("Respuesta [1].")
@@ -139,7 +105,6 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
 
 
 def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
-    from types import SimpleNamespace
     import verificador.agent as agentmod
 
     ver = agentmod.Verificador()
@@ -148,9 +113,7 @@ def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
 
     def fake_create(**k):
         capturado["messages"] = k["messages"]
-        return SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
-        )
+        return stream_de(content=final)
 
     monkeypatch.setattr(ver._client.chat.completions, "create", fake_create)
 
@@ -173,7 +136,6 @@ def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
 
 def test_cada_consulta_es_independiente(monkeypatch):
     """Sin estado: cada preguntar() arranca de cero, sin arrastrar la anterior."""
-    from types import SimpleNamespace
     import verificador.agent as agentmod
 
     ver = agentmod.Verificador()
@@ -182,9 +144,7 @@ def test_cada_consulta_es_independiente(monkeypatch):
 
     def fake_create(**k):
         capturas.append(k["messages"])
-        return SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=final, tool_calls=None))]
-        )
+        return stream_de(content=final)
 
     monkeypatch.setattr(ver._client.chat.completions, "create", fake_create)
 
@@ -206,7 +166,6 @@ def test_cada_consulta_es_independiente(monkeypatch):
 def test_preguntar_enriquece_meta(monkeypatch):
     """El texto devuelto lleva el meta validado: registro curado, extracto
     casado por URL normalizada y confianza recalculada."""
-    from types import SimpleNamespace
     from verificador import veredicto
     from verificador.config import Config
 
@@ -218,26 +177,12 @@ def test_preguntar_enriquece_meta(monkeypatch):
              ' "credibilidad": "baja", "tendencia": "derecha", "coincide": true}]}'
              '\n```')
 
-    class _FakeMsg:
-        def __init__(self, content, tool_calls=None):
-            self.content = content
-            self.tool_calls = tool_calls
-
-    class _FakeTC:
-        def __init__(self, _id, name, args):
-            self.id = _id
-            self.type = "function"
-            self.function = type("F", (), {"name": name, "arguments": args})()
-
-    class _Choices:
-        def __init__(self, m): self.choices = [type("C", (), {"message": m})()]
-
-    respuestas = [
-        _FakeMsg("", [_FakeTC("t1", "leer_pagina", '{"url": "https://www.reuters.com/a"}')]),
-        _FakeMsg(final),
+    flujos = [
+        stream_de(tool_calls=[("t1", "leer_pagina", '{"url": "https://www.reuters.com/a"}')]),
+        stream_de(content=final),
     ]
-    it = iter(respuestas)
-    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: _Choices(next(it)))
+    it = iter(flujos)
+    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: next(it))
     monkeypatch.setattr(agentmod, "leer_pagina", lambda url, **k: Lectura("LO QUE LEYÓ", True))
 
     out = a.preguntar("¿es verdad X?")
