@@ -132,7 +132,8 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
     monkeypatch.setattr(ver._client.chat.completions, "create", lambda **k: fake)
 
     out = ver.preguntar("¿algo?")
-    assert out == final
+    assert out.startswith("Respuesta [1].")
+    assert '"veredicto": "informativo"' in out
     assert ruta.exists()
     assert "diario-raro-xyz.tld" in ruta.read_text(encoding="utf-8")
 
@@ -200,3 +201,49 @@ def test_cada_consulta_es_independiente(monkeypatch):
     # La segunda consulta no contiene rastro de la primera.
     assert all(m.get("content") != "primera" for m in capturas[1])
     assert any(m.get("content") == "segunda" for m in capturas[1])
+
+
+def test_preguntar_enriquece_meta(monkeypatch):
+    """El texto devuelto lleva el meta validado: registro curado, extracto
+    casado por URL normalizada y confianza recalculada."""
+    from types import SimpleNamespace
+    from verificador import veredicto
+    from verificador.config import Config
+
+    a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
+    final = ('Es falso [1].\n\n```json\n'
+             '{"veredicto": "falso", "confianza": 90, "fuentes":'
+             ' [{"n": 1, "medio": "Reuters",'
+             ' "url": "https://reuters.com/a?utm_source=x",'
+             ' "credibilidad": "baja", "tendencia": "derecha", "coincide": true}]}'
+             '\n```')
+
+    class _FakeMsg:
+        def __init__(self, content, tool_calls=None):
+            self.content = content
+            self.tool_calls = tool_calls
+
+    class _FakeTC:
+        def __init__(self, _id, name, args):
+            self.id = _id
+            self.type = "function"
+            self.function = type("F", (), {"name": name, "arguments": args})()
+
+    class _Choices:
+        def __init__(self, m): self.choices = [type("C", (), {"message": m})()]
+
+    respuestas = [
+        _FakeMsg("", [_FakeTC("t1", "leer_pagina", '{"url": "https://www.reuters.com/a"}')]),
+        _FakeMsg(final),
+    ]
+    it = iter(respuestas)
+    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: _Choices(next(it)))
+    monkeypatch.setattr(agentmod, "leer_pagina", lambda url, **k: Lectura("LO QUE LEYÓ", True))
+
+    out = a.preguntar("¿es verdad X?")
+    _, meta = veredicto.partir(out)
+    f = meta["fuentes"][0]
+    assert f["credibilidad"] == "alta"         # registro curado manda
+    assert f["extracto"] == "LO QUE LEYÓ"      # www./utm no impiden el casado
+    assert meta["confianza_modelo"] == 90
+    assert 40 <= meta["confianza"] <= 55        # recalculada: 1 fuente alta

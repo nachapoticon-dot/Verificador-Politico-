@@ -263,3 +263,26 @@ def instruccion_modo(largo: str, detalle: str) -> str:
     l = _MODO_LARGO.get(largo, _MODO_LARGO["corta"])
     d = _MODO_DETALLE.get(detalle, _MODO_DETALLE["simple"])
     return f"[Modo de respuesta] {l} {d}"
+
+
+# Se usa cuando una respuesta llegó sin su bloque JSON de cierre: se pide SOLO
+# el bloque, deducido de la propia respuesta (una única llamada de reparación).
+PROMPT_REPARACION = """\
+La siguiente respuesta de un verificador de hechos llegó sin su bloque JSON de
+cierre. Emite SOLO ese bloque (```json ... ```), sin prosa alguna, deducido de
+la propia respuesta, con esta estructura exacta:
+
+```json
+{
+  "veredicto": "verdadero|falso|enganoso|fuera_de_contexto|prediccion|sin_evidencia|informativo|no_verificable",
+  "confianza": 0,
+  "resumen": "una sola frase con la conclusión",
+  "pais": "código ISO o nombre del país",
+  "fuentes": [
+    {"n": 1, "medio": "nombre", "tendencia": "izquierda|centro-izquierda|centro|centro-derecha|derecha|verificador|internacional", "credibilidad": "alta|media|baja|no_fiable", "manipulacion": "ninguna|sesgo|enganosa|desinformadora", "url": "https://...", "coincide": true}
+  ]
+}
+```
+
+Cada [n] citado en la respuesta debe tener su fuente con ese n. Si un campo no
+se puede deducir, usa el valor más conservador."""
