@@ -32,7 +32,7 @@ export function Sources({
   fuentes: FuenteMeta[];
   extractos: Record<string, string>;
 }) {
-  const [abiertas, setAbiertas] = useState<Set<number>>(new Set());
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
   if (!fuentes.length) return null;
 
   const porUrl: Record<string, string> = {};
@@ -43,11 +43,11 @@ export function Sources({
     (a, b) => Number(b.citada !== false) - Number(a.citada !== false),
   );
 
-  const alternar = (n: number) =>
+  const alternar = (clave: string) =>
     setAbiertas((prev) => {
       const s = new Set(prev);
-      if (s.has(n)) s.delete(n);
-      else s.add(n);
+      if (s.has(clave)) s.delete(clave);
+      else s.add(clave);
       return s;
     });
 
@@ -56,7 +56,7 @@ export function Sources({
       <div className="fuentes-cab">fuentes contrastadas · {fuentes.length}</div>
       <ul className="fuentes-lista">
         {orden.map((f, idx) => {
-          const clave = f.n ?? idx;
+          const clave = (f.n ?? idx) + "-" + idx;
           const dominio = dominioDe(f.url);
           const extracto = f.extracto ?? (f.url ? porUrl[normalizarUrl(f.url)] : undefined);
           const abierta = abiertas.has(clave);
