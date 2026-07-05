@@ -118,7 +118,7 @@ def ver_video(url: str, max_chars: int = 6000) -> Lectura:
     Devuelve ``Lectura(texto, ok)``: ``ok`` es False si no hay transcripción
     accesible (no es YouTube, o no la hay). Solo los éxitos se cachean.
     """
-    clave = normalizar_url(url)
+    clave = "video:" + normalizar_url(url)
     cacheada = _cache_get(clave)
     if cacheada is not None:
         return cacheada
@@ -350,7 +350,7 @@ def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
     extraer texto (el aviso no debe llegar al visor de evidencias). Solo los
     éxitos se cachean.
     """
-    clave = normalizar_url(url)
+    clave = "pagina:" + normalizar_url(url)
     cacheada = _cache_get(clave)
     if cacheada is not None:
         return cacheada

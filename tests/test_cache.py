@@ -85,3 +85,15 @@ def test_buscar_web_agota_reintentos_y_devuelve_error(monkeypatch):
     monkeypatch.setattr(search.time, "sleep", lambda s: None)
     res = buscar_web("x")
     assert "error" in res[0]
+
+
+def test_pagina_y_video_no_comparten_cache(monkeypatch):
+    """La misma URL cacheada por leer_pagina no contamina a ver_video."""
+    monkeypatch.setattr(search, "_leer_rapido", lambda url: "TEXTO DE PAGINA")
+    monkeypatch.setattr(search, "_leer_navegador", lambda url, **k: None)
+    monkeypatch.setattr(search, "_fetch_transcripcion", lambda vid: None)
+    url = "https://youtube.com/watch?v=abc123DEF45"
+    pagina = leer_pagina(url)
+    assert pagina.ok and "TEXTO DE PAGINA" in pagina.texto
+    video = search.ver_video(url)  # sin transcripción accesible en tests → fallo
+    assert video.texto != pagina.texto  # nunca la lectura de página como "vídeo"
