@@ -163,3 +163,52 @@ def calcular_confianza(meta: dict) -> int:
     conf = 95.0 * (1.0 - math.exp(-0.7 * peso))
     conf *= max(0.0, 1.0 - penal)
     return int(round(conf))
+
+
+class Procesado(NamedTuple):
+    """Resultado del post-proceso: texto re-serializado, prosa y meta validado."""
+
+    texto: str
+    prosa: str
+    meta: dict | None
+
+
+def reserializar(prosa: str, meta: dict | None) -> str:
+    """Vuelve a unir prosa + bloque ```json (o la prosa sola si no hay meta)."""
+    if meta is None:
+        return prosa
+    bloque = json.dumps(meta, ensure_ascii=False, indent=2)
+    return f"{prosa}\n\n```json\n{bloque}\n```"
+
+
+def procesar(
+    texto: str,
+    extractos: dict[str, str] | None = None,
+    reparar: Callable[[str], str | None] | None = None,
+) -> Procesado:
+    """Pipeline completo: partir → (reparar) → validar → citas → registro →
+    extractos → confianza → re-serializar. Nunca lanza."""
+    prosa, bruto = partir(texto)
+    if bruto is None and reparar is not None:
+        try:
+            arreglo = reparar(prosa)
+        except Exception:  # noqa: BLE001 — la reparación jamás rompe la respuesta
+            arreglo = None
+        if arreglo:
+            _, bruto = partir(arreglo)
+            if bruto is None:
+                # A veces el modelo devuelve el JSON pelado, sin la valla.
+                try:
+                    cand = json.loads(arreglo.strip())
+                    bruto = cand if isinstance(cand, dict) else None
+                except Exception:  # noqa: BLE001
+                    bruto = None
+    meta = validar_meta(bruto)
+    if meta is None:
+        return Procesado(prosa, prosa, None)
+    marcar_citas(prosa, meta)
+    aplicar_registro(meta)
+    adjuntar_extractos(meta, extractos)
+    meta["confianza_modelo"] = meta.get("confianza", 0)
+    meta["confianza"] = calcular_confianza(meta)
+    return Procesado(reserializar(prosa, meta), prosa, meta)
