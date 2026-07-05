@@ -17,7 +17,8 @@ function enlazarCitas(texto, fuentes) {
   return texto.replace(/\[(\d+)\]/g, (m, n) => {
     const f = porN[n];
     if (!f) return m;
-    return '<a class="cita" href="' + encodeURI(urlSegura(f.url)) + '" target="_blank" rel="noopener">[' + n + "]</a>";
+    const titulo = f.medio ? ' title="' + String(f.medio).replace(/"/g, "&quot;") + '"' : "";
+    return '<a class="cita" href="' + encodeURI(urlSegura(f.url)) + '"' + titulo + ' target="_blank" rel="noopener">[' + n + "]</a>";
   });
 }
 
@@ -42,6 +43,13 @@ assert.ok(!js.includes("javascript:"));
 const sinUrl = enlazarCitas("vacío [1]", [{ n: 1 }]);
 assert.ok(sinUrl.includes('href="#"'));
 assert.ok(!sinUrl.includes("undefined"));
+
+// El nombre del medio se expone como title (comillas escapadas), para el hover.
+assert.ok(
+  enlazarCitas("x [1]", [{ n: 1, url: "https://a.com", medio: 'El "País"' }]).includes(
+    'title="El &quot;País&quot;"',
+  ),
+);
 
 // partirRespuesta — copia de frontend/src/lib/format.ts (mantener idéntica).
 function partirRespuesta(texto) {
