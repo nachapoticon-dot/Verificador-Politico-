@@ -100,3 +100,27 @@ def marcar_citas(prosa: str, meta: dict) -> dict:
     for f in meta.get("fuentes") or []:
         f["citada"] = f["n"] in citadas
     return meta
+
+
+def aplicar_registro(meta: dict) -> dict:
+    """Para dominios curados, la etiqueta del registro manda sobre la del modelo."""
+    for f in meta.get("fuentes") or []:
+        ficha = fuentes.clasificar(f.get("url") or "")
+        if ficha is None:
+            continue
+        f["credibilidad"] = ficha.credibilidad
+        f["manipulacion"] = ficha.manipulacion
+        f["tendencia"] = ficha.tendencia
+    return meta
+
+
+def adjuntar_extractos(meta: dict, extractos: dict[str, str] | None) -> dict:
+    """Adjunta a cada fuente el extracto leído en la traza (casado por URL canónica)."""
+    if not extractos:
+        return meta
+    por_url = {normalizar_url(u): x for u, x in extractos.items() if u and x}
+    for f in meta.get("fuentes") or []:
+        x = por_url.get(normalizar_url(f.get("url") or ""))
+        if x:
+            f["extracto"] = x
+    return meta
