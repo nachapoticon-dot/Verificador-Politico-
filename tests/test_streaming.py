@@ -1,4 +1,8 @@
-from verificador.agent import Verificador
+import threading
+
+import pytest
+
+from verificador.agent import ConsultaCancelada, Verificador
 from verificador.config import Config
 
 from tests.helpers import stream_de
@@ -57,3 +61,18 @@ def test_completar_sin_on_step_no_rompe(monkeypatch):
                         lambda **k: stream_de(content="Texto"))
     content, tcs = a._completar([], None)
     assert content == "Texto"
+
+
+def test_preguntar_cancelada_no_llama_al_modelo(monkeypatch):
+    a = _agente()
+    llamado = {"valor": False}
+    monkeypatch.setattr(
+        a._client.chat.completions,
+        "create",
+        lambda **_k: llamado.update(valor=True),
+    )
+    cancel = threading.Event()
+    cancel.set()
+    with pytest.raises(ConsultaCancelada):
+        a.preguntar("consulta", cancel_event=cancel)
+    assert llamado["valor"] is False

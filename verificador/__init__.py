@@ -1,4 +1,4 @@
-"""Verificador Político: agente de IA sin tendencia para hechos de Colombia."""
+"""Faro: agente de verificación política para cualquier país."""
 
 from .agent import Verificador
 

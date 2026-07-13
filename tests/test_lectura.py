@@ -1,4 +1,5 @@
 import threading
+import time
 
 import pytest
 
@@ -119,3 +120,61 @@ def test_buscar_web_anota_cada_resultado(monkeypatch):
     monkeypatch.setattr("ddgs.DDGS", _DDGS)
     res = s.buscar_web("colombia")
     assert "fiabilidad BAJA" in res[0]["fiabilidad"]
+
+
+def test_ddgs_se_serializa_entre_hilos(monkeypatch):
+    estado = {"activas": 0, "maximas": 0}
+    estado_lock = threading.Lock()
+
+    class _DDGS:
+        def __enter__(self): return self
+        def __exit__(self, *_a): return False
+        def text(self, *_a, **_k):
+            with estado_lock:
+                estado["activas"] += 1
+                estado["maximas"] = max(estado["maximas"], estado["activas"])
+            time.sleep(0.03)
+            with estado_lock:
+                estado["activas"] -= 1
+            return []
+
+    monkeypatch.setattr("ddgs.DDGS", _DDGS)
+    hilos = [
+        threading.Thread(target=search._ddgs_texto, args=(f"q{i}", "wt-wt", 2))
+        for i in range(2)
+    ]
+    for hilo in hilos: hilo.start()
+    for hilo in hilos: hilo.join()
+    assert estado["maximas"] == 1
+
+
+def test_url_publica_bloquea_redes_internas_y_credenciales(monkeypatch):
+    def resolver(host, _port):
+        ip = "93.184.216.34" if host == "publica.example" else "10.0.0.8"
+        return [(None, None, None, None, (ip, 0))]
+
+    monkeypatch.setattr(search.socket, "getaddrinfo", resolver)
+    assert search._url_publica("https://publica.example/nota") is True
+    assert search._url_publica("http://interna.example/admin") is False
+    assert search._url_publica("http://localhost:8000") is False
+    assert search._url_publica("file:///etc/passwd") is False
+    assert search._url_publica("https://usuario:clave@publica.example") is False
+
+
+def test_ruta_rapida_valida_cada_redireccion(monkeypatch):
+    import httpx
+
+    llamadas = []
+    monkeypatch.setattr(search, "_url_publica", lambda url: "127.0.0.1" not in url)
+
+    def get(url, **_kwargs):
+        llamadas.append(url)
+        return httpx.Response(
+            302,
+            headers={"location": "http://127.0.0.1:8000/privado"},
+            request=httpx.Request("GET", url),
+        )
+
+    monkeypatch.setattr(search.httpx, "get", get)
+    assert search._leer_rapido("https://publica.example/nota") is None
+    assert llamadas == ["https://publica.example/nota"]

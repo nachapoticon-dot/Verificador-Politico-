@@ -12,6 +12,26 @@ def test_id_youtube_formas():
     assert search._id_youtube("https://elpais.com/algo") is None
 
 
+def test_adaptador_usa_api_fetch_actual(monkeypatch):
+    import youtube_transcript_api
+
+    capturado = {}
+
+    class _Tramo:
+        def __init__(self, text):
+            self.text = text
+
+    class _Api:
+        def fetch(self, video_id, languages):
+            capturado.update(video_id=video_id, languages=languages)
+            return [_Tramo("Hola"), _Tramo("mundo")]
+
+    monkeypatch.setattr(youtube_transcript_api, "YouTubeTranscriptApi", _Api)
+    assert search._fetch_transcripcion("abc123DEF45") == "Hola mundo"
+    assert capturado["video_id"] == "abc123DEF45"
+    assert "es" in capturado["languages"]
+
+
 def test_ver_video_youtube_usa_transcripcion(monkeypatch):
     # Simula la API de transcripción para no depender de la red.
     monkeypatch.setattr(search, "_fetch_transcripcion", lambda vid: "Hola soy un vídeo")

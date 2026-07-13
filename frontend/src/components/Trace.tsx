@@ -1,52 +1,63 @@
-// Traza de investigación en vivo: cada búsqueda/lectura como una tarjeta que pasa
-// de "buscando…/leyendo…" a ✓ o ✗.
-
+import { useEffect, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  FileSearch,
+  FileText,
+  LoaderCircle,
+  Play,
+  Search,
+  X,
+} from "lucide-react";
 import type { TrazaEvento, Turno } from "../lib/types";
 
-const ETIQUETAS: Record<string, string> = {
-  buscando: "buscando…",
-  leyendo: "leyendo…",
-  ok: "✓",
-  fallo: "✗",
-};
+function IconoPaso({ ev }: { ev: TrazaEvento }) {
+  if (ev.tipo === "busqueda") return <Search size={17} aria-hidden="true" />;
+  if (ev.tipo === "video") return <Play size={17} aria-hidden="true" />;
+  return <FileText size={17} aria-hidden="true" />;
+}
 
-function Favicon({ ev }: { ev: TrazaEvento }) {
-  if (ev.dominio) {
-    return (
-      <img
-        className="fav"
-        alt=""
-        src={
-          "https://www.google.com/s2/favicons?domain=" +
-          encodeURIComponent(ev.dominio) +
-          "&sz=32"
-        }
-      />
-    );
-  }
-  const icono = ev.tipo === "busqueda" ? "🔎" : ev.tipo === "video" ? "▶" : "📄";
-  return <span className="fav fav--q">{icono}</span>;
+function EstadoPaso({ ev }: { ev: TrazaEvento }) {
+  if (ev.estado === "ok") return <><Check size={16} aria-hidden="true" /><span className="sr-only">Completado</span></>;
+  if (ev.estado === "fallo") return <><X size={16} aria-hidden="true" /><span className="sr-only">Falló</span></>;
+  return <><LoaderCircle className="giro" size={16} aria-hidden="true" /><span className="sr-only">En curso</span></>;
 }
 
 export function Trace({ turno }: { turno: Turno }) {
-  // Si la respuesta llegó sin ningún paso, la traza no aporta: no se muestra.
-  if (turno.estado !== "investigando" && turno.eventos.length === 0) return null;
+  const investigando = turno.estado === "investigando";
+  const [abierta, setAbierta] = useState(investigando);
+  useEffect(() => {
+    if (!investigando) setAbierta(false);
+  }, [investigando]);
 
-  const cerrada = turno.estado !== "investigando";
+  if (!investigando && turno.eventos.length === 0) return null;
+  const lecturas = turno.eventos.filter((e) => e.tipo !== "busqueda" && e.estado === "ok").length;
+  const busquedas = turno.eventos.filter((e) => e.tipo === "busqueda").length;
+  const fallos = turno.eventos.filter((e) => e.estado === "fallo").length;
 
   return (
-    <div className={"traza" + (cerrada ? " cerrada" : "")}>
-      <div className="traza-cab">
-        <span className="dot" />
-        {cerrada ? "investigación cerrada" : "investigando"}
-      </div>
-      {turno.eventos.map((ev) => (
-        <div key={ev.id} className="fuente-card" data-estado={ev.estado}>
-          <Favicon ev={ev} />
-          <span className="fuente-tit">{ev.titulo || ev.dominio || ""}</span>
-          <span className="fuente-estado">{ETIQUETAS[ev.estado] || ""}</span>
-        </div>
-      ))}
-    </div>
+    <section className={`traza${investigando ? " activa" : ""}`} aria-label="Proceso de investigación">
+      <button className="traza-cab" type="button" onClick={() => setAbierta((v) => !v)} aria-expanded={abierta}>
+        <span className="traza-icono">
+          {investigando ? <LoaderCircle className="giro" size={18} aria-hidden="true" /> : <FileSearch size={18} aria-hidden="true" />}
+        </span>
+        <span className="traza-titulo" role="status" aria-live="polite">
+          <strong>{investigando ? "Investigando fuentes" : "Recorrido de investigación"}</strong>
+          <small>{busquedas} búsquedas · {lecturas} lecturas{fallos ? ` · ${fallos} sin acceso` : ""}</small>
+        </span>
+        <ChevronDown className="traza-chevron" size={18} aria-hidden="true" />
+      </button>
+      {abierta && (
+        <ol className="traza-lista">
+          {turno.eventos.map((ev) => (
+            <li key={ev.id} className="fuente-card" data-estado={ev.estado}>
+              <span className="paso-icono"><IconoPaso ev={ev} /></span>
+              <span className="fuente-tit">{ev.titulo || ev.dominio || "Fuente sin título"}</span>
+              <span className="fuente-estado"><EstadoPaso ev={ev} /></span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }

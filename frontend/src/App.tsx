@@ -1,198 +1,245 @@
 import { useEffect, useRef, useState } from "react";
+import { Globe2, Plus, Send, Square } from "lucide-react";
 import { FaroAvatar, MiniAvatar } from "./components/avatars";
 import { Trace } from "./components/Trace";
 import { Answer } from "./components/Answer";
 import { useVerificador } from "./hooks/useVerificador";
+import { nombrePais } from "./lib/maps";
 import type { Opciones, Turno } from "./lib/types";
 
 interface Preset {
   valor: string;
   texto: string;
-  titulo: string;
-  opciones: Opciones;
+  aria: string;
+  opciones: Omit<Opciones, "pais">;
 }
 
-// Un solo eje de modo: cada preset fija rigor + largo + detalle de la API.
 const PRESETS: Preset[] = [
   {
     valor: "esencial",
     texto: "Esencial",
-    titulo: "Menos fuentes, respuesta en segundos.",
-    opciones: { rigor: "rapido", largo: "corta", detalle: "simple" },
+    aria: "Esencial: investigación rigurosa y respuesta breve",
+    opciones: { rigor: "riguroso", largo: "corta", detalle: "simple" },
   },
   {
     valor: "normal",
     texto: "Normal",
-    titulo: "Contraste completo, un párrafo.",
+    aria: "Normal: investigación rigurosa con contexto breve",
     opciones: { rigor: "riguroso", largo: "normal", detalle: "simple" },
   },
   {
     valor: "afondo",
     texto: "A fondo",
-    titulo: "Contexto, matices y cifras.",
+    aria: "A fondo: investigación rigurosa, cifras y contexto técnico",
     opciones: { rigor: "riguroso", largo: "detallada", detalle: "tecnico" },
   },
 ];
 
-function Masthead() {
+const PAISES = [
+  ["", "País automático"], ["AR", "Argentina"], ["BO", "Bolivia"],
+  ["BR", "Brasil"], ["CL", "Chile"], ["CO", "Colombia"],
+  ["CR", "Costa Rica"], ["EC", "Ecuador"], ["ES", "España"],
+  ["GT", "Guatemala"], ["MX", "México"], ["PE", "Perú"],
+  ["PY", "Paraguay"], ["US", "Estados Unidos"], ["UY", "Uruguay"],
+  ["VE", "Venezuela"], ["GB", "Reino Unido"], ["FR", "Francia"],
+] as const;
+
+function Masthead({ hayTurnos, enCurso, onNuevo }: { hayTurnos: boolean; enCurso: boolean; onNuevo: () => void }) {
   return (
     <header className="masthead">
-      <a
-        className="brand"
-        href="/"
-        aria-label="Faro, inicio"
-        title="Faro — Frente A la Réplica de lo falsO"
-      >
-        <span className="brand-face" aria-hidden="true">
-          <MiniAvatar />
-        </span>
-        <span className="brand-text">
-          <span className="brand-name">Faro</span>
-          <span className="brand-sub">frente a lo falso</span>
-        </span>
-      </a>
+      <div className="masthead-inner">
+        <button className="brand" type="button" onClick={onNuevo} aria-label="Faro, nueva verificación">
+          <span className="brand-face" aria-hidden="true"><MiniAvatar /></span>
+          <span className="brand-text">
+            <span className="brand-name">Faro</span>
+          </span>
+        </button>
+        {hayTurnos && (
+          <button className="nuevo" type="button" onClick={onNuevo} disabled={enCurso}>
+            <Plus size={18} aria-hidden="true" />
+            <span>Nueva verificación</span>
+          </button>
+        )}
+      </div>
     </header>
   );
 }
 
-function Hero() {
+function EmptyState() {
   return (
-    <section className="hero">
-      <figure className="hero-retrato">
-        <span className="retrato-disco" aria-hidden="true" />
+    <section className="inicio" aria-labelledby="inicio-titulo">
+      <figure className="welcome-portrait">
         <FaroAvatar />
       </figure>
-      <div className="hero-copy">
-        <h1 className="hero-title">Cuéntame qué has&nbsp;oído.</h1>
+      <div className="inicio-copy">
+        <span className="eyebrow">Hola, soy Faro</span>
+        <h1 id="inicio-titulo">Cuéntame qué has oído.</h1>
       </div>
     </section>
   );
 }
 
-function TurnoView({ turno }: { turno: Turno }) {
+function TurnoView({
+  turno,
+  indice,
+  onReintentar,
+}: {
+  turno: Turno;
+  indice: number;
+  onReintentar: () => void;
+}) {
+  const preset = PRESETS.find((p) => p.opciones.largo === turno.opciones.largo)?.texto ?? "Normal";
+  const pais = nombrePais(turno.opciones.pais);
   return (
-    <>
-      <div className="msg msg-consulta">
-        <span className="q-mark">Consulta</span>
-        <p>{turno.pregunta}</p>
-      </div>
-      <div className="msg">
-        <Trace turno={turno} />
-        <Answer turno={turno} />
-      </div>
-    </>
+    <article className="turno" aria-labelledby={`consulta-${turno.id}`}>
+      <header className="msg-consulta">
+        <div className="consulta-meta">
+          <span>Consulta {indice + 1}</span>
+          <span>{preset}</span>
+          {pais && <span>{pais}</span>}
+        </div>
+        <h2 id={`consulta-${turno.id}`}>{turno.pregunta}</h2>
+      </header>
+      <Trace turno={turno} />
+      <Answer turno={turno} onReintentar={onReintentar} />
+    </article>
   );
 }
 
 function Composer({
   enCurso,
   preset,
+  pais,
+  texto,
+  setTexto,
   setPreset,
+  setPais,
   onEnviar,
+  onDetener,
 }: {
   enCurso: boolean;
   preset: string;
-  setPreset: (p: string) => void;
-  onEnviar: (texto: string) => void;
+  pais: string;
+  texto: string;
+  setTexto: (texto: string) => void;
+  setPreset: (preset: string) => void;
+  setPais: (pais: string) => void;
+  onEnviar: () => void;
+  onDetener: () => void;
 }) {
-  const [texto, setTexto] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, window.innerHeight * 0.4) + "px";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
   }, [texto]);
 
-  const enviar = () => {
-    const q = texto.trim();
-    if (!q || enCurso) return;
-    onEnviar(q);
-    setTexto("");
-  };
-
   return (
-    <form
-      className="composer"
-      autoComplete="off"
-      onSubmit={(e) => {
-        e.preventDefault();
-        enviar();
-      }}
-    >
-      <div className="composer-inner">
+    <div className="composer-dock">
+      <form className="composer" onSubmit={(e) => { e.preventDefault(); onEnviar(); }}>
         <textarea
           ref={ref}
           rows={1}
           value={texto}
-          placeholder="Dime qué quieres que verifique…"
-          aria-label="Tu pregunta o afirmación"
+          maxLength={4000}
+          placeholder="Escribí una afirmación, una cita o una pregunta política…"
+          aria-label="Afirmación o pregunta política"
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              enviar();
+              onEnviar();
             }
           }}
         />
-        <div className="composer-pie">
-          <div className="seg" role="group" aria-label="Modo de respuesta">
+        <div className="composer-barra">
+          <label className="pais-control">
+            <Globe2 size={17} aria-hidden="true" />
+            <span className="sr-only">País</span>
+            <select value={pais} onChange={(e) => setPais(e.target.value)} disabled={enCurso}>
+              {PAISES.map(([codigo, nombre]) => <option key={codigo || "auto"} value={codigo}>{nombre}</option>)}
+            </select>
+          </label>
+          <div className="seg" role="group" aria-label="Profundidad del análisis">
             {PRESETS.map((p) => (
               <button
                 key={p.valor}
                 type="button"
-                title={p.titulo}
-                className={"seg-opt" + (preset === p.valor ? " is-on" : "")}
+                className={`seg-opt${preset === p.valor ? " is-on" : ""}`}
+                aria-label={p.aria}
                 aria-pressed={preset === p.valor}
+                disabled={enCurso}
                 onClick={() => setPreset(p.valor)}
               >
                 {p.texto}
               </button>
             ))}
           </div>
-          <button className="enviar" type="submit" aria-label="Validar" disabled={enCurso}>
-            <span>Validar</span>
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-              <path
-                d="M5 12h14M13 6l6 6-6 6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+          {enCurso ? (
+            <button className="detener" type="button" onClick={onDetener} aria-label="Detener verificación">
+              <Square size={15} fill="currentColor" aria-hidden="true" />
+            </button>
+          ) : (
+            <button className="enviar" type="submit" disabled={!texto.trim()} aria-label="Verificar">
+              <Send size={17} aria-hidden="true" />
+            </button>
+          )}
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
 
 export default function App() {
-  const { turnos, enCurso, preguntar } = useVerificador();
+  const { turnos, enCurso, preguntar, detener, limpiar } = useVerificador();
   const [preset, setPreset] = useState("normal");
+  const [pais, setPais] = useState("");
+  const [texto, setTexto] = useState("");
   const finRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    finRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [turnos]);
+    if (turnos.length > 0) finRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [turnos.length]);
 
-  const opciones = (PRESETS.find((p) => p.valor === preset) ?? PRESETS[1]).opciones;
+  const enviar = () => {
+    const pregunta = texto.trim();
+    if (!pregunta || enCurso) return;
+    const opcionesBase = (PRESETS.find((p) => p.valor === preset) ?? PRESETS[1]).opciones;
+    preguntar(pregunta, { ...opcionesBase, pais: pais || undefined });
+    setTexto("");
+  };
+
   return (
-    <>
-      <div className="grain" aria-hidden="true" />
-      <Masthead />
-      <main className="hilo">
-        {turnos.length === 0 && <Hero />}
-        {turnos.map((t) => (
-          <TurnoView key={t.id} turno={t} />
-        ))}
+    <div className="app-shell">
+      <a className="skip-link" href="#contenido">Saltar al contenido</a>
+      <Masthead hayTurnos={turnos.length > 0} enCurso={enCurso} onNuevo={limpiar} />
+      <main className="workspace" id="contenido">
+        {turnos.length === 0 ? <EmptyState /> : (
+          <div className="hilo">
+            {turnos.map((turno, i) => (
+              <TurnoView
+                key={turno.id}
+                turno={turno}
+                indice={i}
+                onReintentar={() => preguntar(turno.pregunta, turno.opciones)}
+              />
+            ))}
+          </div>
+        )}
         <div ref={finRef} />
       </main>
-      <Composer enCurso={enCurso} preset={preset} setPreset={setPreset}
-                onEnviar={(q) => preguntar(q, opciones)} />
-    </>
+      <Composer
+        enCurso={enCurso}
+        preset={preset}
+        pais={pais}
+        texto={texto}
+        setTexto={setTexto}
+        setPreset={setPreset}
+        setPais={setPais}
+        onEnviar={enviar}
+        onDetener={detener}
+      />
+    </div>
   );
 }

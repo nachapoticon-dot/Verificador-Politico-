@@ -2,6 +2,20 @@
 from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro, calcular_confianza, Procesado, procesar
 
 
+def _evidencia(n, dominio, **extra):
+    base = {
+        "n": n,
+        "url": f"https://{dominio}/nota-{n}",
+        "citada": True,
+        "extracto": "Texto efectivamente leído",
+        "registro_curado": True,
+        "coincide": True,
+        "credibilidad": "alta",
+        "manipulacion": "ninguna",
+    }
+    return {**base, **extra}
+
+
 def test_partir_separa_prosa_y_meta():
     texto = 'Es falso [1].\n\n```json\n{"veredicto": "falso", "fuentes": []}\n```'
     prosa, meta = partir(texto)
@@ -71,6 +85,15 @@ def test_validar_meta_acota_confianza():
     assert validar_meta({"confianza": -5})["confianza"] == 0
 
 
+def test_validar_meta_no_coacciona_strings_a_booleanos_y_deduplica_n():
+    meta = validar_meta({"fuentes": [
+        {"n": 1, "coincide": "false", "url": "https://a.com"},
+        {"n": 1, "coincide": True, "url": "https://b.com"},
+    ]})
+    assert len(meta["fuentes"]) == 1
+    assert meta["fuentes"][0]["coincide"] is False
+
+
 def test_validar_meta_no_dict_es_none():
     assert validar_meta(None) is None
     assert validar_meta([1]) is None
@@ -133,68 +156,81 @@ def test_adjuntar_extractos_sin_datos_no_rompe():
 def test_confianza_cero_sin_fuentes_que_coincidan():
     assert calcular_confianza({"fuentes": []}) == 0
     assert calcular_confianza({"fuentes": [
-        {"n": 1, "coincide": False, "credibilidad": "alta"},
+        _evidencia(1, "a.com", coincide=False),
     ]}) == 0
 
 
 def test_confianza_una_fuente_alta_es_media():
     c = calcular_confianza({"fuentes": [
-        {"n": 1, "coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"},
+        _evidencia(1, "a.com"),
     ]})
     assert 40 <= c <= 55
 
 
 def test_confianza_contraste_izq_der_sube():
-    base = {"coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"}
     sin_contraste = calcular_confianza({"fuentes": [
-        {"n": 1, "tendencia": "izquierda", **base},
-        {"n": 2, "tendencia": "centro-izquierda", **base},
+        _evidencia(1, "a.com", tendencia="izquierda"),
+        _evidencia(2, "b.com", tendencia="centro-izquierda"),
     ]})
     con_contraste = calcular_confianza({"fuentes": [
-        {"n": 1, "tendencia": "izquierda", **base},
-        {"n": 2, "tendencia": "derecha", **base},
+        _evidencia(1, "a.com", tendencia="izquierda"),
+        _evidencia(2, "b.com", tendencia="derecha"),
     ]})
     assert con_contraste > sin_contraste
 
 
 def test_confianza_tres_buenas_contrastadas_ronda_90_y_nunca_100():
-    base = {"coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"}
     c = calcular_confianza({"fuentes": [
-        {"n": 1, "tendencia": "izquierda", **base},
-        {"n": 2, "tendencia": "derecha", **base},
-        {"n": 3, "tendencia": "verificador", **base},
+        _evidencia(1, "a.com", tendencia="izquierda"),
+        _evidencia(2, "b.com", tendencia="derecha"),
+        _evidencia(3, "c.com", tendencia="verificador"),
     ]})
     assert 85 <= c < 100
 
 
 def test_fuentes_deshonestas_no_suman_y_penalizan():
     solo_desinfo = calcular_confianza({"fuentes": [
-        {"n": 1, "coincide": True, "credibilidad": "alta",
-         "manipulacion": "desinformadora"},
+        _evidencia(1, "a.com", manipulacion="desinformadora"),
     ]})
     assert solo_desinfo == 0
     limpia = calcular_confianza({"fuentes": [
-        {"n": 1, "coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"},
+        _evidencia(1, "a.com"),
     ]})
     con_lastre = calcular_confianza({"fuentes": [
-        {"n": 1, "coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"},
-        {"n": 2, "coincide": True, "credibilidad": "alta", "manipulacion": "enganosa"},
+        _evidencia(1, "a.com"),
+        _evidencia(2, "b.com", manipulacion="enganosa"),
     ]})
     assert con_lastre < limpia
 
 
 def test_sin_tendencia_no_cuenta_como_contraste():
     """Una fuente sin tendencia no es "otra tendencia": no dispara el bono."""
-    base = {"coincide": True, "credibilidad": "alta", "manipulacion": "ninguna"}
     sin_tendencia = calcular_confianza({"fuentes": [
-        {"n": 1, "tendencia": "verificador", **base},
-        {"n": 2, **base},
+        _evidencia(1, "a.com", tendencia="verificador"),
+        _evidencia(2, "b.com"),
     ]})
     dos_reales = calcular_confianza({"fuentes": [
-        {"n": 1, "tendencia": "verificador", **base},
-        {"n": 2, "tendencia": "centro", **base},
+        _evidencia(1, "a.com", tendencia="verificador"),
+        _evidencia(2, "b.com", tendencia="centro"),
     ]})
     assert dos_reales > sin_tendencia
+
+
+def test_confianza_ignora_no_leidas_no_citadas_y_dominios_duplicados():
+    valida = _evidencia(1, "a.com")
+    no_leida = _evidencia(2, "b.com", extracto="")
+    no_citada = _evidencia(3, "c.com", citada=False)
+    duplicada = _evidencia(4, "a.com")
+    assert calcular_confianza({"fuentes": [valida, no_leida, no_citada, duplicada]}) == calcular_confianza({"fuentes": [valida]})
+
+
+def test_evidencia_que_matiza_reduce_solidez():
+    limpia = calcular_confianza({"fuentes": [_evidencia(1, "a.com")]})
+    matizada = calcular_confianza({"fuentes": [
+        _evidencia(1, "a.com"),
+        _evidencia(2, "b.com", coincide=False),
+    ]})
+    assert matizada < limpia
 
 
 def test_procesar_pipeline_completo():
@@ -213,6 +249,7 @@ def test_procesar_pipeline_completo():
     assert f["citada"] is True
     assert p.meta["confianza_modelo"] == 90
     assert p.meta["confianza"] != 90           # recalculada (1 fuente alta ≈ 48)
+    assert p.meta["evidencia"]["leidas"] == 1
     assert p.texto.startswith("Es falso [1].")
     assert '"confianza_modelo": 90' in p.texto
 
@@ -226,12 +263,17 @@ def test_procesar_repara_una_vez_si_falta_el_json():
 
     p = procesar("Solo prosa sin bloque.", reparar=reparar)
     assert llamadas == ["Solo prosa sin bloque."]
-    assert p.meta["veredicto"] == "informativo"
+    assert p.meta["veredicto"] == "sin_evidencia"
 
 
 def test_procesar_acepta_reparacion_con_json_pelado():
     p = procesar("Prosa.", reparar=lambda _: '{"veredicto": "falso", "fuentes": []}')
-    assert p.meta["veredicto"] == "falso"
+    assert p.meta["veredicto"] == "sin_evidencia"
+
+
+def test_no_verificable_no_se_fuerza_a_sin_evidencia():
+    p = procesar('Hola.\n\n```json\n{"veredicto":"no_verificable","fuentes":[]}\n```')
+    assert p.meta["veredicto"] == "no_verificable"
 
 
 def test_procesar_degrada_si_la_reparacion_falla():

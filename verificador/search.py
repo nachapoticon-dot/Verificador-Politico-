@@ -13,10 +13,13 @@ llamarlas para contrastar fuentes de distintas tendencias.
 from __future__ import annotations
 
 import atexit
+import ipaddress
 import queue
+import socket
 import threading
 import time
 from typing import NamedTuple
+from urllib.parse import urljoin, urlparse
 
 import httpx
 import re
@@ -45,6 +48,10 @@ _CACHE_TTL = 900.0   # 15 min
 _CACHE_MAX = 64
 _cache: dict[str, tuple[float, Lectura]] = {}
 _cache_lock = threading.Lock()
+# DDGS usa internamente curl/curl-cffi. En macOS puede abortar el proceso si dos
+# instancias se crean a la vez desde el pool del agente (double free nativo).
+# Solo serializamos la llamada al buscador; las lecturas HTTP siguen en paralelo.
+_ddgs_lock = threading.Lock()
 
 
 def _cache_get(clave: str) -> Lectura | None:
@@ -91,6 +98,35 @@ _YT_RE = re.compile(
 )
 
 
+def _url_publica(url: str) -> bool:
+    """Acepta solo HTTP(S) hacia hosts públicos; bloquea SSRF y credenciales."""
+    try:
+        parsed = urlparse(url)
+    except Exception:  # noqa: BLE001
+        return False
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    if parsed.username or parsed.password:
+        return False
+    host = parsed.hostname.rstrip(".").lower()
+    if host == "localhost" or host.endswith(".localhost"):
+        return False
+    try:
+        direcciones = {info[4][0] for info in socket.getaddrinfo(host, parsed.port)}
+    except (OSError, ValueError):
+        return False
+    if not direcciones:
+        return False
+    for direccion in direcciones:
+        try:
+            ip = ipaddress.ip_address(direccion)
+        except ValueError:
+            return False
+        if not ip.is_global:
+            return False
+    return True
+
+
 def _id_youtube(url: str) -> str | None:
     m = _YT_RE.search(url or "")
     return m.group(1) if m else None
@@ -101,12 +137,22 @@ def _fetch_transcripcion(video_id: str) -> str | None:
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
 
-        tramos = YouTubeTranscriptApi.get_transcript(
-            video_id, languages=["es", "en", "pt", "fr"]
-        )
+        idiomas = ["es", "en", "pt", "fr"]
+        api = YouTubeTranscriptApi()
+        if hasattr(api, "fetch"):
+            tramos = api.fetch(video_id, languages=idiomas)
+        else:  # compatibilidad con youtube-transcript-api < 1.0
+            tramos = YouTubeTranscriptApi.get_transcript(video_id, languages=idiomas)
     except Exception:  # noqa: BLE001 — sin transcripción disponible
         return None
-    texto = " ".join(t.get("text", "") for t in tramos).strip()
+    partes = []
+    for tramo in tramos:
+        texto = getattr(tramo, "text", None)
+        if texto is None and isinstance(tramo, dict):
+            texto = tramo.get("text", "")
+        if texto:
+            partes.append(str(texto))
+    texto = " ".join(partes).strip()
     return texto or None
 
 
@@ -147,8 +193,9 @@ def _ddgs_texto(query: str, region: str, max_resultados: int) -> list[dict]:
     """Llamada cruda a DuckDuckGo. Separada para poder reintentar y testear."""
     from ddgs import DDGS  # import perezoso: acelera el arranque del CLI
 
-    with DDGS() as ddgs:
-        return list(ddgs.text(query, region=region, max_results=max_resultados))
+    with _ddgs_lock:
+        with DDGS() as ddgs:
+            return list(ddgs.text(query, region=region, max_results=max_resultados))
 
 
 def buscar_web(query: str, max_resultados: int = 6, pais: str | None = None) -> list[dict]:
@@ -269,8 +316,17 @@ def _arrancar_navegador() -> "queue.Queue":
 
 def _leer_en_pagina(browser, url: str) -> str | None:
     """Renderiza una url en el navegador y extrae su texto. Corre en el hilo propietario."""
+    if not _url_publica(url):
+        return None
     page = browser.new_page(user_agent=_HEADERS["User-Agent"])
     try:
+        def filtrar(route):
+            if _url_publica(route.request.url):
+                route.continue_()
+            else:
+                route.abort()
+
+        page.route("**/*", filtrar)
         page.goto(url, wait_until="networkidle", timeout=20000)
         html = page.content()
     finally:
@@ -291,7 +347,23 @@ def _leer_rapido(url: str) -> str | None:
     5xx (nunca ante 4xx). None si falla o sale vacío."""
     for intento in range(2):
         try:
-            resp = httpx.get(url, headers=_HEADERS, timeout=8.0, follow_redirects=True)
+            actual = url
+            resp = None
+            for _ in range(6):
+                if not _url_publica(actual):
+                    return None
+                resp = httpx.get(
+                    actual, headers=_HEADERS, timeout=8.0, follow_redirects=False
+                )
+                if resp.is_redirect:
+                    destino = resp.headers.get("location")
+                    if not destino:
+                        return None
+                    actual = urljoin(actual, destino)
+                    continue
+                break
+            if resp is None or resp.is_redirect:
+                return None
             resp.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code < 500 or intento == 1:
@@ -314,6 +386,8 @@ def _leer_navegador(url: str, timeout: float = 30.0) -> str | None:
     Chromium no está disponible (el hilo propietario degrada a None), de modo
     que `_leer_rapido(url) or _leer_navegador(url)` siga respondiendo.
     """
+    if not _url_publica(url):
+        return None
     jobs = _arrancar_navegador()
     result_q: "queue.Queue" = queue.Queue(maxsize=1)
     jobs.put((url, result_q))

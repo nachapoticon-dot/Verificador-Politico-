@@ -1,7 +1,7 @@
 // Maneja el hilo de turnos y el streaming. El motor es sin estado: cada turno es
 // independiente, así que el hook solo acumula turnos en una lista.
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { streamVerificar } from "../lib/sse";
 import type { Opciones, TrazaEvento, Turno } from "../lib/types";
 
@@ -24,10 +24,14 @@ function aplicarTraza(turno: Turno, ev: TrazaEvento): Turno {
 export function useVerificador() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [enCurso, setEnCurso] = useState(false);
+  const controlador = useRef<AbortController | null>(null);
 
   const preguntar = useCallback(async (pregunta: string, opts: Opciones) => {
+    if (controlador.current) return;
     const id = nuevoId();
-    setTurnos((t) => [...t, { id, pregunta, eventos: [], estado: "investigando" }]);
+    const abort = new AbortController();
+    controlador.current = abort;
+    setTurnos((t) => [...t, { id, pregunta, opciones: opts, eventos: [], estado: "investigando" }]);
     setEnCurso(true);
 
     const parchar = (fn: (t: Turno) => Turno) =>
@@ -50,20 +54,30 @@ export function useVerificador() {
         } else if (evento === "error") {
           parchar((t) => ({ ...t, estado: "error", error: dato.mensaje || "Algo salió mal." }));
         }
-      });
+      }, abort.signal);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        parchar((t) => ({ ...t, estado: "cancelado" }));
+        return;
+      }
       parchar((t) => ({
         ...t,
         estado: "error",
         error:
-          "No pude conectar con el verificador. ¿Está el servidor en marcha? (" +
-          (err instanceof Error ? err.message : String(err)) +
-          ")",
+          err instanceof Error && !/load failed|failed to fetch|networkerror/i.test(err.message)
+            ? err.message
+            : "Se interrumpió la conexión antes de terminar la verificación.",
       }));
     } finally {
+      controlador.current = null;
       setEnCurso(false);
     }
   }, []);
 
-  return { turnos, enCurso, preguntar };
+  const detener = useCallback(() => controlador.current?.abort(), []);
+  const limpiar = useCallback(() => {
+    if (!controlador.current) setTurnos([]);
+  }, []);
+
+  return { turnos, enCurso, preguntar, detener, limpiar };
 }
