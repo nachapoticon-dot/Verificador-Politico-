@@ -55,6 +55,20 @@ def test_sse_emite_delta_y_reset(monkeypatch):
     assert "event: respuesta" in cuerpo
 
 
+def test_error_interno_emite_terminal_saneado(monkeypatch):
+    class _FakeAgente:
+        def preguntar(self, *_args, **_kwargs):
+            raise RuntimeError("secreto interno")
+
+    monkeypatch.setattr(server, "_agente", lambda: _FakeAgente())
+    client = TestClient(server.app)
+    with client.stream("POST", "/api/verificar", json={"pregunta": "x"}) as r:
+        cuerpo = "".join(chunk for chunk in r.iter_text())
+    assert "event: error" in cuerpo
+    assert "No se pudo completar" in cuerpo
+    assert "secreto interno" not in cuerpo
+
+
 def test_endpoint_valida_largo_detalle_pais_rigor(monkeypatch):
     capturado = {}
 
@@ -76,3 +90,14 @@ def test_endpoint_valida_largo_detalle_pais_rigor(monkeypatch):
     assert capturado["detalle"] == "tecnico"  # válido → respetado
     assert capturado["country"] == "AR"       # normalizado a mayúsculas
     assert capturado["rigor"] == "rapido"
+
+
+def test_payload_no_objeto_y_pregunta_excesiva_son_422():
+    client = TestClient(server.app)
+    assert client.post("/api/verificar", json=["pregunta"]).status_code == 422
+    assert client.post("/api/verificar", json={"pregunta": "x" * 4001}).status_code == 422
+
+
+def test_pais_invalido_es_422():
+    client = TestClient(server.app)
+    assert client.post("/api/verificar", json={"pregunta": "x", "pais": "Argentina"}).status_code == 422

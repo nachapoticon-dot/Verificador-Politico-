@@ -31,19 +31,30 @@ export interface Meta {
   resumen?: string;
   pais?: string;
   fuentes?: FuenteMeta[];
+  evidencia?: {
+    listadas: number;
+    leidas: number;
+    citadas: number;
+    dominios_independientes: number;
+    respaldan: number;
+    matizan: number;
+    diversidad_editorial: number;
+  };
 }
 
 export interface Opciones {
   rigor: string;
   largo: string;
   detalle: string;
+  pais?: string;
 }
 
 export interface Turno {
   id: string;
   pregunta: string;
+  opciones: Opciones;
   eventos: TrazaEvento[];
-  estado: "investigando" | "respondiendo" | "listo" | "error";
+  estado: "investigando" | "respondiendo" | "listo" | "cancelado" | "error";
   respuesta?: string;
   error?: string;
 }

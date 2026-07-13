@@ -26,6 +26,7 @@ export async function streamVerificar(
   pregunta: string,
   opts: Opciones,
   onEvento: Handler,
+  signal?: AbortSignal,
 ): Promise<void> {
   const resp = await fetch("/api/verificar", {
     method: "POST",
@@ -35,21 +36,26 @@ export async function streamVerificar(
       rigor: opts.rigor,
       largo: opts.largo,
       detalle: opts.detalle,
+      pais: opts.pais || undefined,
     }),
+    signal,
   });
 
   if (!resp.ok || !resp.body) {
-    throw new Error("HTTP " + resp.status);
+    if (resp.status === 422) throw new Error("La consulta no tiene un formato válido.");
+    throw new Error("El servidor respondió con estado " + resp.status + ".");
   }
 
   const lector = resp.body.getReader();
   const dec = new TextDecoder();
   let buffer = "";
+  let terminal = false;
 
   while (true) {
     const { value, done } = await lector.read();
     if (done) break;
     buffer += dec.decode(value, { stream: true });
+    buffer = buffer.replace(/\r\n/g, "\n");
 
     // Los eventos SSE se separan por una línea en blanco.
     let corte: number;
@@ -57,7 +63,12 @@ export async function streamVerificar(
       const bloque = buffer.slice(0, corte);
       buffer = buffer.slice(corte + 2);
       const { evento, dato } = parseSSE(bloque);
+      if (evento === "respuesta" || evento === "error") terminal = true;
       onEvento(evento, dato);
     }
+  }
+
+  if (!terminal) {
+    throw new Error("Se interrumpió la conexión antes de recibir una respuesta final.");
   }
 }

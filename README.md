@@ -1,130 +1,121 @@
-# Verificador Político
+# Faro
 
-Un agente de IA **sin tendencia política** que verifica hechos sobre la
-actualidad política de **cualquier país**. Le haces una pregunta, busca en la
-web, **contrasta medios de distintas tendencias** (derecha, izquierda, centro y
-verificadores independientes) y responde con un veredicto basado en hechos,
-citando siempre sus fuentes.
+Faro es un agente de verificación política sin memoria entre consultas. Busca
+información actual, abre las fuentes, contrasta evidencia y devuelve una
+conclusión con citas y una medida auditable de solidez.
 
-Sirve para preguntas como *"¿es verdad que el candidato X va a privatizar la
-educación?"* o *"¿Milei eliminó el Banco Central?"*: separa lo que alguien
-**dijo** de lo que le **atribuyen**, y explica si algo es siquiera posible
-institucionalmente en ese país.
+Su objetivo es aplicar una metodología neutral y conservadora. No promete
+infalibilidad ni sustituye la lectura directa de las fuentes.
 
-## Qué hace distinto
+## Capacidades
 
-- **No toma partido.** Su única lealtad son los hechos. Nunca insinúa a quién votar.
-- **Cualquier país.** Detecta la jurisdicción de la pregunta y adapta los medios
-  y el análisis institucional a ese país. Puedes fijar uno con `--pais`.
-- **Contrasta tendencias.** Busca cómo cubren el mismo hecho medios de derecha y
-  de izquierda, y prioriza verificadores de la red IFCN (ColombiaCheck,
-  Chequeado, Maldita, PolitiFact, AFP Factual…).
-- **Recuerda la veracidad de cada sitio.** Lleva un registro curado con dos ejes
-  por fuente: su **credibilidad** (qué tan precisa) y su **manipulación** (qué tan
-  honesta: ninguna, sesgo, engañosa, desinformadora). Pondera lo que lee con
-  ambos y nunca sostiene un veredicto sobre una fuente desinformadora.
-- **Va a la fuente primaria.** Para declaraciones busca la cita completa, no el
-  titular, y detecta lo sacado de contexto.
-- **Evalúa lo que "va a pasar".** Explica si una promesa o un miedo de campaña es
-  jurídica y constitucionalmente posible (casi ningún cargo legisla solo).
-- **Etiqueta cada respuesta:** ✅ Verdadero · ❌ Falso · ⚠️ Engañoso ·
-  🔀 Sacado de contexto · 🔮 Predicción / no comprobable · ❓ Sin evidencia.
+- Verificación política para cualquier país, con jurisdicción automática o fija.
+- Búsqueda web y lectura de artículos, páginas dinámicas y vídeos de YouTube.
+- Contraste entre fuentes primarias, verificadores y medios de distintas líneas.
+- Veredictos: verdadero, falso, engañoso, fuera de contexto, predicción y sin evidencia.
+- Confianza calculada solo con fuentes abiertas, citadas y deduplicadas.
+- Registro curado de credibilidad, tendencia y manipulación por dominio.
+- Streaming de la investigación y la respuesta mediante SSE.
+- Protección contra URLs internas, entradas excesivas y consultas concurrentes.
 
-## Cómo funciona
+## Arquitectura
 
-- **Modelo: DeepSeek** (`deepseek-chat`), vía API compatible con OpenAI.
-- **Búsqueda propia:** como DeepSeek no tiene búsqueda web nativa, el agente usa
-  herramientas propias por *function calling* — `buscar_web` (DuckDuckGo, sin
-  API key) y `leer_pagina` (descarga y extrae el texto principal). Verás la
-  traza de investigación en vivo (qué busca, qué lee).
-- **Claves:** reutiliza tu `DEEPSEEK_API_KEY`. La busca en este orden: variable
-  de entorno → `.env` local → `.env.local` del proyecto EdifcIA (son proyectos
-  separados; este solo lee la clave, no toca EdifcIA).
+```text
+React + Vite
+     │  POST /api/verificar
+     ▼
+FastAPI + SSE
+     │
+     ▼
+Agente DeepSeek ──► DuckDuckGo / páginas / vídeos
+     │
+     ▼
+Validación de citas, fuentes y solidez
+```
+
+Cada consulta es independiente. El frontend mantiene el hilo únicamente en
+memoria durante la sesión del navegador; no construye perfiles ni entrena con
+las preguntas del usuario.
 
 ## Instalación
 
-Requiere Python 3.10+.
+Requiere Python 3.10+ y Node.js 22+.
 
 ```bash
-cd verificador-politico
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-# La clave se toma de EdifcIA automáticamente; o ponla tú:
-# export DEEPSEEK_API_KEY=sk-...
+playwright install chromium
+
+cp .env.example .env
+cd frontend
+npm install
+npm run build
+cd ..
 ```
 
-## Uso
+Configura `DEEPSEEK_API_KEY` en `.env` o en el entorno. Por compatibilidad, la
+aplicación también puede leerla desde `EDIFICIA_DIR/.env.local`.
 
-Modo chat:
+## Ejecución
+
+Interfaz web:
+
+```bash
+uvicorn verificador.server:app --reload
+```
+
+Abre `http://127.0.0.1:8000`.
+
+Desarrollo frontend con recarga automática:
+
+```bash
+cd frontend
+npm run dev
+```
+
+CLI interactivo o consulta única:
 
 ```bash
 python main.py
+python main.py --pais AR "¿Milei eliminó el Banco Central?"
 ```
 
-Pregunta única (con país opcional para sesgar la búsqueda):
+En el CLI, `/pais XX` fija el país, `/pais off` lo quita y `/salir` termina la
+sesión.
+
+## Verificación
 
 ```bash
-python main.py --pais AR "¿es verdad que Milei eliminó el Banco Central?"
-python main.py "¿es verdad que el candidato X va a privatizar la educación?"
+.venv/bin/pytest -q
+cd frontend && npm run check
 ```
 
-Cada pregunta es independiente (el agente no guarda memoria entre consultas).
-Dentro del chat: `/pais XX` fija el país por defecto, `/pais off` lo quita,
-`/salir` cierra.
-
-### Interfaz web ("Faro")
-
-Además del CLI hay una interfaz web —**Faro** (Frente A la Réplica de lo falsO),
-un agente de análisis: le das una
-pregunta o una afirmación y devuelve una respuesta factual validada fuente por
-fuente. Transmite la traza de validación en vivo (qué busca, qué lee) y dibuja el
-veredicto, las fuentes contrastadas y un **aviso de honestidad** por fuente. Es
-una app **React + Tailwind + shadcn** (en `frontend/`) que el servidor FastAPI
-sirve ya construida.
-
-```bash
-# 1) construir el frontend (una vez, o tras cambiarlo)
-cd frontend && npm install && npm run build && cd ..
-# 2) levantar el servidor (sirve frontend/dist y la API en /api)
-uvicorn verificador.server:app --reload
-# abre http://127.0.0.1:8000
-```
-
-Para desarrollar el frontend con recarga en caliente: `cd frontend && npm run
-dev` (Vite proxya `/api` al uvicorn del 8000). Eliges el modo desde el propio
-composer (Esencial / Normal / A fondo) y la respuesta llega en streaming:
-primero la traza de validación, luego la prosa palabra a palabra y al final
-el veredicto con su confianza —calculada a partir de las fuentes reales que
-coinciden, no autodeclarada— y la ficha de fuentes contrastadas con su
-extracto.
+`npm run check` ejecuta las pruebas del contrato SSE, lint y build de producción.
 
 ## Estructura
 
-```
-verificador-politico/
-├── main.py                 # punto de entrada del CLI
+```text
+├── main.py                  Entrada del CLI
 ├── verificador/
-│   ├── agent.py            # bucle de tool-calling sobre DeepSeek (sin estado)
-│   ├── search.py           # herramientas buscar_web / leer_pagina / ver_video
-│   ├── prompts.py          # metodología, neutralidad, autenticidad
-│   ├── config.py           # carga de la clave (incl. desde EdifcIA)
-│   ├── fuentes.py          # registro de credibilidad/manipulación por fuente
-│   ├── server.py           # servidor web (FastAPI + SSE), sirve frontend/dist
-│   └── cli.py              # interfaz de terminal
-├── frontend/               # interfaz "Faro" (React + Tailwind + shadcn, Vite)
-│   ├── src/                # componentes, hook de SSE, tema de Faro
-│   └── dist/               # build que sirve el servidor (npm run build)
+│   ├── agent.py             Orquestación del modelo y herramientas
+│   ├── search.py            Búsqueda, lectura web y vídeo
+│   ├── veredicto.py         Contrato, citas y solidez
+│   ├── fuentes.py           Registro de fuentes
+│   ├── prompts.py           Metodología del agente
+│   ├── server.py            API FastAPI y streaming SSE
+│   └── cli.py               Interfaz de terminal
+├── frontend/                Interfaz React + Vite + CSS
+├── tests/                   Pruebas Python y contratos frontend
 ├── requirements.txt
 └── .env.example
 ```
 
-## Límites honestos
+## Límites
 
-- La IA puede equivocarse: úsalo como punto de partida. Por eso **siempre cita
-  fuentes** — verifícalas tú también.
-- Depende de lo que haya en la web (vía DuckDuckGo); si un tema es muy nuevo o
-  nadie lo ha reportado, dirá "sin evidencia suficiente" en lugar de inventar.
-- La clasificación de tendencia de cada medio es orientativa.
-- DeepSeek no tiene búsqueda nativa; la calidad depende de los resultados de
-  DuckDuckGo y de las páginas que se logren leer.
-```
+- La calidad depende de las fuentes disponibles y de que puedan abrirse.
+- Una clasificación editorial por dominio es orientativa, no una garantía sobre
+  cada artículo.
+- Una fuente leída puede contener errores; Faro muestra extractos y enlaces para
+  que la evidencia pueda revisarse.
+- Si no consigue evidencia trazable, degrada la respuesta a `sin_evidencia`.

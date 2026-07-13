@@ -98,8 +98,8 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
                         lambda **k: stream_de(content=final))
 
     out = ver.preguntar("¿algo?")
-    assert out.startswith("Respuesta [1].")
-    assert '"veredicto": "informativo"' in out
+    assert '"veredicto": "sin_evidencia"' in out
+    assert '"veredicto_modelo": "informativo"' in out
     assert ruta.exists()
     assert "diario-raro-xyz.tld" in ruta.read_text(encoding="utf-8")
 

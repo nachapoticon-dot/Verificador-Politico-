@@ -16,6 +16,7 @@ import math
 import re
 from collections.abc import Callable
 from typing import NamedTuple
+from urllib.parse import urlparse
 
 from . import fuentes
 from .urls import normalizar_url
@@ -64,6 +65,7 @@ def validar_meta(meta) -> dict | None:
         if isinstance(val, str) and val.strip():
             out[campo] = val.strip()
     out["fuentes"] = []
+    vistos_n: set[int] = set()
     for f in meta.get("fuentes") or []:
         if not isinstance(f, dict):
             continue
@@ -71,10 +73,21 @@ def validar_meta(meta) -> dict | None:
             n = int(f.get("n"))
         except (TypeError, ValueError):
             continue
-        fu: dict = {"n": n, "coincide": bool(f.get("coincide"))}
+        if n < 1 or n in vistos_n:
+            continue
+        vistos_n.add(n)
+        # Un string como "false" no puede convertirse con bool(): en Python
+        # sería True e inflaría la confianza. Solo aceptamos el booleano JSON.
+        coincide = f.get("coincide")
+        fu: dict = {"n": n, "coincide": coincide if isinstance(coincide, bool) else False}
         url = f.get("url")
-        if isinstance(url, str) and url.startswith(("http://", "https://")):
-            fu["url"] = url
+        if isinstance(url, str):
+            try:
+                parsed = urlparse(url)
+                if parsed.scheme in {"http", "https"} and parsed.hostname:
+                    fu["url"] = url
+            except (TypeError, ValueError):
+                pass
         medio = f.get("medio")
         if isinstance(medio, str) and medio.strip():
             fu["medio"] = medio.strip()
@@ -107,7 +120,9 @@ def aplicar_registro(meta: dict) -> dict:
     for f in meta.get("fuentes") or []:
         ficha = fuentes.clasificar(f.get("url") or "")
         if ficha is None:
+            f["registro_curado"] = False
             continue
+        f["registro_curado"] = True
         f["credibilidad"] = ficha.credibilidad
         f["manipulacion"] = ficha.manipulacion
         f["tendencia"] = ficha.tendencia
@@ -131,6 +146,13 @@ _IZQ = {"izquierda", "centro-izquierda"}
 _DER = {"derecha", "centro-derecha"}
 
 
+def _dominio_fuente(url: str) -> str:
+    try:
+        return (urlparse(url).hostname or "").lower().removeprefix("www.")
+    except (TypeError, ValueError):
+        return ""
+
+
 def calcular_confianza(meta: dict) -> int:
     """Confianza 0-100 calculada de las fuentes reales, no autodeclarada.
 
@@ -141,16 +163,35 @@ def calcular_confianza(meta: dict) -> int:
     """
     peso = 0.0
     penal = 0.0
+    contrapeso = 0.0
     tendencias: set[str] = set()
+    dominios: set[str] = set()
     for f in meta.get("fuentes") or []:
+        # La confianza se deriva del ledger de la consulta: una fuente debe
+        # haber sido abierta (extracto), citada y tener una URL comprobable.
+        url = f.get("url") or ""
+        dominio = _dominio_fuente(url)
+        if not dominio or dominio in dominios or f.get("citada") is not True:
+            continue
+        if not isinstance(f.get("extracto"), str) or not f["extracto"].strip():
+            continue
+        dominios.add(dominio)
+
         manip = (f.get("manipulacion") or "ninguna").lower()
         if manip in ("enganosa", "desinformadora"):
             if f.get("coincide"):
                 penal += 0.15
             continue
+        cred = _PESO_CRED.get((f.get("credibilidad") or "").lower(), 0.25)
+        if f.get("registro_curado") is not True:
+            cred = min(cred, 0.6)
         if not f.get("coincide"):
+            # Evidencia leída que no respalda el fallo reduce su solidez. No la
+            # tratamos como una refutación total porque el contrato actual solo
+            # distingue "respalda" de "matiza".
+            contrapeso += cred * 0.12
             continue
-        peso += _PESO_CRED.get((f.get("credibilidad") or "").lower(), 0.25)
+        peso += cred
         t = (f.get("tendencia") or "").lower()
         if t:
             tendencias.add(t)
@@ -161,8 +202,31 @@ def calcular_confianza(meta: dict) -> int:
     if contraste:
         peso *= 1.25
     conf = 95.0 * (1.0 - math.exp(-0.7 * peso))
-    conf *= max(0.0, 1.0 - penal)
+    conf *= max(0.0, 1.0 - penal - contrapeso)
     return int(round(conf))
+
+
+def resumir_evidencia(meta: dict) -> dict:
+    """Resumen auditable de la evidencia usada por el cálculo de solidez."""
+    fuentes_meta = meta.get("fuentes") or []
+    leidas = [
+        f for f in fuentes_meta
+        if isinstance(f.get("extracto"), str) and f["extracto"].strip()
+    ]
+    citadas = [f for f in leidas if f.get("citada") is True]
+    dominios = {_dominio_fuente(f.get("url") or "") for f in citadas}
+    dominios.discard("")
+    tendencias = {(f.get("tendencia") or "").lower() for f in citadas}
+    tendencias.discard("")
+    return {
+        "listadas": len(fuentes_meta),
+        "leidas": len(leidas),
+        "citadas": len(citadas),
+        "dominios_independientes": len(dominios),
+        "respaldan": sum(1 for f in citadas if f.get("coincide") is True),
+        "matizan": sum(1 for f in citadas if f.get("coincide") is not True),
+        "diversidad_editorial": len(tendencias),
+    }
 
 
 class Procesado(NamedTuple):
@@ -211,4 +275,14 @@ def procesar(
     adjuntar_extractos(meta, extractos)
     meta["confianza_modelo"] = meta.get("confianza", 0)
     meta["confianza"] = calcular_confianza(meta)
+    meta["evidencia"] = resumir_evidencia(meta)
+    if meta.get("veredicto") != "no_verificable" and meta["evidencia"]["leidas"] == 0:
+        meta["veredicto_modelo"] = meta.get("veredicto")
+        meta["veredicto"] = "sin_evidencia"
+        meta["confianza"] = 0
+        meta["resumen"] = "No se reunió evidencia verificable suficiente."
+        prosa = (
+            "No pude abrir y citar evidencia suficiente para sostener una conclusión. "
+            "Prueba reformulando la afirmación con un nombre, fecha o país concreto."
+        )
     return Procesado(reserializar(prosa, meta), prosa, meta)

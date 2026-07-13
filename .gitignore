@@ -1,11 +1,21 @@
 .venv/
 __pycache__/
-*.pyc
-.env
+*.py[cod]
 .pytest_cache/
+.coverage
+htmlcov/
+
+.env
+.env.*
+!.env.example
+*.local
+
+node_modules/
+frontend/dist/
+
 .superpowers/
 verificador/data/propuestas.jsonl
 
-# Frontend (React/Vite)
-node_modules/
-frontend/dist/
+.DS_Store
+.idea/
+.vscode/
