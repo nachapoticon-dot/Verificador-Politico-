@@ -181,7 +181,7 @@ class Verificador:
         *,
         country: str | None = None,
         rigor: str = "riguroso",
-        largo: str = "corta",
+        largo: str = "normal",
         detalle: str = "simple",
         on_step: Callable[[dict], None] | None = None,
         cancel_event: threading.Event | None = None,

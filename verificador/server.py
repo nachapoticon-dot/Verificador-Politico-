@@ -120,7 +120,7 @@ async def verificar(body: VerificarEntrada, request: Request) -> StreamingRespon
     country = body.pais
     rigor = "rapido" if body.rigor == "rapido" else "riguroso"
     largo = body.largo
-    largo = largo if largo in ("corta", "normal", "detallada") else "corta"
+    largo = largo if largo in ("corta", "normal", "detallada") else "normal"
     detalle = body.detalle
     detalle = detalle if detalle in ("simple", "tecnico") else "simple"
 

@@ -258,9 +258,10 @@ def instruccion_modo(largo: str, detalle: str) -> str:
     """Línea de modo que se antepone a cada consulta.
 
     Combina el eje de largo y el de detalle. Tolera valores fuera de
-    vocabulario cayendo al modo predeterminado (corta + simple).
+    vocabulario cayendo al modo predeterminado (normal + simple), el mismo
+    en todas las capas.
     """
-    l = _MODO_LARGO.get(largo, _MODO_LARGO["corta"])
+    l = _MODO_LARGO.get(largo, _MODO_LARGO["normal"])
     d = _MODO_DETALLE.get(detalle, _MODO_DETALLE["simple"])
     return f"[Modo de respuesta] {l} {d}"
 
