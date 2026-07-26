@@ -4,8 +4,9 @@ from verificador.prompts import SYSTEM_PROMPT
 def test_prompt_clasifica_pregunta_y_pondera_credibilidad():
     p = SYSTEM_PROMPT
     pl = p.lower()
-    # veredicto informativo para preguntas sin afirmación:
-    assert "informativo" in p
+    # las preguntas sin afirmación son un TIPO, no un veredicto:
+    assert "pregunta" in p
+    assert "mecanismo" in p
     assert "afirmaci" in pl  # menciona afirmación vs pregunta
     # ponderación por credibilidad y trato de baja/no fiable:
     assert "credibilidad" in pl
@@ -99,3 +100,22 @@ def test_todas_las_capas_comparten_el_mismo_default_de_largo():
     assert por_defecto == "normal"
     assert pydantic == "normal"
     assert instruccion_modo("normal", "simple") == fallback
+
+
+from verificador.prompts import SYSTEM_PROMPT, PROMPT_REPARACION
+
+
+def test_prompt_pide_el_campo_tipo():
+    assert '"tipo"' in SYSTEM_PROMPT
+    assert "afirmacion|pregunta|mecanismo" in SYSTEM_PROMPT
+    assert '"tipo"' in PROMPT_REPARACION
+
+
+def test_informativo_ya_no_es_un_veredicto():
+    """Era un tipo disfrazado de veredicto: por eso no tenía sello."""
+    assert "informativo" not in SYSTEM_PROMPT
+    assert "informativo" not in PROMPT_REPARACION
+
+
+def test_solo_las_afirmaciones_llevan_sello():
+    assert "Solo si `tipo` es `afirmacion`" in SYSTEM_PROMPT
