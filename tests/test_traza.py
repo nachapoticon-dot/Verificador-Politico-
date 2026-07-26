@@ -1,5 +1,3 @@
-import pytest
-
 from verificador import agent as agentmod
 from verificador.agent import Verificador, _dominio
 from verificador.search import Lectura
@@ -85,17 +83,6 @@ def test_on_step_ver_video_no_youtube_es_fallo(monkeypatch):
     assert "extracto" not in fallo[0]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Conocido y esperado entre las tareas 7 y 9. El test da por bueno que "
-        "`informativo` se convierta en `sin_evidencia`, o sea, consagra el bug: "
-        "afirma como correcto que a una pregunta bien respondida se le estampe "
-        "un sello de falta de evidencia. La tarea 9 elimina esa puerta y "
-        "reescribe este test. strict=True a propósito: cuando la 9 lo arregle, "
-        "esto fallará por XPASS y obligará a quitar el marcador."
-    ),
-)
 def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
     import verificador.agent as agentmod
     import verificador.fuentes as fuentes
@@ -111,8 +98,8 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
                         lambda **k: stream_de(content=final))
 
     out = ver.preguntar("¿algo?")
-    assert '"veredicto": "sin_evidencia"' in out
-    assert '"veredicto_modelo": "informativo"' in out
+    assert '"aviso"' in out
+    assert '"sin_abrir"' in out
     assert ruta.exists()
     assert "diario-raro-xyz.tld" in ruta.read_text(encoding="utf-8")
 
