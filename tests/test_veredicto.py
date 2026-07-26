@@ -287,3 +287,26 @@ def test_procesar_degrada_si_la_reparacion_falla():
 def test_procesar_sin_reparador_devuelve_prosa():
     p = procesar("Prosa sin json.")
     assert p == Procesado("Prosa sin json.", "Prosa sin json.", None)
+
+
+def test_aplicar_registro_expone_el_tipo_de_fuente():
+    meta = {"fuentes": [{"n": 1, "url": "https://www.banrep.gov.co/es/el-banco"}]}
+    aplicar_registro(meta)
+    assert meta["fuentes"][0]["tipo_fuente"] == "primaria_oficial"
+
+
+def test_primaria_oficial_no_sufre_el_tope_de_no_curada():
+    """El tope de 0.6 castiga lo no revisado; una institucional no lo necesita.
+
+    Ojo: `_evidencia` pone `registro_curado: True` por defecto, y con eso el
+    tope no se aplica a NADIE y el test pasaría sin probar nada. Hay que
+    forzarlo a False en los dos lados para que la comparación signifique algo.
+    """
+    oficial = _evidencia(1, "banrep.gov.co", registro_curado=False,
+                         tipo_fuente="primaria_oficial")
+    medio = _evidencia(1, "cualquiermedio.com", registro_curado=False,
+                       tipo_fuente="medio")
+    curada = _evidencia(1, "reuters.com", registro_curado=True)
+    assert calcular_confianza({"fuentes": [oficial]}) > calcular_confianza({"fuentes": [medio]})
+    # Y pesa exactamente igual que una curada de credibilidad alta.
+    assert calcular_confianza({"fuentes": [oficial]}) == calcular_confianza({"fuentes": [curada]})
