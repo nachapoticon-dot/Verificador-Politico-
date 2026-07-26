@@ -447,3 +447,17 @@ def test_sin_aviso_cuando_hay_evidencia_abierta():
     p = procesar(texto, extractos={"https://reuters.com/x": "Texto leído de verdad"})
     assert "aviso" not in p.meta
     assert p.meta["solidez"] > 0
+
+
+def test_validar_meta_aguanta_fuentes_que_no_son_lista():
+    """El bloque JSON lo escribe un modelo: `fuentes` puede llegar como
+    número, booleano o texto, e iterar sobre eso lanzaría."""
+    for basura in (42, True, "texto", {"a": 1}, 3.5, None):
+        m = validar_meta({"tipo": "afirmacion", "fuentes": basura})
+        assert m["fuentes"] == []
+
+
+def test_procesar_aguanta_fuentes_que_no_son_lista():
+    """Y el pipeline entero tampoco puede romperse por eso: la prosa sobrevive."""
+    p = procesar('Una respuesta.\n\n```json\n{"tipo": "pregunta", "fuentes": 42}\n```')
+    assert p.prosa == "Una respuesta."
