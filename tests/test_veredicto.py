@@ -1,5 +1,5 @@
 # tests/test_veredicto.py
-from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro, calcular_confianza, Procesado, procesar
+from verificador.veredicto import partir, validar_meta, marcar_citas, adjuntar_extractos, aplicar_registro, calcular_solidez, Procesado, procesar
 
 
 def _evidencia(n, dominio, **extra):
@@ -154,25 +154,25 @@ def test_adjuntar_extractos_sin_datos_no_rompe():
 
 
 def test_confianza_cero_sin_fuentes_que_coincidan():
-    assert calcular_confianza({"fuentes": []}) == 0
-    assert calcular_confianza({"fuentes": [
+    assert calcular_solidez({"tipo": "afirmacion", "fuentes": []}) == 0
+    assert calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", coincide=False),
     ]}) == 0
 
 
 def test_confianza_una_fuente_alta_es_media():
-    c = calcular_confianza({"fuentes": [
+    c = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com"),
     ]})
     assert 40 <= c <= 55
 
 
 def test_confianza_contraste_izq_der_sube():
-    sin_contraste = calcular_confianza({"fuentes": [
+    sin_contraste = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="izquierda"),
         _evidencia(2, "b.com", tendencia="centro-izquierda"),
     ]})
-    con_contraste = calcular_confianza({"fuentes": [
+    con_contraste = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="izquierda"),
         _evidencia(2, "b.com", tendencia="derecha"),
     ]})
@@ -180,7 +180,7 @@ def test_confianza_contraste_izq_der_sube():
 
 
 def test_confianza_tres_buenas_contrastadas_ronda_90_y_nunca_100():
-    c = calcular_confianza({"fuentes": [
+    c = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="izquierda"),
         _evidencia(2, "b.com", tendencia="derecha"),
         _evidencia(3, "c.com", tendencia="verificador"),
@@ -189,14 +189,14 @@ def test_confianza_tres_buenas_contrastadas_ronda_90_y_nunca_100():
 
 
 def test_fuentes_deshonestas_no_suman_y_penalizan():
-    solo_desinfo = calcular_confianza({"fuentes": [
+    solo_desinfo = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", manipulacion="desinformadora"),
     ]})
     assert solo_desinfo == 0
-    limpia = calcular_confianza({"fuentes": [
+    limpia = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com"),
     ]})
-    con_lastre = calcular_confianza({"fuentes": [
+    con_lastre = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com"),
         _evidencia(2, "b.com", manipulacion="enganosa"),
     ]})
@@ -205,11 +205,11 @@ def test_fuentes_deshonestas_no_suman_y_penalizan():
 
 def test_sin_tendencia_no_cuenta_como_contraste():
     """Una fuente sin tendencia no es "otra tendencia": no dispara el bono."""
-    sin_tendencia = calcular_confianza({"fuentes": [
+    sin_tendencia = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="verificador"),
         _evidencia(2, "b.com"),
     ]})
-    dos_reales = calcular_confianza({"fuentes": [
+    dos_reales = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="verificador"),
         _evidencia(2, "b.com", tendencia="centro"),
     ]})
@@ -221,12 +221,12 @@ def test_confianza_ignora_no_leidas_no_citadas_y_dominios_duplicados():
     no_leida = _evidencia(2, "b.com", extracto="")
     no_citada = _evidencia(3, "c.com", citada=False)
     duplicada = _evidencia(4, "a.com")
-    assert calcular_confianza({"fuentes": [valida, no_leida, no_citada, duplicada]}) == calcular_confianza({"fuentes": [valida]})
+    assert calcular_solidez({"tipo": "afirmacion", "fuentes": [valida, no_leida, no_citada, duplicada]}) == calcular_solidez({"tipo": "afirmacion", "fuentes": [valida]})
 
 
 def test_evidencia_que_matiza_reduce_solidez():
-    limpia = calcular_confianza({"fuentes": [_evidencia(1, "a.com")]})
-    matizada = calcular_confianza({"fuentes": [
+    limpia = calcular_solidez({"tipo": "afirmacion", "fuentes": [_evidencia(1, "a.com")]})
+    matizada = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com"),
         _evidencia(2, "b.com", coincide=False),
     ]})
@@ -247,11 +247,11 @@ def test_procesar_pipeline_completo():
     assert f["credibilidad"] == "alta"        # registro curado manda
     assert f["extracto"] == "LO QUE LEYÓ"     # casó por URL normalizada
     assert f["citada"] is True
-    assert p.meta["confianza_modelo"] == 90
-    assert p.meta["confianza"] != 90           # recalculada (1 fuente alta ≈ 48)
+    assert p.meta["solidez_modelo"] == 90
+    assert p.meta["solidez"] != 90             # recalculada (1 fuente alta ≈ 48)
     assert p.meta["evidencia"]["leidas"] == 1
     assert p.texto.startswith("Es falso [1].")
-    assert '"confianza_modelo": 90' in p.texto
+    assert '"solidez_modelo": 90' in p.texto
 
 
 def test_procesar_repara_una_vez_si_falta_el_json():
@@ -302,9 +302,11 @@ def test_primaria_oficial_no_sufre_el_tope_de_no_curada():
     medio = _evidencia(1, "cualquiermedio.com", registro_curado=False,
                        tipo_fuente="medio")
     curada = _evidencia(1, "reuters.com", registro_curado=True)
-    assert calcular_confianza({"fuentes": [oficial]}) > calcular_confianza({"fuentes": [medio]})
+    assert (calcular_solidez({"tipo": "afirmacion", "fuentes": [oficial]})
+            > calcular_solidez({"tipo": "afirmacion", "fuentes": [medio]}))
     # Y pesa exactamente igual que una curada de credibilidad alta.
-    assert calcular_confianza({"fuentes": [oficial]}) == calcular_confianza({"fuentes": [curada]})
+    assert (calcular_solidez({"tipo": "afirmacion", "fuentes": [oficial]})
+            == calcular_solidez({"tipo": "afirmacion", "fuentes": [curada]}))
 
 
 def test_validar_meta_acepta_tipo():
@@ -333,3 +335,47 @@ def test_afirmacion_conserva_su_veredicto():
 def test_informativo_ya_no_es_veredicto_valido():
     m = validar_meta({"tipo": "afirmacion", "veredicto": "informativo", "fuentes": []})
     assert "veredicto" not in m
+
+
+def test_mecanismo_con_una_primaria_oficial_da_solidez_alta():
+    """El criterio de aceptación del diseño: esto ya no puede dar 33."""
+    meta = {"tipo": "mecanismo", "fuentes": [
+        _evidencia(1, "banrep.gov.co", tipo_fuente="primaria_oficial", tendencia="centro"),
+    ]}
+    assert calcular_solidez(meta) >= 75
+
+
+def test_afirmacion_con_una_sola_fuente_no_da_solidez_alta():
+    """En disputa, una sola fuente nunca basta, por buena que sea."""
+    meta = {"tipo": "afirmacion", "fuentes": [
+        _evidencia(1, "banrep.gov.co", tipo_fuente="primaria_oficial"),
+    ]}
+    assert calcular_solidez(meta) < 60
+
+
+def test_mecanismo_solo_con_wikipedia_no_da_solidez_alta():
+    meta = {"tipo": "mecanismo", "fuentes": [
+        _evidencia(1, "wikipedia.org", credibilidad="baja", tipo_fuente="enciclopedia_editable"),
+    ]}
+    assert calcular_solidez(meta) < 50
+
+
+def test_afirmacion_contrastada_sigue_subiendo():
+    meta = {"tipo": "afirmacion", "fuentes": [
+        _evidencia(1, "a.com", tendencia="izquierda"),
+        _evidencia(2, "b.com", tendencia="derecha"),
+        _evidencia(3, "c.com", tendencia="verificador"),
+    ]}
+    assert 85 <= calcular_solidez(meta) < 100
+
+
+def test_solidez_sin_fuentes_es_cero_en_los_tres_tipos():
+    for t in ("afirmacion", "pregunta", "mecanismo"):
+        assert calcular_solidez({"tipo": t, "fuentes": []}) == 0
+
+
+def test_un_muro_no_leido_no_da_solidez():
+    meta = {"tipo": "mecanismo", "fuentes": [
+        _evidencia(1, "banrep.gov.co", tipo_fuente="primaria_oficial", extracto=""),
+    ]}
+    assert calcular_solidez(meta) == 0
