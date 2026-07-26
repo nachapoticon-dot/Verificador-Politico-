@@ -75,7 +75,10 @@ def validar_meta(meta) -> dict | None:
             out[campo] = val.strip()
     out["fuentes"] = []
     vistos_n: set[int] = set()
-    for f in meta.get("fuentes") or []:
+    # El modelo puede mandar `fuentes` como número, booleano o texto. Iterar
+    # sobre eso lanza, y este módulo es el último paso antes del usuario.
+    fuentes_meta = meta.get("fuentes")
+    for f in fuentes_meta if isinstance(fuentes_meta, list) else []:
         if not isinstance(f, dict):
             continue
         try:
