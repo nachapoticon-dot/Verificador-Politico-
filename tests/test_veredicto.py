@@ -268,7 +268,10 @@ def test_procesar_repara_una_vez_si_falta_el_json():
 
 def test_procesar_acepta_reparacion_con_json_pelado():
     p = procesar("Prosa.", reparar=lambda _: '{"veredicto": "falso", "fuentes": []}')
-    assert p.meta["veredicto"] == "sin_evidencia"
+    # El veredicto reparado sobrevive intacto: ya no se sobrescribe con
+    # "sin_evidencia" solo por no haber evidencia leída (esa era la puerta
+    # destructiva que esta tarea elimina).
+    assert p.meta["veredicto"] == "falso"
 
 
 def test_procesar_degrada_si_la_reparacion_falla():
@@ -418,3 +421,29 @@ def test_lo_que_contradice_resta_tambien_en_la_curva_explicativa():
         _evidencia(2, "b.com", coincide=False),
     ]}
     assert calcular_solidez(contradicha) < calcular_solidez(limpia)
+
+
+def test_la_prosa_sobrevive_sin_evidencia_abierta():
+    """Lo que el modelo escribió no se destruye jamás: se anota."""
+    texto = ('El Banco de la República es el banco central [1].\n\n```json\n'
+             '{"tipo": "mecanismo", "confianza": 90, "fuentes": '
+             '[{"n": 1, "url": "https://banrep.gov.co/x", "coincide": true}]}\n```')
+    p = procesar(texto)
+    assert "banco central" in p.prosa
+    assert "reformul" not in p.prosa.lower()
+    assert p.meta["aviso"]["codigo"] == "sin_abrir"
+    assert p.meta["solidez"] == 0
+
+
+def test_aviso_distingue_no_encontrar_de_no_poder_abrir():
+    sin_nada = procesar('Texto.\n\n```json\n{"tipo": "pregunta", "fuentes": []}\n```')
+    assert sin_nada.meta["aviso"]["codigo"] == "nada_encontrado"
+
+
+def test_sin_aviso_cuando_hay_evidencia_abierta():
+    texto = ('Es falso [1].\n\n```json\n'
+             '{"tipo": "afirmacion", "veredicto": "falso", "fuentes": '
+             '[{"n": 1, "url": "https://reuters.com/x", "coincide": true}]}\n```')
+    p = procesar(texto, extractos={"https://reuters.com/x": "Texto leído de verdad"})
+    assert "aviso" not in p.meta
+    assert p.meta["solidez"] > 0

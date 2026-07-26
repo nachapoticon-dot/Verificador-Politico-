@@ -369,13 +369,20 @@ def procesar(
     meta["solidez_modelo"] = meta.pop("confianza", 0)
     meta["solidez"] = calcular_solidez(meta)
     meta["evidencia"] = resumir_evidencia(meta)
-    if meta.get("veredicto") != "no_verificable" and meta["evidencia"]["leidas"] == 0:
-        meta["veredicto_modelo"] = meta.get("veredicto")
-        meta["veredicto"] = "sin_evidencia"
+    # Degradar informando, jamás borrando. La prosa que el modelo escribió ya
+    # viajó al navegador por streaming: sustituirla es borrar una respuesta
+    # delante del usuario. Se anota qué le falta y por qué.
+    if meta["evidencia"]["leidas"] == 0:
+        if meta["evidencia"]["listadas"] == 0:
+            meta["aviso"] = {
+                "codigo": "nada_encontrado",
+                "texto": "No encontré ninguna fuente sobre esto.",
+            }
+        else:
+            meta["aviso"] = {
+                "codigo": "sin_abrir",
+                "texto": ("Encontré fuentes pero no pude abrir ninguna, así que "
+                          "no puedo respaldar esto con lo que dicen por dentro."),
+            }
         meta["solidez"] = 0
-        meta["resumen"] = "No se reunió evidencia verificable suficiente."
-        prosa = (
-            "No pude abrir y citar evidencia suficiente para sostener una conclusión. "
-            "Prueba reformulando la afirmación con un nombre, fecha o país concreto."
-        )
     return Procesado(reserializar(prosa, meta), prosa, meta)
