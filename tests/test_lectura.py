@@ -29,20 +29,7 @@ def _chromium_disponible() -> bool:
 @pytest.mark.skipif(
     not _chromium_disponible(), reason="Playwright/Chromium no disponible en este entorno"
 )
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Roto por el guardia SSRF: _url_publica rechaza file:// (esquema no "
-        "http/s) y también 127.0.0.1 (IP no global), así que _leer_navegador "
-        "devuelve None sin llegar a tocar Playwright. La propiedad que protege "
-        "—la afinidad de hilo, que ya fue un bug caro— lleva sin cobertura "
-        "desde entonces. Se arregla haciendo inyectable el guardia; ver "
-        "docs/superpowers/specs/2026-07-26-faro-siguiente-nivel-design.md. "
-        "strict=True: cuando se arregle, esto fallará por XPASS y hay que "
-        "quitar el marcador."
-    ),
-)
-def test_navegador_reutilizado_entre_hilos(tmp_path):
+def test_navegador_reutilizado_entre_hilos(tmp_path, monkeypatch):
     """Dos hilos distintos leen vía Chromium y ambos obtienen el texto.
 
     Real (no mockeado) y hermético (file://, sin red). Falla con el diseño de
@@ -60,6 +47,7 @@ def test_navegador_reutilizado_entre_hilos(tmp_path):
     url = pagina.as_uri()
 
     resultados: dict[int, str | None] = {}
+    monkeypatch.setattr(search, "_guardia", lambda url: True)
 
     def correr(k: int) -> None:
         resultados[k] = search._leer_navegador(url)
@@ -179,7 +167,7 @@ def test_ruta_rapida_valida_cada_redireccion(monkeypatch):
     import httpx
 
     llamadas = []
-    monkeypatch.setattr(search, "_url_publica", lambda url: "127.0.0.1" not in url)
+    monkeypatch.setattr(search, "_guardia", lambda url: "127.0.0.1" not in url)
 
     def get(url, **_kwargs):
         llamadas.append(url)

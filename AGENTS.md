@@ -19,11 +19,9 @@ carpeta una vez: están rotos. `.venv/bin/python` es un enlace y sí funciona.
 
 ## Estado conocido
 
-`tests/test_lectura.py::test_navegador_reutilizado_entre_hilos` **falla, y es
-preexistente.** Usa una URL `file://` y el guardia SSRF (`search.py:_url_publica`)
-rechaza todo lo que no sea http/s hacia una IP global, así que nunca llega a
-Playwright. No lo arregles debilitando el guardia: hay que hacerlo inyectable.
-Mientras tanto, 104 de 105 en verde es el estado esperado.
+La suite pasa entera. Si `npm install` nunca se corrió en esta máquina,
+`frontend/node_modules` no existe y `npm run check` falla por ahí, no por el
+código.
 
 ## Minas
 
