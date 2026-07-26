@@ -514,7 +514,7 @@ En `verificador/agent.py`, sustituye el cuerpo entero de `_ejecutar_tool` por:
             tope = 4 if rigor == "rapido" else 8
             try:
                 pedido = int(args.get("max_resultados", 6))
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 pedido = 6
             res = buscar_web(
                 query=str(args.get("query", "")),
