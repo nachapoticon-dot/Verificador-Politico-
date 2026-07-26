@@ -178,7 +178,7 @@ def test_cada_consulta_es_independiente(monkeypatch):
 
 def test_preguntar_enriquece_meta(monkeypatch):
     """El texto devuelto lleva el meta validado: registro curado, extracto
-    casado por URL normalizada y confianza recalculada."""
+    casado por URL normalizada y solidez recalculada."""
     from verificador import veredicto
     from verificador.config import Config
 
@@ -212,5 +212,9 @@ def test_preguntar_enriquece_meta(monkeypatch):
     assert f["credibilidad"] == "alta"         # registro curado manda
     assert f["extracto"] == "LO QUE LEYÓ"      # www./utm no impiden el casado
     assert not f["extracto"].startswith("[fuente:")  # sin la anotación interna
-    assert meta["confianza_modelo"] == 90
-    assert 40 <= meta["confianza"] <= 55        # recalculada: 1 fuente alta
+    assert meta["solidez_modelo"] == 90
+    # Recalculada: 1 sola fuente alta (Reuters, curada, sin contraste de
+    # tendencia) da 48 con la curva de afirmación — comprobado ejecutando este
+    # mismo escenario contra `calcular_solidez`. Rango de ±7 para no acoplar
+    # el test a la constante exacta de la fórmula.
+    assert 41 <= meta["solidez"] <= 55
