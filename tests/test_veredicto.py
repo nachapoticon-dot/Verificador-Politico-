@@ -153,21 +153,21 @@ def test_adjuntar_extractos_sin_datos_no_rompe():
     assert "extracto" not in meta["fuentes"][0]
 
 
-def test_confianza_cero_sin_fuentes_que_coincidan():
+def test_solidez_cero_sin_fuentes_que_coincidan():
     assert calcular_solidez({"tipo": "afirmacion", "fuentes": []}) == 0
     assert calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", coincide=False),
     ]}) == 0
 
 
-def test_confianza_una_fuente_alta_es_media():
+def test_solidez_una_fuente_alta_es_media():
     c = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com"),
     ]})
     assert 40 <= c <= 55
 
 
-def test_confianza_contraste_izq_der_sube():
+def test_solidez_contraste_izq_der_sube():
     sin_contraste = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="izquierda"),
         _evidencia(2, "b.com", tendencia="centro-izquierda"),
@@ -179,7 +179,7 @@ def test_confianza_contraste_izq_der_sube():
     assert con_contraste > sin_contraste
 
 
-def test_confianza_tres_buenas_contrastadas_ronda_90_y_nunca_100():
+def test_solidez_tres_buenas_contrastadas_ronda_90_y_nunca_100():
     c = calcular_solidez({"tipo": "afirmacion", "fuentes": [
         _evidencia(1, "a.com", tendencia="izquierda"),
         _evidencia(2, "b.com", tendencia="derecha"),
@@ -216,7 +216,7 @@ def test_sin_tendencia_no_cuenta_como_contraste():
     assert dos_reales > sin_tendencia
 
 
-def test_confianza_ignora_no_leidas_no_citadas_y_dominios_duplicados():
+def test_solidez_ignora_no_leidas_no_citadas_y_dominios_duplicados():
     valida = _evidencia(1, "a.com")
     no_leida = _evidencia(2, "b.com", extracto="")
     no_citada = _evidencia(3, "c.com", citada=False)
@@ -357,7 +357,9 @@ def test_mecanismo_solo_con_wikipedia_no_da_solidez_alta():
     meta = {"tipo": "mecanismo", "fuentes": [
         _evidencia(1, "wikipedia.org", credibilidad="baja", tipo_fuente="enciclopedia_editable"),
     ]}
-    assert calcular_solidez(meta) < 50
+    # El valor real es 18; un margen de 32 puntos (< 50) no detectaría una
+    # regresión que subiera la curva. < 25 sigue dejando holgura sin ser ciego.
+    assert calcular_solidez(meta) < 25
 
 
 def test_afirmacion_contrastada_sigue_subiendo():
@@ -379,3 +381,40 @@ def test_un_muro_no_leido_no_da_solidez():
         _evidencia(1, "banrep.gov.co", tipo_fuente="primaria_oficial", extracto=""),
     ]}
     assert calcular_solidez(meta) == 0
+
+
+def test_calcular_solidez_aguanta_tipos_inesperados():
+    """Los campos vienen de un modelo de lenguaje: pueden ser cualquier cosa.
+
+    veredicto.py es el último paso antes del usuario y no puede lanzar nunca.
+    """
+    basura = [1, None, [], {}, True, 3.5, object()]
+    for valor in basura:
+        for campo in ("credibilidad", "manipulacion", "tendencia", "url",
+                      "extracto", "coincide", "tipo_fuente"):
+            meta = {"tipo": "mecanismo", "fuentes": [_evidencia(1, "a.com", **{campo: valor})]}
+            calcular_solidez(meta)          # no debe lanzar
+    for forma in (["x"], [None], 1, "texto", {"a": 1}, None):
+        calcular_solidez({"tipo": "afirmacion", "fuentes": forma})
+    for m in (None, 1, "x", []):
+        calcular_solidez(m)
+
+
+def test_desinformadoras_no_corroboran_en_la_curva_explicativa():
+    """Contarlas por cabezas llevaba la respuesta al techo del sistema."""
+    sola = {"tipo": "mecanismo", "fuentes": [_evidencia(1, "a.com")]}
+    con_basura = {"tipo": "mecanismo", "fuentes": [
+        _evidencia(1, "a.com"),
+        _evidencia(2, "b.com", manipulacion="desinformadora"),
+        _evidencia(3, "c.com", manipulacion="desinformadora"),
+    ]}
+    assert calcular_solidez(con_basura) == calcular_solidez(sola)
+
+
+def test_lo_que_contradice_resta_tambien_en_la_curva_explicativa():
+    limpia = {"tipo": "mecanismo", "fuentes": [_evidencia(1, "a.com")]}
+    contradicha = {"tipo": "mecanismo", "fuentes": [
+        _evidencia(1, "a.com"),
+        _evidencia(2, "b.com", coincide=False),
+    ]}
+    assert calcular_solidez(contradicha) < calcular_solidez(limpia)
