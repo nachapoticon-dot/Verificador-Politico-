@@ -245,10 +245,20 @@ def test_aplicar_registro_expone_el_tipo_de_fuente():
 
 
 def test_primaria_oficial_no_sufre_el_tope_de_no_curada():
-    """Una institucional pesa como 'alta' entera, no capada a 0.6."""
-    oficial = _evidencia(1, "banrep.gov.co", tipo_fuente="primaria_oficial")
-    medio = _evidencia(1, "elpais.com", tipo_fuente="medio")
-    assert calcular_confianza({"fuentes": [oficial]}) == calcular_confianza({"fuentes": [medio]})
+    """El tope de 0.6 castiga lo no revisado; una institucional no lo necesita.
+
+    Ojo: `_evidencia` pone `registro_curado: True` por defecto, y con eso el
+    tope no se aplica a NADIE y el test pasaría sin probar nada. Hay que
+    forzarlo a False en los dos lados para que la comparación signifique algo.
+    """
+    oficial = _evidencia(1, "banrep.gov.co", registro_curado=False,
+                         tipo_fuente="primaria_oficial")
+    medio = _evidencia(1, "cualquiermedio.com", registro_curado=False,
+                       tipo_fuente="medio")
+    curada = _evidencia(1, "reuters.com", registro_curado=True)
+    assert calcular_confianza({"fuentes": [oficial]}) > calcular_confianza({"fuentes": [medio]})
+    # Y pesa exactamente igual que una curada de credibilidad alta.
+    assert calcular_confianza({"fuentes": [oficial]}) == calcular_confianza({"fuentes": [curada]})
 ```
 
 - [ ] **Paso 2: verificar que fallan**
