@@ -21,8 +21,10 @@ _DEFAULT_EDIFICIA_DIR = Path.home() / "Proyectos" / "EdifcIA"
 
 # DeepSeek es compatible con la API de OpenAI.
 DEFAULT_BASE_URL = "https://api.deepseek.com"
-# Modelo público de DeepSeek que soporta function calling (búsqueda por tools).
-DEFAULT_MODEL = "deepseek-chat"
+# Modelo público de DeepSeek con function calling (búsqueda por tools). Los
+# alias `deepseek-chat` y `deepseek-reasoner` se retiraron el 2026-07-24; hoy
+# la API solo acepta `deepseek-v4-flash` y `deepseek-v4-pro`.
+DEFAULT_MODEL = "deepseek-v4-flash"
 
 
 @dataclass
