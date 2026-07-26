@@ -259,21 +259,16 @@ def test_procesar_repara_una_vez_si_falta_el_json():
 
     def reparar(prosa):
         llamadas.append(prosa)
-        return '```json\n{"veredicto": "informativo", "fuentes": []}\n```'
+        return '```json\n{"tipo": "pregunta", "fuentes": []}\n```'
 
     p = procesar("Solo prosa sin bloque.", reparar=reparar)
     assert llamadas == ["Solo prosa sin bloque."]
-    assert p.meta["veredicto"] == "sin_evidencia"
+    assert p.meta["tipo"] == "pregunta"
 
 
 def test_procesar_acepta_reparacion_con_json_pelado():
     p = procesar("Prosa.", reparar=lambda _: '{"veredicto": "falso", "fuentes": []}')
     assert p.meta["veredicto"] == "sin_evidencia"
-
-
-def test_no_verificable_no_se_fuerza_a_sin_evidencia():
-    p = procesar('Hola.\n\n```json\n{"veredicto":"no_verificable","fuentes":[]}\n```')
-    assert p.meta["veredicto"] == "no_verificable"
 
 
 def test_procesar_degrada_si_la_reparacion_falla():
@@ -310,3 +305,31 @@ def test_primaria_oficial_no_sufre_el_tope_de_no_curada():
     assert calcular_confianza({"fuentes": [oficial]}) > calcular_confianza({"fuentes": [medio]})
     # Y pesa exactamente igual que una curada de credibilidad alta.
     assert calcular_confianza({"fuentes": [oficial]}) == calcular_confianza({"fuentes": [curada]})
+
+
+def test_validar_meta_acepta_tipo():
+    m = validar_meta({"tipo": "mecanismo", "fuentes": []})
+    assert m["tipo"] == "mecanismo"
+    assert "veredicto" not in m
+
+
+def test_tipo_invalido_cae_a_afirmacion():
+    assert validar_meta({"tipo": "cualquier-cosa", "fuentes": []})["tipo"] == "afirmacion"
+    assert validar_meta({"fuentes": []})["tipo"] == "afirmacion"
+
+
+def test_una_pregunta_no_arrastra_veredicto():
+    """Aunque el modelo mande un veredicto en una pregunta, se descarta."""
+    m = validar_meta({"tipo": "pregunta", "veredicto": "verdadero", "fuentes": []})
+    assert m["tipo"] == "pregunta"
+    assert "veredicto" not in m
+
+
+def test_afirmacion_conserva_su_veredicto():
+    m = validar_meta({"tipo": "afirmacion", "veredicto": "falso", "fuentes": []})
+    assert m["veredicto"] == "falso"
+
+
+def test_informativo_ya_no_es_veredicto_valido():
+    m = validar_meta({"tipo": "afirmacion", "veredicto": "informativo", "fuentes": []})
+    assert "veredicto" not in m
