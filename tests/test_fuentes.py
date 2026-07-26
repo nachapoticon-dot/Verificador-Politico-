@@ -110,3 +110,17 @@ def test_capturar_propuestas_meta_vacia_no_rompe(tmp_path):
     ruta = tmp_path / "p.jsonl"
     assert capturar_propuestas(None, ruta) == 0
     assert capturar_propuestas({}, ruta) == 0
+
+
+def test_registro_incluye_fuentes_institucionales():
+    for url in (
+        "https://www.banrep.gov.co/es/el-banco",
+        "https://www.registraduria.gov.co/",
+        "https://www.boe.es/diario_boe/",
+        "https://www.dane.gov.co/",
+        "https://www.ine.es/",
+    ):
+        ficha = clasificar(url)
+        assert ficha is not None, f"{url} debería estar registrada"
+        assert ficha.tipo == "primaria_oficial"
+        assert ficha.credibilidad == "alta"

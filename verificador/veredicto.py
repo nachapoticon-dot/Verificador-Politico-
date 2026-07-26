@@ -126,6 +126,7 @@ def aplicar_registro(meta: dict) -> dict:
         f["credibilidad"] = ficha.credibilidad
         f["manipulacion"] = ficha.manipulacion
         f["tendencia"] = ficha.tendencia
+        f["tipo_fuente"] = ficha.tipo
     return meta
 
 
@@ -183,7 +184,9 @@ def calcular_confianza(meta: dict) -> int:
                 penal += 0.15
             continue
         cred = _PESO_CRED.get((f.get("credibilidad") or "").lower(), 0.25)
-        if f.get("registro_curado") is not True:
+        # El tope castiga a los dominios que nadie ha revisado. Una fuente
+        # primaria oficial no necesita revisión editorial: es la fuente.
+        if f.get("registro_curado") is not True and f.get("tipo_fuente") != "primaria_oficial":
             cred = min(cred, 0.6)
         if not f.get("coincide"):
             # Evidencia leída que no respalda el fallo reduce su solidez. No la
