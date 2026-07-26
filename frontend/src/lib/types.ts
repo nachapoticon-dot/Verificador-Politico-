@@ -19,15 +19,26 @@ export interface FuenteMeta {
   tendencia?: string;
   credibilidad?: string;
   manipulacion?: string;
+  tipo_fuente?: string;
   url?: string;
   coincide?: boolean;
   extracto?: string;
   citada?: boolean;
 }
 
+export type TipoConsulta = "afirmacion" | "pregunta" | "mecanismo";
+
+export interface Aviso {
+  codigo: "nada_encontrado" | "sin_abrir";
+  texto: string;
+}
+
 export interface Meta {
+  tipo?: TipoConsulta;
   veredicto?: string;
-  confianza?: number;
+  solidez?: number;
+  solidez_modelo?: number;
+  aviso?: Aviso;
   resumen?: string;
   pais?: string;
   fuentes?: FuenteMeta[];
