@@ -169,9 +169,16 @@ def _fuentes_utiles(meta: dict) -> list[dict]:
     La solidez se deriva del ledger de la consulta, no de lo que el modelo diga
     de sí mismo. Una fuente que no se abrió no es evidencia.
     """
+    # El contenedor también lo propone el modelo: "fuentes" puede no ser una
+    # lista, o traer elementos que ni siquiera son objetos.
+    fuentes_meta = meta.get("fuentes") if isinstance(meta, dict) else None
+    if not isinstance(fuentes_meta, list):
+        return []
     utiles: list[dict] = []
     dominios: set[str] = set()
-    for f in meta.get("fuentes") or []:
+    for f in fuentes_meta:
+        if not isinstance(f, dict):
+            continue
         url = f.get("url")
         dominio = _dominio_fuente(url) if isinstance(url, str) else ""
         if not dominio or dominio in dominios or f.get("citada") is not True:
@@ -221,6 +228,9 @@ def _solidez_afirmacion(utiles: list[dict]) -> int:
             continue
         cred = _peso_credibilidad(f)
         if not f.get("coincide"):
+            # Evidencia leída que no respalda el fallo reduce su solidez. No la
+            # tratamos como una refutación total porque el contrato actual solo
+            # distingue "respalda" de "matiza".
             contrapeso += cred * 0.12
             continue
         peso += cred
@@ -233,6 +243,7 @@ def _solidez_afirmacion(utiles: list[dict]) -> int:
     )
     if contraste:
         peso *= 1.25
+    # Techo asintótico: ni un aluvión de fuentes llega a 100.
     conf = 95.0 * (1.0 - math.exp(-0.7 * peso))
     conf *= max(0.0, 1.0 - penal - contrapeso)
     return int(round(conf))
@@ -245,18 +256,25 @@ def _solidez_explicativa(utiles: list[dict]) -> int:
     necesita que un medio de izquierda y otro de derecha coincidan en qué hace
     un banco central. Lo que importa es si lo dice quien tiene autoridad.
     """
-    respaldan = [f for f in utiles if f.get("coincide") is not False]
+    # Solo corrobora quien pesa. Contar por cabezas dejaba que dos fuentes
+    # desinformadoras, que pesan cero, llevaran la respuesta al techo.
+    respaldan = [f for f in utiles
+                 if f.get("coincide") is not False and _peso_credibilidad(f) > 0]
     if not respaldan:
         return 0
     mejor = max(_peso_credibilidad(f) for f in respaldan)
-    if any(f.get("tipo_fuente") == "primaria_oficial" and _peso_credibilidad(f) > 0
-           for f in respaldan):
+    if any(f.get("tipo_fuente") == "primaria_oficial" for f in respaldan):
         base = 88.0
     else:
         base = 70.0 * mejor
     # Corroborar suma, pero poco: no es lo que decide.
     extra = min(2, len(respaldan) - 1) * 4.0
-    return int(round(min(95.0, base + extra)))
+    # Aquí no hay bono por contraste editorial —nadie necesita que izquierda y
+    # derecha coincidan en qué hace un banco central— pero una fuente leída que
+    # dice lo contrario sí resta, igual que en la curva de afirmación.
+    contrapeso = sum(_peso_credibilidad(f) for f in utiles
+                     if f.get("coincide") is False) * 0.12
+    return int(round(min(95.0, base + extra) * max(0.0, 1.0 - contrapeso)))
 
 
 def calcular_solidez(meta: dict) -> int:
@@ -275,15 +293,23 @@ def calcular_solidez(meta: dict) -> int:
 
 def resumir_evidencia(meta: dict) -> dict:
     """Resumen auditable de la evidencia usada por el cálculo de solidez."""
-    fuentes_meta = meta.get("fuentes") or []
+    # Mismo contenedor propuesto por el modelo que en `_fuentes_utiles`: puede
+    # no ser una lista, o traer elementos que ni siquiera son objetos.
+    fuentes_meta = meta.get("fuentes") if isinstance(meta, dict) else None
+    if not isinstance(fuentes_meta, list):
+        fuentes_meta = []
+    else:
+        fuentes_meta = [f for f in fuentes_meta if isinstance(f, dict)]
     leidas = [
         f for f in fuentes_meta
         if isinstance(f.get("extracto"), str) and f["extracto"].strip()
     ]
     citadas = [f for f in leidas if f.get("citada") is True]
-    dominios = {_dominio_fuente(f.get("url") or "") for f in citadas}
+    dominios = {
+        _dominio_fuente(f["url"]) for f in citadas if isinstance(f.get("url"), str)
+    }
     dominios.discard("")
-    tendencias = {(f.get("tendencia") or "").lower() for f in citadas}
+    tendencias = {_campo_texto(f, "tendencia") for f in citadas}
     tendencias.discard("")
     return {
         "listadas": len(fuentes_meta),
