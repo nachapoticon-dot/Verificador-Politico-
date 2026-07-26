@@ -124,3 +124,28 @@ def test_registro_incluye_fuentes_institucionales():
         assert ficha is not None, f"{url} debería estar registrada"
         assert ficha.tipo == "primaria_oficial"
         assert ficha.credibilidad == "alta"
+
+
+def test_ningun_paraguas_de_gobierno_en_el_registro():
+    """Una clave paraguas colaría cualquier subdominio como fuente oficial.
+
+    `clasificar()` casa por sufijo, así que registrar `gob.mx` daría
+    credibilidad alta y exención de tope a la oficina de prensa de cualquier
+    gobierno. Entra la agencia que produce el dato, no el gobierno entero.
+    """
+    import json
+    from pathlib import Path
+    import verificador.fuentes as fuentes_module
+    registro = json.loads(
+        (Path(fuentes_module.__file__).parent / "data" / "fuentes.json").read_text(encoding="utf-8")
+    )
+    # Excepciones: agencias internacionales y europeas bien conocidas con un solo punto.
+    # Dominios de gobierno (gob.*, .gov.*) deben tener al menos 2 puntos.
+    excepciones_un_punto = {"boe.es", "ine.es", "ine.mx", "congreso.es", "senado.es",
+                            "bcentral.cl", "un.org", "worldbank.org", "imf.org"}
+    for dominio, ficha in registro.items():
+        if ficha.get("tipo") != "primaria_oficial":
+            continue
+        assert dominio.count(".") >= 2 or dominio in excepciones_un_punto, (
+            f"{dominio} es demasiado amplio para ser una fuente primaria concreta"
+        )
