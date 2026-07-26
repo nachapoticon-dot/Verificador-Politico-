@@ -417,6 +417,38 @@ def cerrar_navegador() -> None:
 atexit.register(cerrar_navegador)
 
 
+# Marcadores de "no estás leyendo el artículo, estás leyendo al portero".
+# Se comprueban sobre texto ya extraído y en minúsculas.
+_MARCAS_MURO = (
+    "captcha",
+    "verifica que eres humano",
+    "verify you are human",
+    "checking your browser",
+    "cloudflare",
+    "habilita javascript",
+    "enable javascript",
+    "acceso denegado",
+    "access denied",
+    "403 forbidden",
+    "suscríbete para seguir leyendo",
+    "solo para suscriptores",
+    "contenido exclusivo para suscriptores",
+)
+# Un artículo largo que MENCIONE un captcha no es un muro. La señal es que el
+# texto sea corto: los porteros no tienen cuerpo.
+_TOPE_MURO = 1500
+
+
+def _es_muro(texto: str) -> bool:
+    """¿Lo extraído es un muro anti-bot o de pago, y no el contenido?"""
+    if not texto:
+        return False
+    if len(texto) > _TOPE_MURO:
+        return False
+    bajo = texto.lower()
+    return any(marca in bajo for marca in _MARCAS_MURO)
+
+
 def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
     """Descarga una URL y devuelve su texto principal (caché → rápido → navegador).
 
@@ -431,6 +463,14 @@ def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
     texto = _leer_rapido(url) or _leer_navegador(url)
     if not texto:
         return Lectura(f"[No pude abrir ni extraer texto de {url}.]", False)
+    if _es_muro(texto):
+        # Nunca se cachea ni se marca ok: si contara como lectura, un portero
+        # alimentaría la solidez como si fuera evidencia. Ya pasó.
+        return Lectura(
+            f"[{url}: la página respondió con un muro anti-bot o de pago, "
+            f"no con su contenido.]",
+            False,
+        )
     if len(texto) > max_chars:
         texto = texto[:max_chars] + "\n…[texto truncado]"
     try:
