@@ -57,6 +57,15 @@ cd ..
 Configura `DEEPSEEK_API_KEY` en `.env` o en el entorno. Por compatibilidad, la
 aplicación también puede leerla desde `EDIFICIA_DIR/.env.local`.
 
+El modelo por defecto es `deepseek-v4-flash`. DeepSeek retira nombres de modelo
+con periodo de gracia corto —`deepseek-chat` y `deepseek-reasoner` dejaron de
+existir el 2026-07-24 y toda consulta falló—, así que ante un error
+`invalid_request_error` lo primero es comprobar qué modelos siguen vivos:
+
+```bash
+python scripts/humo.py
+```
+
 ## Ejecución
 
 Interfaz web:
@@ -87,9 +96,13 @@ sesión.
 ## Verificación
 
 ```bash
-.venv/bin/pytest -q
+.venv/bin/python -m pytest -q
 cd frontend && npm run check
 ```
+
+Usa `python -m pytest`, no `.venv/bin/pytest`: los ejecutables del entorno
+llevan la ruta absoluta incrustada en su shebang y dejan de funcionar si mueves
+el proyecto de carpeta. `.venv/bin/python` sí sobrevive (es un enlace).
 
 `npm run check` ejecuta las pruebas del contrato SSE, lint y build de producción.
 
