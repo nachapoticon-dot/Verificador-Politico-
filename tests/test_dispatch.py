@@ -50,3 +50,18 @@ def test_ejecutar_tool_tolera_argumentos_none():
     v = _verificador_falso()
     out = v._ejecutar_tool("leer_pagina", None)
     assert out.ok is False
+
+
+def test_ejecutar_tool_tolera_max_resultados_infinito(monkeypatch):
+    """`Infinity` y `1e400` son JSON válido, y int() de un float infinito
+    lanza OverflowError, no ValueError: por ahí se colaba la excepción."""
+    import json
+    from verificador import agent as agentmod
+    monkeypatch.setattr(agentmod, "buscar_web",
+                        lambda **kw: [{"titulo": "x", "url": "https://a.com"}])
+    v = _verificador_falso()
+    for crudo in ('{"query": "x", "max_resultados": Infinity}',
+                  '{"query": "x", "max_resultados": 1e400}'):
+        args = json.loads(crudo)
+        out = v._ejecutar_tool("buscar_web", args)
+        assert out.ok is True

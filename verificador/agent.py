@@ -107,7 +107,7 @@ class Verificador:
             tope = 4 if rigor == "rapido" else 8
             try:
                 pedido = int(args.get("max_resultados", 6))
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 pedido = 6
             res = buscar_web(
                 query=str(args.get("query", "")),
