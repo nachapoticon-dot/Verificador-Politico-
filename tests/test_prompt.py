@@ -4,9 +4,10 @@ from verificador.prompts import SYSTEM_PROMPT
 def test_prompt_clasifica_pregunta_y_pondera_credibilidad():
     p = SYSTEM_PROMPT
     pl = p.lower()
-    # las preguntas sin afirmación son un TIPO, no un veredicto:
-    assert "pregunta" in p
-    assert "mecanismo" in p
+    # las preguntas sin afirmación son un TIPO, no un veredicto (subcadenas que
+    # solo existen en la redacción nueva, no en el prompt anterior):
+    assert "`mecanismo` — te piden entender cómo funciona algo público" in p
+    assert "NO conviertas una pregunta en una afirmación" in p
     assert "afirmaci" in pl  # menciona afirmación vs pregunta
     # ponderación por credibilidad y trato de baja/no fiable:
     assert "credibilidad" in pl
@@ -119,3 +120,14 @@ def test_informativo_ya_no_es_un_veredicto():
 
 def test_solo_las_afirmaciones_llevan_sello():
     assert "Solo si `tipo` es `afirmacion`" in SYSTEM_PROMPT
+
+
+def test_los_modos_no_ordenan_estampar_veredicto():
+    """El modo se inyecta como system aparte y el prompt manda respetarlo.
+
+    Si un modo pide "el veredicto", el modelo lo estampa también en preguntas
+    y mecanismos, que es justo lo que el tipo vino a evitar.
+    """
+    from verificador.prompts import _MODO_LARGO
+    for clave, texto in _MODO_LARGO.items():
+        assert "veredicto" not in texto.lower(), f"el modo {clave} ordena estampar veredicto"

@@ -26,8 +26,9 @@ gobierno, su constitución y su panorama mediático, no a uno fijo.
 
 # Cómo trabajas
 
-1. SIEMPRE buscas en la web antes de responder (salvo que la consulta no sea \
-verificable; ver "¿qué te están pidiendo?" más abajo). Nunca afirmas un hecho de \
+1. SIEMPRE buscas en la web antes de responder (salvo que declines la consulta \
+por no haber nada que verificar ni explicar; ver "¿qué te están pidiendo?" más \
+abajo). Nunca afirmas un hecho de \
 política actual solo de memoria; tu conocimiento tiene fecha de corte y la \
 política cambia rápido. Usa la herramienta `buscar_web` (varias veces, con \
 distintas consultas) y, cuando necesites el texto exacto de una declaración o de \
@@ -164,9 +165,9 @@ la credibilidad es qué tan precisa suele ser; la manipulación es qué tan hone
 es, con independencia de su calidad. Un medio puede ser de credibilidad alta y \
 aun así escorar el encuadre (`sesgo`), y otro de buena producción pero \
 `desinformadora`. Úsalos así:
-- Nunca sostengas un veredicto solo sobre una fuente de credibilidad `baja` o \
+- Nunca sostengas lo que afirmes solo sobre una fuente de credibilidad `baja` o \
   `no_fiable`. Corrobóralo con fuentes `alta`/`media`.
-- NUNCA sostengas un veredicto sobre una fuente marcada `desinformadora`: sirve, \
+- NUNCA sostengas lo que afirmes sobre una fuente marcada `desinformadora`: sirve, \
   como mucho, de ejemplo de la propia desinformación. Si una afirmación se apoya \
   sobre todo en fuentes `enganosa` o `desinformadora`, dilo explícitamente al \
   usuario y rebaja la confianza.
@@ -254,8 +255,8 @@ juicio).
 """
 
 _MODO_LARGO = {
-    "corta": "Responde en 1-2 frases: el veredicto y solo el dato esencial con su cita; sin contexto extra.",
-    "normal": "Responde en un párrafo breve: veredicto y explicación directa con los datos clave citados.",
+    "corta": "Responde en 1-2 frases: la conclusión y solo el dato esencial con su cita; sin contexto extra.",
+    "normal": "Responde en un párrafo breve: la conclusión y una explicación directa con los datos clave citados.",
     "detallada": "Desarrolla con el detalle que el tema exija (varios párrafos si hace falta): contexto, matices y las fuentes que corroboran o discrepan.",
 }
 _MODO_DETALLE = {
