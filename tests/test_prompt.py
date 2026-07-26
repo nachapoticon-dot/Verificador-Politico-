@@ -74,7 +74,7 @@ def test_instruccion_modo_textos_por_eje():
 
 def test_instruccion_modo_cae_al_default_si_invalido():
     from verificador.prompts import instruccion_modo
-    assert instruccion_modo("xxx", "yyy") == instruccion_modo("corta", "simple")
+    assert instruccion_modo("xxx", "yyy") == instruccion_modo("normal", "simple")
 
 
 def test_prompt_prohibe_encabezados_markdown():
@@ -84,3 +84,18 @@ def test_prompt_prohibe_encabezados_markdown():
     assert "###" in SYSTEM_PROMPT
     # el largo ya no se hardcodea: se delega al modo de cada consulta
     assert "modo de respuesta" in pl
+
+
+def test_todas_las_capas_comparten_el_mismo_default_de_largo():
+    """Tres capas daban tres defaults distintos: normal, corta y corta."""
+    from verificador import agent as agent_mod
+    from verificador import server as server_mod
+    from verificador.prompts import instruccion_modo
+    import inspect
+
+    por_defecto = inspect.signature(agent_mod.Verificador.preguntar).parameters["largo"].default
+    pydantic = server_mod.VerificarEntrada().largo
+    fallback = instruccion_modo("valor-invalido", "simple")
+    assert por_defecto == "normal"
+    assert pydantic == "normal"
+    assert instruccion_modo("normal", "simple") == fallback
