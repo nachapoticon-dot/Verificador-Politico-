@@ -103,6 +103,18 @@
 .conf progress::-webkit-progress-value { background: var(--brand); }
 .conf progress::-moz-progress-bar { background: var(--brand); }
 .resp-titular { max-width: 820px; margin: 1.2rem 0 0.85rem; font-family: var(--serif); font-size: 1.7rem; line-height: 1.15; font-weight: 600; }
+
+/* Aviso de evidencia floja: informa sin gritar, y sin sustituir la respuesta. */
+.aviso-evidencia {
+  margin: 0 0 .75rem;
+  padding: .5rem .75rem;
+  border-left: 3px solid var(--warn);
+  background: var(--surface-2);
+  border-radius: 0 8px 8px 0;
+  font-family: var(--display);
+  font-size: .8rem;
+  color: var(--ink-2);
+}
 .respuesta-cuerpo { max-width: 790px; color: var(--ink-2); font-family: var(--serif); font-size: 1.08rem; line-height: 1.7; }
 .respuesta-cuerpo p { margin: 0 0 1rem; }
 .respuesta-cuerpo ul { margin: 0 0 1rem; padding-left: 1.4rem; }

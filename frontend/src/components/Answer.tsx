@@ -53,12 +53,8 @@ export function Answer({ turno, onReintentar }: { turno: Turno; onReintentar: ()
   }
 
   const conf =
-    meta &&
-    meta.veredicto !== "informativo" &&
-    meta.veredicto !== "no_verificable" &&
-    typeof meta.confianza === "number" &&
-    Number.isFinite(meta.confianza)
-      ? Math.max(0, Math.min(100, Math.round(meta.confianza)))
+    meta && typeof meta.solidez === "number" && Number.isFinite(meta.solidez)
+      ? Math.max(0, Math.min(100, Math.round(meta.solidez)))
       : null;
   const evidencia = meta?.evidencia;
 
@@ -109,6 +105,11 @@ export function Answer({ turno, onReintentar }: { turno: Turno; onReintentar: ()
       )}
 
       {meta?.resumen && !escribiendo && <h2 className="resp-titular">{meta.resumen}</h2>}
+      {meta?.aviso && (
+        <p className="aviso-evidencia" role="status">
+          {meta.aviso.texto}
+        </p>
+      )}
       <RichText texto={prosa} fuentes={fuentes} />
       {escribiendo && <span className="escribiendo"><span className="sr-only">Redactando respuesta</span></span>}
 
