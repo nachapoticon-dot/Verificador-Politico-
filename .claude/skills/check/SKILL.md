@@ -18,10 +18,7 @@ cd frontend && npm run check
 Si `npm install` nunca se corrió en esta máquina, `frontend/node_modules` no
 existe y `npm run check` falla por ahí, no por el código. Instala primero.
 
-**Estado esperado: todo verde.** El test de afinidad de hilo
-(`test_navegador_reutilizado_entre_hilos`) está marcado `xfail(strict=True)`
-porque el guardia SSRF lo dejó sin poder pasar; si aparece como **XPASS**,
-alguien arregló el guardia y hay que quitar el marcador.
+**Estado esperado: todo verde.**
 
 Al terminar, pega la salida real de ambos comandos. No resumas "todo bien" sin
 mostrarla: en este proyecto ya hubo una caída total que ninguna prueba detectó y

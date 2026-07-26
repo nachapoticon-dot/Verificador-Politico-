@@ -127,6 +127,12 @@ def _url_publica(url: str) -> bool:
     return True
 
 
+# Punto de inyección para pruebas. En producción es siempre `_url_publica`; los
+# tests herméticos lo sustituyen para poder servir desde file:// sin debilitar
+# el guardia real, que es la defensa contra SSRF.
+_guardia = _url_publica
+
+
 def _id_youtube(url: str) -> str | None:
     m = _YT_RE.search(url or "")
     return m.group(1) if m else None
@@ -316,12 +322,12 @@ def _arrancar_navegador() -> "queue.Queue":
 
 def _leer_en_pagina(browser, url: str) -> str | None:
     """Renderiza una url en el navegador y extrae su texto. Corre en el hilo propietario."""
-    if not _url_publica(url):
+    if not _guardia(url):
         return None
     page = browser.new_page(user_agent=_HEADERS["User-Agent"])
     try:
         def filtrar(route):
-            if _url_publica(route.request.url):
+            if _guardia(route.request.url):
                 route.continue_()
             else:
                 route.abort()
@@ -350,7 +356,7 @@ def _leer_rapido(url: str) -> str | None:
             actual = url
             resp = None
             for _ in range(6):
-                if not _url_publica(actual):
+                if not _guardia(actual):
                     return None
                 resp = httpx.get(
                     actual, headers=_HEADERS, timeout=8.0, follow_redirects=False
@@ -386,7 +392,7 @@ def _leer_navegador(url: str, timeout: float = 30.0) -> str | None:
     Chromium no está disponible (el hilo propietario degrada a None), de modo
     que `_leer_rapido(url) or _leer_navegador(url)` siga respondiendo.
     """
-    if not _url_publica(url):
+    if not _guardia(url):
         return None
     jobs = _arrancar_navegador()
     result_q: "queue.Queue" = queue.Queue(maxsize=1)
