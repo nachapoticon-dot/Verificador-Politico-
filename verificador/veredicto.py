@@ -23,10 +23,14 @@ from .urls import normalizar_url
 
 _log = logging.getLogger(__name__)
 
+# `informativo` y `no_verificable` ya no viven aquí: el primero era un tipo
+# disfrazado de veredicto (y por eso nunca tuvo sello) y el segundo es un
+# rechazo que se resuelve antes de investigar.
 VEREDICTOS = {
     "verdadero", "falso", "enganoso", "fuera_de_contexto",
-    "prediccion", "sin_evidencia", "informativo", "no_verificable",
+    "prediccion", "sin_evidencia",
 }
+TIPOS = {"afirmacion", "pregunta", "mecanismo"}
 CREDIBILIDADES = {"alta", "media", "baja", "no_fiable"}
 MANIPULACIONES = {"ninguna", "sesgo", "enganosa", "desinformadora"}
 
@@ -52,9 +56,14 @@ def validar_meta(meta) -> dict | None:
     if not isinstance(meta, dict):
         return None
     out: dict = {}
-    v = meta.get("veredicto")
-    if isinstance(v, str) and v.lower().strip() in VEREDICTOS:
-        out["veredicto"] = v.lower().strip()
+    t = meta.get("tipo")
+    out["tipo"] = t.lower().strip() if isinstance(t, str) and t.lower().strip() in TIPOS else "afirmacion"
+    # El sello solo existe para afirmaciones. Si el modelo manda uno en una
+    # pregunta, se descarta: no hay nada que juzgar.
+    if out["tipo"] == "afirmacion":
+        v = meta.get("veredicto")
+        if isinstance(v, str) and v.lower().strip() in VEREDICTOS:
+            out["veredicto"] = v.lower().strip()
     try:
         c = float(meta.get("confianza"))
         out["confianza"] = int(round(min(100.0, max(0.0, c))))
