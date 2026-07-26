@@ -93,21 +93,33 @@ class Verificador:
         ``texto`` es lo que se le manda al modelo; ``ok`` decide el estado de la
         traza. Las herramientas de lectura ya devuelven ``Lectura``; las demás
         se envuelven aquí.
+
+        El modelo puede mandar cualquier cosa como argumentos —una lista, un
+        número donde va texto— y eso jamás debe tumbar la consulta entera: el
+        error se le devuelve a él para que reintente.
         """
+        if not isinstance(args, dict):
+            return Lectura(
+                f"[Argumentos inválidos para {nombre}: se esperaba un objeto JSON.]",
+                False,
+            )
         if nombre == "buscar_web":
             tope = 4 if rigor == "rapido" else 8
-            pedido = int(args.get("max_resultados", 6))
+            try:
+                pedido = int(args.get("max_resultados", 6))
+            except (TypeError, ValueError):
+                pedido = 6
             res = buscar_web(
-                query=args.get("query", ""),
+                query=str(args.get("query", "")),
                 max_resultados=max(1, min(pedido, tope)),
                 pais=country,
             )
             ok = not (res and isinstance(res[0], dict) and "error" in res[0])
             return Lectura(json.dumps(res, ensure_ascii=False), ok)
         if nombre == "leer_pagina":
-            return leer_pagina(url=args.get("url", ""))
+            return leer_pagina(url=str(args.get("url", "")))
         if nombre == "ver_video":
-            return ver_video(url=args.get("url", ""))
+            return ver_video(url=str(args.get("url", "")))
         return Lectura(f"[Herramienta desconocida: {nombre}]", False)
 
     def _reparar_json(self, prosa: str) -> str | None:
