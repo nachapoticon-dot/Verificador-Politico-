@@ -10,10 +10,17 @@ infalibilidad ni sustituye la lectura directa de las fuentes.
 ## Capacidades
 
 - Verificación política para cualquier país, con jurisdicción automática o fija.
+- Afirmaciones, pero también preguntas y peticiones de explicación sobre
+  asuntos públicos: no hace falta traer una afirmación para usarlo.
 - Búsqueda web y lectura de artículos, páginas dinámicas y vídeos de YouTube.
 - Contraste entre fuentes primarias, verificadores y medios de distintas líneas.
-- Veredictos: verdadero, falso, engañoso, fuera de contexto, predicción y sin evidencia.
-- Confianza calculada solo con fuentes abiertas, citadas y deduplicadas.
+- Tres tipos de consulta: `afirmacion`, `pregunta` y `mecanismo`. El sello
+  (verdadero, falso, engañoso, fuera de contexto, predicción, sin evidencia)
+  solo se estampa en el primero: lo demás no lleva etiqueta porque no hay nada
+  que juzgar.
+- Solidez de la evidencia, calculada solo con fuentes abiertas, citadas y
+  deduplicadas, con dos curvas: confirmaciones independientes para una
+  afirmación en disputa, la mejor fuente disponible para una explicación.
 - Registro curado de credibilidad, tendencia y manipulación por dominio.
 - Streaming de la investigación y la respuesta mediante SSE.
 - Protección contra URLs internas, entradas excesivas y consultas concurrentes.
@@ -131,4 +138,6 @@ el proyecto de carpeta. `.venv/bin/python` sí sobrevive (es un enlace).
   cada artículo.
 - Una fuente leída puede contener errores; Faro muestra extractos y enlaces para
   que la evidencia pueda revisarse.
-- Si no consigue evidencia trazable, degrada la respuesta a `sin_evidencia`.
+- Si no consigue evidencia trazable, la respuesta no se borra nunca: se conserva
+  con la solidez a 0 y un aviso que distingue no haber encontrado nada
+  (`nada_encontrado`) de no haber podido abrir lo que encontró (`sin_abrir`).
