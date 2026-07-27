@@ -215,3 +215,23 @@ def test_leer_pagina_rechaza_un_muro(monkeypatch):
     assert out.ok is False
     assert "bloque" in out.texto.lower() or "muro" in out.texto.lower()
     assert search._cache_get("pagina:" + normalizar_url("https://banrep.gov.co/es/el-banco")) is None
+
+
+def test_es_muro_no_marca_prosa_legitima_con_palabras_ambiguas():
+    """"Acceso denegado" aparece en periodismo normal; un muro no tiene cuerpo."""
+    assert search._es_muro(
+        "El tribunal ratificó el acceso denegado a los documentos de campaña "
+        "que la fiscalía había solicitado en el marco de la investigación "
+        "abierta el año pasado sobre la financiación del partido."
+    ) is False
+    assert search._es_muro(
+        "Error 403 forbidden del portal de transparencia: la oposición pidió "
+        "explicaciones al ministerio por la caída del sitio durante la consulta."
+    ) is False
+
+
+def test_es_muro_si_marca_una_pagina_de_error_pelada():
+    """Sin cuerpo alrededor, el mismo texto sí es el portero."""
+    assert search._es_muro("403 Forbidden") is True
+    assert search._es_muro("Acceso denegado.") is True
+    assert search._es_muro("Access Denied. You don't have permission.") is True

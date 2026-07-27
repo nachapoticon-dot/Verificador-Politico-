@@ -433,26 +433,43 @@ _MARCAS_MURO = (
     "cloudflare",
     "habilita javascript",
     "enable javascript",
-    "acceso denegado",
-    "access denied",
-    "403 forbidden",
     "suscríbete para seguir leyendo",
     "solo para suscriptores",
     "contenido exclusivo para suscriptores",
 )
+# Estas también delatan un muro, pero son español periodístico corriente: "el
+# tribunal ratificó el acceso denegado a los documentos" es una noticia, no un
+# portero. Descartarla sería tirar evidencia buena en silencio, que es el falso
+# cero de solidez que este módulo existe para evitar.
+_MARCAS_MURO_AMBIGUAS = (
+    "acceso denegado",
+    "access denied",
+    "403 forbidden",
+)
 # Un artículo largo que MENCIONE un captcha no es un muro. La señal es que el
 # texto sea corto: los porteros no tienen cuerpo.
 _TOPE_MURO = 1500
+# A las ambiguas se les exige mucho más: que el texto SEA el error, sin cuerpo
+# alrededor. Una página de error que trafilatura extrae cabe en dos líneas; una
+# frase periodística que menciona un acceso denegado no. Ante la duda preferimos
+# dejar pasar un muro raro antes que tirar evidencia buena: las marcas
+# inequívocas de arriba ya cazan la inmensa mayoría de los porteros reales.
+_TOPE_MURO_AMBIGUO = 120
 
 
 def _es_muro(texto: str) -> bool:
     """¿Lo extraído es un muro anti-bot o de pago, y no el contenido?"""
     if not texto:
         return False
-    if len(texto) > _TOPE_MURO:
+    largo = len(texto)
+    if largo > _TOPE_MURO:
         return False
     bajo = texto.lower()
-    return any(marca in bajo for marca in _MARCAS_MURO)
+    if any(marca in bajo for marca in _MARCAS_MURO):
+        return True
+    return largo <= _TOPE_MURO_AMBIGUO and any(
+        marca in bajo for marca in _MARCAS_MURO_AMBIGUAS
+    )
 
 
 def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
