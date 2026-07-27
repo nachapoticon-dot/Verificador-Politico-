@@ -76,8 +76,22 @@ El frontend se construye a `frontend/dist` y lo sirve FastAPI. En desarrollo,
 
 ## Trabajo en curso
 
-El diseño del siguiente nivel está en
-`docs/superpowers/specs/2026-07-26-faro-siguiente-nivel-design.md`: pipeline de
-razonamiento en cuatro etapas, contrato nuevo de veredicto (`tipo` separado de
-`veredicto`, `solidez` en vez de `confianza`) y rediseño del control de esfuerzo.
-Léelo antes de tocar `veredicto.py`, `prompts.py` o `agent.py`.
+El contrato `tipo` / `veredicto` / `solidez` ya está implementado, no es un
+plan a futuro. `tipo` (`afirmacion`, `pregunta`, `mecanismo`) lo decide el
+modelo antes de investigar; el sello de veredicto solo existe cuando
+`tipo == "afirmacion"`; `solidez` sustituye a la vieja `confianza` con dos
+curvas en `veredicto.py` (`_solidez_afirmacion` / `_solidez_explicativa`):
+confirmaciones independientes con bono por contraste para una afirmación en
+disputa, la mejor fuente disponible sin ese bono para una pregunta o un
+mecanismo. La prosa del modelo ya no se borra nunca: si la evidencia queda
+floja se conserva y se adjunta `meta.aviso` (`nada_encontrado` o `sin_abrir`).
+Faro acepta preguntas y peticiones de explicación sobre asuntos públicos, no
+solo afirmaciones — ese es el cambio de producto de esta rama.
+
+Lo que queda del diseño en
+`docs/superpowers/specs/2026-07-26-faro-siguiente-nivel-design.md` es el
+pipeline de razonamiento en cuatro etapas y el rediseño del control de
+esfuerzo (hoy los tres presets solo cambian cuánto escribe, no cuánto
+investiga). Trátalo como referencia de esas fases pendientes, no como
+descripción del estado actual: la parte de contrato que describe ya no
+coincide con el código porque se implementó tal cual.
