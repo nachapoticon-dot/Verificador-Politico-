@@ -132,6 +132,12 @@ def test_ningun_paraguas_de_gobierno_en_el_registro():
     `clasificar()` casa por sufijo, así que registrar `gob.mx` daría
     credibilidad alta y exención de tope a la oficina de prensa de cualquier
     gobierno. Entra la agencia que produce el dato, no el gobierno entero.
+
+    Contar puntos no basta: `argentina.gob.ar` tiene dos y coló igual (caso
+    real que pasó esta misma regla) porque es el portal agregado de TODO el
+    Estado argentino, no la web de una agencia. Un dominio con dos puntos
+    puede ser tan paraguas como uno con uno, así que además de la regla
+    geométrica hace falta una lista cerrada de portales nacionales prohibidos.
     """
     import json
     from pathlib import Path
@@ -149,3 +155,15 @@ def test_ningun_paraguas_de_gobierno_en_el_registro():
         assert dominio.count(".") >= 2 or dominio in excepciones_un_punto, (
             f"{dominio} es demasiado amplio para ser una fuente primaria concreta"
         )
+    # Portales-paraguas nacionales conocidos: prohibidos como clave del
+    # registro sin importar cuántos puntos tengan ni qué `tipo` se les ponga.
+    # Son el sitio de un gobierno entero, nunca la agencia que produce un dato.
+    prohibidos = {
+        "argentina.gob.ar", "gob.mx", "europa.eu", "gov.co",
+        "gob.cl", "gob.pe", "gov.uk",
+    }
+    coladas = prohibidos & registro.keys()
+    assert not coladas, (
+        f"portal(es)-paraguas de gobierno en el registro: {sorted(coladas)} — "
+        "entra la agencia que produce el dato, no el gobierno entero"
+    )
