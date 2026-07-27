@@ -97,6 +97,9 @@
 .sello-banda[data-v="warn"] .sello-etiqueta { color: var(--warn); }
 .sello-banda[data-v="info"] .sello-etiqueta { color: var(--blue); }
 .conf { min-width: 280px; display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 0.7rem; align-items: center; color: var(--muted-text); font-size: 0.75rem; }
+/* En pregunta y mecanismo no hay sello, así que la solidez se queda sola en la
+   banda: la anclamos a la derecha para que no cambie de sitio según el tipo. */
+.sello-banda > .conf:only-child { margin-left: auto; }
 .conf strong { color: var(--ink); font-family: var(--mono); font-size: 0.8rem; }
 .conf progress { grid-column: 1 / -1; width: 100%; height: 6px; appearance: none; border: 0; overflow: hidden; border-radius: 3px; background: var(--line); }
 .conf progress::-webkit-progress-bar { background: var(--line); }
