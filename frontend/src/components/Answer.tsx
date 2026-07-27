@@ -88,12 +88,17 @@ export function Answer({ turno, onReintentar }: { turno: Turno; onReintentar: ()
         )}
       </div>
 
-      {sello && !escribiendo && (
-        <div className="sello-banda" data-v={sello.v}>
-          <span className="sello-etiqueta">
-            <IconoVeredicto valor={sello.v} />
-            {sello.etiqueta}
-          </span>
+      {/* La banda vive aquí aunque no haya sello: en pregunta/mecanismo
+          `selloDe` devuelve null a propósito (no hay veredicto que sellar),
+          pero la solidez sigue siendo un dato real y debe verse igual. */}
+      {!escribiendo && (sello || conf !== null) && (
+        <div className="sello-banda" data-v={sello?.v}>
+          {sello && (
+            <span className="sello-etiqueta">
+              <IconoVeredicto valor={sello.v} />
+              {sello.etiqueta}
+            </span>
+          )}
           {conf !== null && (
             <div className="conf">
               <span>Solidez de la evidencia</span>
