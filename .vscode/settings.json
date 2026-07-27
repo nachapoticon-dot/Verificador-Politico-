@@ -1,0 +1,23 @@
+{
+  "//": "Oculta del explorador lo que se genera solo y nunca se edita a mano. No borra nada: solo deja de ensuciar la raíz.",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    ".venv": true,
+    ".superpowers": true,
+    "frontend/node_modules": true,
+    "frontend/dist": true
+  },
+  "//search": "Y que las búsquedas no tengan que atravesar 430 MB de dependencias.",
+  "search.exclude": {
+    "**/__pycache__": true,
+    ".venv": true,
+    "frontend/node_modules": true,
+    "frontend/dist": true,
+    "frontend/package-lock.json": true
+  },
+  "files.watcherExclude": {
+    "**/.venv/**": true,
+    "**/node_modules/**": true
+  }
+}
