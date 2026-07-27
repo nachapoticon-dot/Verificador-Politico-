@@ -22,4 +22,9 @@ CLAUDE.local.md
 
 .DS_Store
 .idea/
-.vscode/
+# Se excluye el contenido, no la carpeta: si se ignora `.vscode/` entero, git
+# no puede desexcluir nada de dentro. Y settings.json sí interesa versionarlo:
+# qué ocultar del explorador es útil para cualquiera que clone, no una
+# preferencia personal.
+.vscode/*
+!.vscode/settings.json

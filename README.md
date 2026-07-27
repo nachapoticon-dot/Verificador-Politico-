@@ -120,13 +120,20 @@ el proyecto de carpeta. `.venv/bin/python` sí sobrevive (es un enlace).
 ├── verificador/
 │   ├── agent.py             Orquestación del modelo y herramientas
 │   ├── search.py            Búsqueda, lectura web y vídeo
-│   ├── veredicto.py         Contrato, citas y solidez
-│   ├── fuentes.py           Registro de fuentes
+│   ├── veredicto.py         Contrato, tipos, citas y solidez
+│   ├── fuentes.py           Registro curado de fuentes
 │   ├── prompts.py           Metodología del agente
 │   ├── server.py            API FastAPI y streaming SSE
-│   └── cli.py               Interfaz de terminal
+│   ├── cli.py               Interfaz de terminal
+│   └── data/fuentes.json    Credibilidad, tendencia y manipulación por dominio
 ├── frontend/                Interfaz React + Vite + CSS
-├── tests/                   Pruebas Python y contratos frontend
+├── tests/                   Pruebas Python y contratos del frontend
+├── scripts/humo.py          Contrato contra la API real (gasta tokens)
+├── docs/
+│   ├── despliegue.md        Qué falta para sacar Faro a internet
+│   └── superpowers/         Diseño, planes y deuda conocida
+├── .github/workflows/       CI: pytest y npm run check
+├── AGENTS.md                Guía para agentes de codificación
 ├── requirements.txt
 └── .env.example
 ```
