@@ -16,8 +16,6 @@ export const SELLOS: Record<string, Sello> = {
   fuera_de_contexto: { etiqueta: "Sacado de contexto", v: "warn", emoji: "🔀" },
   prediccion: { etiqueta: "Predicción", v: "muted", emoji: "🔮" },
   sin_evidencia: { etiqueta: "Sin evidencia", v: "muted", emoji: "❓" },
-  informativo: { etiqueta: "Información", v: "info", emoji: "ℹ️" },
-  no_verificable: { etiqueta: "No verificable", v: "muted", emoji: "💬" },
 };
 
 // Respaldo: si faltara el JSON, detectamos el sello por el emoji de la prosa.
@@ -28,7 +26,6 @@ const SELLO_POR_EMOJI: Record<string, string> = {
   "🔀": "fuera_de_contexto",
   "🔮": "prediccion",
   "❓": "sin_evidencia",
-  ℹ: "informativo",
 };
 
 // Credibilidad: solo se anuncia lo anómalo (baja / no fiable); lo normal no
@@ -48,19 +45,22 @@ export const MANIPULACION: Record<string, { txt: string; clase: string }> = {
   desinformadora: { txt: "desinforma", clase: "m-desinfo" },
 };
 
-export const TEND_ABREV: Record<string, string> = {
-  izquierda: "izq",
-  "centro-izquierda": "c-izq",
+// En versalitas caben enteras, así que se dicen enteras: "c-izq" era jerga que
+// el lector tenía que descifrar para nada.
+export const TENDENCIA_NOMBRE: Record<string, string> = {
+  izquierda: "izquierda",
+  "centro-izquierda": "centro izquierda",
   centro: "centro",
-  "centro-derecha": "c-der",
-  derecha: "der",
-  verificador: "verif.",
-  internacional: "int.",
+  "centro-derecha": "centro derecha",
+  derecha: "derecha",
+  verificador: "verificador",
+  internacional: "internacional",
 };
 
-// Determina el sello: primero por el campo `veredicto` del JSON; si falta, por
-// el emoji que aparezca en la prosa.
+// El sello solo existe para afirmaciones. Una pregunta o un mecanismo bien
+// respondidos no llevan etiqueta: no hay nada que juzgar.
 export function selloDe(meta: Meta | null, prosa: string): Sello | null {
+  if (meta?.tipo && meta.tipo !== "afirmacion") return null;
   const clave =
     meta && typeof meta.veredicto === "string" ? meta.veredicto.toLowerCase().trim() : null;
   if (clave && SELLOS[clave]) return SELLOS[clave];

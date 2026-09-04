@@ -56,6 +56,43 @@ export function normalizarUrl(u: string | undefined): string {
   return host + ruta + (pares.length ? "?" + pares.join("&") : "");
 }
 
+// Tokens que RichText convierte en nodos: negrita, enlace markdown y cita [n].
+export const TOKEN_RICO = /(\*\*[^*\n]+\*\*|\[[^\]\n]+\]\(https?:\/\/[^\s)]+\)|\[\d+\])/g;
+
+const CITA = /^\[\d+\]$/;
+
+/** Índices de inicio de las citas que vienen pegadas a la cita anterior, sin
+ *  nada en medio: `[2][3]`. Solo esas llevan coma volada, porque `²³` se lee
+ *  como veintitrés.
+ *
+ *  Vive aquí, y no como un `+` de CSS, porque el combinador de hermano
+ *  adyacente salta los nodos de texto: para CSS dos citas separadas por medio
+ *  párrafo son adyacentes, y le colaba la coma a la segunda cita de cada
+ *  párrafo. */
+export function citasPegadas(texto: string): Set<number> {
+  const pegadas = new Set<number>();
+  let finPrevia = -1;
+  for (const m of texto.matchAll(TOKEN_RICO)) {
+    if (!CITA.test(m[0])) continue;
+    const i = m.index ?? 0;
+    if (i === finPrevia) pegadas.add(i);
+    finPrevia = i + m[0].length;
+  }
+  return pegadas;
+}
+
+// Convención editorial: las cantidades pequeñas se escriben, las cifras que son
+// dato (la solidez) se dejan en número. Así la glosa se lee como una frase y no
+// como una tabla, y el único guarismo de la cabecera es el que importa.
+const PALABRAS = [
+  "cero", "una", "dos", "tres", "cuatro", "cinco", "seis",
+  "siete", "ocho", "nueve", "diez", "once", "doce",
+];
+
+export function enPalabras(n: number): string {
+  return Number.isInteger(n) && n >= 0 && n < PALABRAS.length ? PALABRAS[n] : String(n);
+}
+
 export function dominioDe(u: string | undefined): string {
   try {
     const host = new URL(u ?? "").hostname.toLowerCase();

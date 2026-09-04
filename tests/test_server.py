@@ -86,7 +86,7 @@ def test_endpoint_valida_largo_detalle_pais_rigor(monkeypatch):
                              "pais": "ar", "rigor": "rapido"}) as r:
         "".join(chunk for chunk in r.iter_text())
 
-    assert capturado["largo"] == "corta"      # inválido → default
+    assert capturado["largo"] == "normal"      # inválido → default
     assert capturado["detalle"] == "tecnico"  # válido → respetado
     assert capturado["country"] == "AR"       # normalizado a mayúsculas
     assert capturado["rigor"] == "rapido"

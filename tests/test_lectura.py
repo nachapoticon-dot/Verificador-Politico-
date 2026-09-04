@@ -4,6 +4,7 @@ import time
 import pytest
 
 from verificador import search
+from verificador.urls import normalizar_url
 
 
 def setup_function(_f):
@@ -28,7 +29,7 @@ def _chromium_disponible() -> bool:
 @pytest.mark.skipif(
     not _chromium_disponible(), reason="Playwright/Chromium no disponible en este entorno"
 )
-def test_navegador_reutilizado_entre_hilos(tmp_path):
+def test_navegador_reutilizado_entre_hilos(tmp_path, monkeypatch):
     """Dos hilos distintos leen vía Chromium y ambos obtienen el texto.
 
     Real (no mockeado) y hermético (file://, sin red). Falla con el diseño de
@@ -46,6 +47,7 @@ def test_navegador_reutilizado_entre_hilos(tmp_path):
     url = pagina.as_uri()
 
     resultados: dict[int, str | None] = {}
+    monkeypatch.setattr(search, "_guardia", lambda url: True)
 
     def correr(k: int) -> None:
         resultados[k] = search._leer_navegador(url)
@@ -165,7 +167,7 @@ def test_ruta_rapida_valida_cada_redireccion(monkeypatch):
     import httpx
 
     llamadas = []
-    monkeypatch.setattr(search, "_url_publica", lambda url: "127.0.0.1" not in url)
+    monkeypatch.setattr(search, "_guardia", lambda url: "127.0.0.1" not in url)
 
     def get(url, **_kwargs):
         llamadas.append(url)
@@ -178,3 +180,58 @@ def test_ruta_rapida_valida_cada_redireccion(monkeypatch):
     monkeypatch.setattr(search.httpx, "get", get)
     assert search._leer_rapido("https://publica.example/nota") is None
     assert llamadas == ["https://publica.example/nota"]
+
+
+def test_es_muro_detecta_captcha_corto():
+    texto = ("pero su actividad y comportamiento nos hace pensar que usted es "
+             "un Bot. Por favor resuelva este CAPTCHA para que se desbloquee "
+             "el sitio.")
+    assert search._es_muro(texto) is True
+
+
+def test_es_muro_ignora_articulo_largo_que_menciona_captcha():
+    """Un artículo sobre captchas no es un muro: lo corto es la señal."""
+    texto = "Los captchas cumplen 25 años. " + ("Texto de relleno. " * 200)
+    assert search._es_muro(texto) is False
+
+
+def test_es_muro_detecta_paywall_y_cloudflare():
+    assert search._es_muro("Artículo solo para suscriptores. Suscríbete para seguir leyendo.") is True
+    assert search._es_muro("Checking your browser before accessing the site.") is True
+
+
+def test_es_muro_no_marca_texto_normal_corto():
+    assert search._es_muro("El Banco de la República es el banco central.") is False
+
+
+def test_leer_pagina_rechaza_un_muro(monkeypatch):
+    """Un muro no es evidencia: ok=False y no se cachea."""
+    monkeypatch.setattr(
+        search, "_leer_rapido",
+        lambda url: "Por favor resuelva este CAPTCHA para continuar.",
+    )
+    monkeypatch.setattr(search, "_leer_navegador", lambda url: None)
+    out = search.leer_pagina("https://banrep.gov.co/es/el-banco")
+    assert out.ok is False
+    assert "bloque" in out.texto.lower() or "muro" in out.texto.lower()
+    assert search._cache_get("pagina:" + normalizar_url("https://banrep.gov.co/es/el-banco")) is None
+
+
+def test_es_muro_no_marca_prosa_legitima_con_palabras_ambiguas():
+    """"Acceso denegado" aparece en periodismo normal; un muro no tiene cuerpo."""
+    assert search._es_muro(
+        "El tribunal ratificó el acceso denegado a los documentos de campaña "
+        "que la fiscalía había solicitado en el marco de la investigación "
+        "abierta el año pasado sobre la financiación del partido."
+    ) is False
+    assert search._es_muro(
+        "Error 403 forbidden del portal de transparencia: la oposición pidió "
+        "explicaciones al ministerio por la caída del sitio durante la consulta."
+    ) is False
+
+
+def test_es_muro_si_marca_una_pagina_de_error_pelada():
+    """Sin cuerpo alrededor, el mismo texto sí es el portero."""
+    assert search._es_muro("403 Forbidden") is True
+    assert search._es_muro("Acceso denegado.") is True
+    assert search._es_muro("Access Denied. You don't have permission.") is True

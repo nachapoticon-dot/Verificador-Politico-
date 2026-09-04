@@ -4,8 +4,10 @@ from verificador.prompts import SYSTEM_PROMPT
 def test_prompt_clasifica_pregunta_y_pondera_credibilidad():
     p = SYSTEM_PROMPT
     pl = p.lower()
-    # veredicto informativo para preguntas sin afirmación:
-    assert "informativo" in p
+    # las preguntas sin afirmación son un TIPO, no un veredicto (subcadenas que
+    # solo existen en la redacción nueva, no en el prompt anterior):
+    assert "`mecanismo` — te piden entender cómo funciona algo público" in p
+    assert "NO conviertas una pregunta en una afirmación" in p
     assert "afirmaci" in pl  # menciona afirmación vs pregunta
     # ponderación por credibilidad y trato de baja/no fiable:
     assert "credibilidad" in pl
@@ -74,7 +76,7 @@ def test_instruccion_modo_textos_por_eje():
 
 def test_instruccion_modo_cae_al_default_si_invalido():
     from verificador.prompts import instruccion_modo
-    assert instruccion_modo("xxx", "yyy") == instruccion_modo("corta", "simple")
+    assert instruccion_modo("xxx", "yyy") == instruccion_modo("normal", "simple")
 
 
 def test_prompt_prohibe_encabezados_markdown():
@@ -84,3 +86,48 @@ def test_prompt_prohibe_encabezados_markdown():
     assert "###" in SYSTEM_PROMPT
     # el largo ya no se hardcodea: se delega al modo de cada consulta
     assert "modo de respuesta" in pl
+
+
+def test_todas_las_capas_comparten_el_mismo_default_de_largo():
+    """Tres capas daban tres defaults distintos: normal, corta y corta."""
+    from verificador import agent as agent_mod
+    from verificador import server as server_mod
+    from verificador.prompts import instruccion_modo
+    import inspect
+
+    por_defecto = inspect.signature(agent_mod.Verificador.preguntar).parameters["largo"].default
+    pydantic = server_mod.VerificarEntrada().largo
+    fallback = instruccion_modo("valor-invalido", "simple")
+    assert por_defecto == "normal"
+    assert pydantic == "normal"
+    assert instruccion_modo("normal", "simple") == fallback
+
+
+from verificador.prompts import SYSTEM_PROMPT, PROMPT_REPARACION
+
+
+def test_prompt_pide_el_campo_tipo():
+    assert '"tipo"' in SYSTEM_PROMPT
+    assert "afirmacion|pregunta|mecanismo" in SYSTEM_PROMPT
+    assert '"tipo"' in PROMPT_REPARACION
+
+
+def test_informativo_ya_no_es_un_veredicto():
+    """Era un tipo disfrazado de veredicto: por eso no tenía sello."""
+    assert "informativo" not in SYSTEM_PROMPT
+    assert "informativo" not in PROMPT_REPARACION
+
+
+def test_solo_las_afirmaciones_llevan_sello():
+    assert "Solo si `tipo` es `afirmacion`" in SYSTEM_PROMPT
+
+
+def test_los_modos_no_ordenan_estampar_veredicto():
+    """El modo se inyecta como system aparte y el prompt manda respetarlo.
+
+    Si un modo pide "el veredicto", el modelo lo estampa también en preguntas
+    y mecanismos, que es justo lo que el tipo vino a evitar.
+    """
+    from verificador.prompts import _MODO_LARGO
+    for clave, texto in _MODO_LARGO.items():
+        assert "veredicto" not in texto.lower(), f"el modo {clave} ordena estampar veredicto"

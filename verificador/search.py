@@ -127,6 +127,12 @@ def _url_publica(url: str) -> bool:
     return True
 
 
+# Punto de inyección para pruebas. En producción es siempre `_url_publica`; los
+# tests herméticos lo sustituyen para poder servir desde file:// sin debilitar
+# el guardia real, que es la defensa contra SSRF.
+_guardia = _url_publica
+
+
 def _id_youtube(url: str) -> str | None:
     m = _YT_RE.search(url or "")
     return m.group(1) if m else None
@@ -316,12 +322,12 @@ def _arrancar_navegador() -> "queue.Queue":
 
 def _leer_en_pagina(browser, url: str) -> str | None:
     """Renderiza una url en el navegador y extrae su texto. Corre en el hilo propietario."""
-    if not _url_publica(url):
+    if not _guardia(url):
         return None
     page = browser.new_page(user_agent=_HEADERS["User-Agent"])
     try:
         def filtrar(route):
-            if _url_publica(route.request.url):
+            if _guardia(route.request.url):
                 route.continue_()
             else:
                 route.abort()
@@ -350,7 +356,7 @@ def _leer_rapido(url: str) -> str | None:
             actual = url
             resp = None
             for _ in range(6):
-                if not _url_publica(actual):
+                if not _guardia(actual):
                     return None
                 resp = httpx.get(
                     actual, headers=_HEADERS, timeout=8.0, follow_redirects=False
@@ -386,7 +392,7 @@ def _leer_navegador(url: str, timeout: float = 30.0) -> str | None:
     Chromium no está disponible (el hilo propietario degrada a None), de modo
     que `_leer_rapido(url) or _leer_navegador(url)` siga respondiendo.
     """
-    if not _url_publica(url):
+    if not _guardia(url):
         return None
     jobs = _arrancar_navegador()
     result_q: "queue.Queue" = queue.Queue(maxsize=1)
@@ -417,6 +423,55 @@ def cerrar_navegador() -> None:
 atexit.register(cerrar_navegador)
 
 
+# Marcadores de "no estás leyendo el artículo, estás leyendo al portero".
+# Se comprueban sobre texto ya extraído y en minúsculas.
+_MARCAS_MURO = (
+    "captcha",
+    "verifica que eres humano",
+    "verify you are human",
+    "checking your browser",
+    "cloudflare",
+    "habilita javascript",
+    "enable javascript",
+    "suscríbete para seguir leyendo",
+    "solo para suscriptores",
+    "contenido exclusivo para suscriptores",
+)
+# Estas también delatan un muro, pero son español periodístico corriente: "el
+# tribunal ratificó el acceso denegado a los documentos" es una noticia, no un
+# portero. Descartarla sería tirar evidencia buena en silencio, que es el falso
+# cero de solidez que este módulo existe para evitar.
+_MARCAS_MURO_AMBIGUAS = (
+    "acceso denegado",
+    "access denied",
+    "403 forbidden",
+)
+# Un artículo largo que MENCIONE un captcha no es un muro. La señal es que el
+# texto sea corto: los porteros no tienen cuerpo.
+_TOPE_MURO = 1500
+# A las ambiguas se les exige mucho más: que el texto SEA el error, sin cuerpo
+# alrededor. Una página de error que trafilatura extrae cabe en dos líneas; una
+# frase periodística que menciona un acceso denegado no. Ante la duda preferimos
+# dejar pasar un muro raro antes que tirar evidencia buena: las marcas
+# inequívocas de arriba ya cazan la inmensa mayoría de los porteros reales.
+_TOPE_MURO_AMBIGUO = 120
+
+
+def _es_muro(texto: str) -> bool:
+    """¿Lo extraído es un muro anti-bot o de pago, y no el contenido?"""
+    if not texto:
+        return False
+    largo = len(texto)
+    if largo > _TOPE_MURO:
+        return False
+    bajo = texto.lower()
+    if any(marca in bajo for marca in _MARCAS_MURO):
+        return True
+    return largo <= _TOPE_MURO_AMBIGUO and any(
+        marca in bajo for marca in _MARCAS_MURO_AMBIGUAS
+    )
+
+
 def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
     """Descarga una URL y devuelve su texto principal (caché → rápido → navegador).
 
@@ -431,6 +486,14 @@ def leer_pagina(url: str, max_chars: int = 6000) -> Lectura:
     texto = _leer_rapido(url) or _leer_navegador(url)
     if not texto:
         return Lectura(f"[No pude abrir ni extraer texto de {url}.]", False)
+    if _es_muro(texto):
+        # Nunca se cachea ni se marca ok: si contara como lectura, un portero
+        # alimentaría la solidez como si fuera evidencia. Ya pasó.
+        return Lectura(
+            f"[{url}: la página respondió con un muro anti-bot o de pago, "
+            f"no con su contenido.]",
+            False,
+        )
     if len(texto) > max_chars:
         texto = texto[:max_chars] + "\n…[texto truncado]"
     try:

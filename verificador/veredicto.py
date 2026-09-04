@@ -3,7 +3,7 @@
 Toda respuesta final del modelo pasa por aquí antes de llegar al usuario:
 se valida el bloque ```json de cierre (y se repara si falta), se comprueba la
 consistencia de las citas [n], se aplican las etiquetas del registro curado,
-se adjuntan los extractos de la traza y se recalcula la confianza a partir de
+se adjuntan los extractos de la traza y se recalcula la solidez a partir de
 las fuentes reales. Nunca lanza: ante datos imposibles degrada campo a campo;
 la prosa siempre sobrevive.
 """
@@ -23,10 +23,14 @@ from .urls import normalizar_url
 
 _log = logging.getLogger(__name__)
 
+# `informativo` y `no_verificable` ya no viven aquí: el primero era un tipo
+# disfrazado de veredicto (y por eso nunca tuvo sello) y el segundo es un
+# rechazo que se resuelve antes de investigar.
 VEREDICTOS = {
     "verdadero", "falso", "enganoso", "fuera_de_contexto",
-    "prediccion", "sin_evidencia", "informativo", "no_verificable",
+    "prediccion", "sin_evidencia",
 }
+TIPOS = {"afirmacion", "pregunta", "mecanismo"}
 CREDIBILIDADES = {"alta", "media", "baja", "no_fiable"}
 MANIPULACIONES = {"ninguna", "sesgo", "enganosa", "desinformadora"}
 
@@ -52,9 +56,14 @@ def validar_meta(meta) -> dict | None:
     if not isinstance(meta, dict):
         return None
     out: dict = {}
-    v = meta.get("veredicto")
-    if isinstance(v, str) and v.lower().strip() in VEREDICTOS:
-        out["veredicto"] = v.lower().strip()
+    t = meta.get("tipo")
+    out["tipo"] = t.lower().strip() if isinstance(t, str) and t.lower().strip() in TIPOS else "afirmacion"
+    # El sello solo existe para afirmaciones. Si el modelo manda uno en una
+    # pregunta, se descarta: no hay nada que juzgar.
+    if out["tipo"] == "afirmacion":
+        v = meta.get("veredicto")
+        if isinstance(v, str) and v.lower().strip() in VEREDICTOS:
+            out["veredicto"] = v.lower().strip()
     try:
         c = float(meta.get("confianza"))
         out["confianza"] = int(round(min(100.0, max(0.0, c))))
@@ -66,7 +75,10 @@ def validar_meta(meta) -> dict | None:
             out[campo] = val.strip()
     out["fuentes"] = []
     vistos_n: set[int] = set()
-    for f in meta.get("fuentes") or []:
+    # El modelo puede mandar `fuentes` como número, booleano o texto. Iterar
+    # sobre eso lanza, y este módulo es el último paso antes del usuario.
+    fuentes_meta = meta.get("fuentes")
+    for f in fuentes_meta if isinstance(fuentes_meta, list) else []:
         if not isinstance(f, dict):
             continue
         try:
@@ -126,6 +138,7 @@ def aplicar_registro(meta: dict) -> dict:
         f["credibilidad"] = ficha.credibilidad
         f["manipulacion"] = ficha.manipulacion
         f["tendencia"] = ficha.tendencia
+        f["tipo_fuente"] = ficha.tipo
     return meta
 
 
@@ -153,38 +166,70 @@ def _dominio_fuente(url: str) -> str:
         return ""
 
 
-def calcular_confianza(meta: dict) -> int:
-    """Confianza 0-100 calculada de las fuentes reales, no autodeclarada.
+def _fuentes_utiles(meta: dict) -> list[dict]:
+    """Fuentes que cuentan: abiertas, citadas, con URL comprobable y dominio único.
 
-    Suman las fuentes que coinciden, ponderadas por credibilidad; el contraste
-    real (tendencias opuestas o verificador + otra) da un bono; las fuentes
-    deshonestas nunca suman y, si "apoyan", restan solidez. Techo asintótico:
-    ni un aluvión de fuentes llega a 100.
+    La solidez se deriva del ledger de la consulta, no de lo que el modelo diga
+    de sí mismo. Una fuente que no se abrió no es evidencia.
     """
-    peso = 0.0
-    penal = 0.0
-    contrapeso = 0.0
-    tendencias: set[str] = set()
+    # El contenedor también lo propone el modelo: "fuentes" puede no ser una
+    # lista, o traer elementos que ni siquiera son objetos.
+    fuentes_meta = meta.get("fuentes") if isinstance(meta, dict) else None
+    if not isinstance(fuentes_meta, list):
+        return []
+    utiles: list[dict] = []
     dominios: set[str] = set()
-    for f in meta.get("fuentes") or []:
-        # La confianza se deriva del ledger de la consulta: una fuente debe
-        # haber sido abierta (extracto), citada y tener una URL comprobable.
-        url = f.get("url") or ""
-        dominio = _dominio_fuente(url)
+    for f in fuentes_meta:
+        if not isinstance(f, dict):
+            continue
+        url = f.get("url")
+        dominio = _dominio_fuente(url) if isinstance(url, str) else ""
         if not dominio or dominio in dominios or f.get("citada") is not True:
             continue
         if not isinstance(f.get("extracto"), str) or not f["extracto"].strip():
             continue
         dominios.add(dominio)
+        utiles.append(f)
+    return utiles
 
-        manip = (f.get("manipulacion") or "ninguna").lower()
-        if manip in ("enganosa", "desinformadora"):
+
+def _campo_texto(f: dict, campo: str) -> str:
+    """``campo`` en minúsculas si es texto real; si no, cadena vacía.
+
+    Estos campos los propone un modelo de lenguaje: un ``None``, un número o
+    una lista donde se esperaba texto no puede tirar abajo el cálculo de
+    solidez, así que un tipo inesperado se trata como "sin dato".
+    """
+    val = f.get(campo)
+    return val.lower() if isinstance(val, str) else ""
+
+
+def _peso_credibilidad(f: dict) -> float:
+    """Peso 0-1 de una fuente, ya descontada su deshonestidad."""
+    if _campo_texto(f, "manipulacion") in ("enganosa", "desinformadora"):
+        return 0.0
+    cred = _PESO_CRED.get(_campo_texto(f, "credibilidad"), 0.25)
+    # El tope castiga a los dominios que nadie ha revisado. Una fuente primaria
+    # oficial no necesita revisión editorial: es la fuente.
+    if f.get("registro_curado") is not True and f.get("tipo_fuente") != "primaria_oficial":
+        cred = min(cred, 0.6)
+    return cred
+
+
+def _solidez_afirmacion(utiles: list[dict]) -> int:
+    """Curva para lo que está en disputa: cuentan confirmaciones independientes.
+
+    Una sola fuente nunca basta, por buena que sea; que fuentes que trabajan por
+    separado —y mejor de tendencias opuestas— lleguen al mismo dato, sí.
+    """
+    peso = penal = contrapeso = 0.0
+    tendencias: set[str] = set()
+    for f in utiles:
+        if _campo_texto(f, "manipulacion") in ("enganosa", "desinformadora"):
             if f.get("coincide"):
                 penal += 0.15
             continue
-        cred = _PESO_CRED.get((f.get("credibilidad") or "").lower(), 0.25)
-        if f.get("registro_curado") is not True:
-            cred = min(cred, 0.6)
+        cred = _peso_credibilidad(f)
         if not f.get("coincide"):
             # Evidencia leída que no respalda el fallo reduce su solidez. No la
             # tratamos como una refutación total porque el contrato actual solo
@@ -192,7 +237,7 @@ def calcular_confianza(meta: dict) -> int:
             contrapeso += cred * 0.12
             continue
         peso += cred
-        t = (f.get("tendencia") or "").lower()
+        t = _campo_texto(f, "tendencia")
         if t:
             tendencias.add(t)
     contraste = bool(
@@ -201,22 +246,73 @@ def calcular_confianza(meta: dict) -> int:
     )
     if contraste:
         peso *= 1.25
+    # Techo asintótico: ni un aluvión de fuentes llega a 100.
     conf = 95.0 * (1.0 - math.exp(-0.7 * peso))
     conf *= max(0.0, 1.0 - penal - contrapeso)
     return int(round(conf))
 
 
+def _solidez_explicativa(utiles: list[dict]) -> int:
+    """Curva para preguntas y mecanismos: manda la MEJOR fuente disponible.
+
+    Aquí no hay nada en disputa, así que el contraste editorial no aporta: nadie
+    necesita que un medio de izquierda y otro de derecha coincidan en qué hace
+    un banco central. Lo que importa es si lo dice quien tiene autoridad.
+    """
+    # Solo corrobora quien pesa. Contar por cabezas dejaba que dos fuentes
+    # desinformadoras, que pesan cero, llevaran la respuesta al techo.
+    respaldan = [f for f in utiles
+                 if f.get("coincide") is not False and _peso_credibilidad(f) > 0]
+    if not respaldan:
+        return 0
+    mejor = max(_peso_credibilidad(f) for f in respaldan)
+    if any(f.get("tipo_fuente") == "primaria_oficial" for f in respaldan):
+        base = 88.0
+    else:
+        base = 70.0 * mejor
+    # Corroborar suma, pero poco: no es lo que decide.
+    extra = min(2, len(respaldan) - 1) * 4.0
+    # Aquí no hay bono por contraste editorial —nadie necesita que izquierda y
+    # derecha coincidan en qué hace un banco central— pero una fuente leída que
+    # dice lo contrario sí resta, igual que en la curva de afirmación.
+    contrapeso = sum(_peso_credibilidad(f) for f in utiles
+                     if f.get("coincide") is False) * 0.12
+    return int(round(min(95.0, base + extra) * max(0.0, 1.0 - contrapeso)))
+
+
+def calcular_solidez(meta: dict) -> int:
+    """Solidez 0-100 calculada de las fuentes reales, no autodeclarada.
+
+    Dos curvas, porque "qué tan respaldado está esto" significa cosas distintas
+    según lo que te hayan preguntado.
+    """
+    utiles = _fuentes_utiles(meta)
+    if not utiles:
+        return 0
+    if meta.get("tipo", "afirmacion") == "afirmacion":
+        return _solidez_afirmacion(utiles)
+    return _solidez_explicativa(utiles)
+
+
 def resumir_evidencia(meta: dict) -> dict:
     """Resumen auditable de la evidencia usada por el cálculo de solidez."""
-    fuentes_meta = meta.get("fuentes") or []
+    # Mismo contenedor propuesto por el modelo que en `_fuentes_utiles`: puede
+    # no ser una lista, o traer elementos que ni siquiera son objetos.
+    fuentes_meta = meta.get("fuentes") if isinstance(meta, dict) else None
+    if not isinstance(fuentes_meta, list):
+        fuentes_meta = []
+    else:
+        fuentes_meta = [f for f in fuentes_meta if isinstance(f, dict)]
     leidas = [
         f for f in fuentes_meta
         if isinstance(f.get("extracto"), str) and f["extracto"].strip()
     ]
     citadas = [f for f in leidas if f.get("citada") is True]
-    dominios = {_dominio_fuente(f.get("url") or "") for f in citadas}
+    dominios = {
+        _dominio_fuente(f["url"]) for f in citadas if isinstance(f.get("url"), str)
+    }
     dominios.discard("")
-    tendencias = {(f.get("tendencia") or "").lower() for f in citadas}
+    tendencias = {_campo_texto(f, "tendencia") for f in citadas}
     tendencias.discard("")
     return {
         "listadas": len(fuentes_meta),
@@ -251,7 +347,7 @@ def procesar(
     reparar: Callable[[str], str | None] | None = None,
 ) -> Procesado:
     """Pipeline completo: partir → (reparar) → validar → citas → registro →
-    extractos → confianza → re-serializar. Nunca lanza."""
+    extractos → solidez → re-serializar. Nunca lanza."""
     prosa, bruto = partir(texto)
     if bruto is None and reparar is not None:
         try:
@@ -273,16 +369,23 @@ def procesar(
     marcar_citas(prosa, meta)
     aplicar_registro(meta)
     adjuntar_extractos(meta, extractos)
-    meta["confianza_modelo"] = meta.get("confianza", 0)
-    meta["confianza"] = calcular_confianza(meta)
+    meta["solidez_modelo"] = meta.pop("confianza", 0)
+    meta["solidez"] = calcular_solidez(meta)
     meta["evidencia"] = resumir_evidencia(meta)
-    if meta.get("veredicto") != "no_verificable" and meta["evidencia"]["leidas"] == 0:
-        meta["veredicto_modelo"] = meta.get("veredicto")
-        meta["veredicto"] = "sin_evidencia"
-        meta["confianza"] = 0
-        meta["resumen"] = "No se reunió evidencia verificable suficiente."
-        prosa = (
-            "No pude abrir y citar evidencia suficiente para sostener una conclusión. "
-            "Prueba reformulando la afirmación con un nombre, fecha o país concreto."
-        )
+    # Degradar informando, jamás borrando. La prosa que el modelo escribió ya
+    # viajó al navegador por streaming: sustituirla es borrar una respuesta
+    # delante del usuario. Se anota qué le falta y por qué.
+    if meta["evidencia"]["leidas"] == 0:
+        if meta["evidencia"]["listadas"] == 0:
+            meta["aviso"] = {
+                "codigo": "nada_encontrado",
+                "texto": "No encontré ninguna fuente sobre esto.",
+            }
+        else:
+            meta["aviso"] = {
+                "codigo": "sin_abrir",
+                "texto": ("Encontré fuentes pero no pude abrir ninguna, así que "
+                          "no puedo respaldar esto con lo que dicen por dentro."),
+            }
+        meta["solidez"] = 0
     return Procesado(reserializar(prosa, meta), prosa, meta)
