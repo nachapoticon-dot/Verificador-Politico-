@@ -1,0 +1,2925 @@
+{
+  "version": 1,
+  "root": "../../..",
+  "scope": "verificador-politico",
+  "source_fingerprint": "ef1e03f3e85de16acc14665f316f4556caa72d59592ba5f06eabe2d3c4308cc6",
+  "repository": {
+    "is_git": true,
+    "head": "ced6d636872405d3f7777563fc1238fc33a673c1",
+    "branch": "faro-siguiente-nivel",
+    "dirty": {
+      "AGENTS.md": " M",
+      "README.md": " M",
+      "frontend/package.json": " M",
+      "frontend/src/App.tsx": " M",
+      "frontend/src/components/Answer.tsx": " M",
+      "frontend/src/components/RichText.tsx": " M",
+      "frontend/src/components/Sources.tsx": " M",
+      "frontend/src/components/avatars.tsx": " M",
+      "frontend/src/faro.css": " M",
+      "frontend/src/index.css": " M",
+      "frontend/src/lib/format.ts": " M",
+      "frontend/src/lib/maps.ts": " M",
+      "tests/test_format.mjs": " M",
+      "verificador/config.py": " M",
+      "verificador/prompts.py": " M"
+    }
+  },
+  "records": [
+    {
+      "path": "proyectos/verificador-politico/.claude/rules/contrato.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "contrato",
+      "bytes": 2806,
+      "estimated_tokens": 692,
+      "sha256": "dd910a3348764d9ce308140c49204d8be37fedcc90b2e98e12b22db6474a1882",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/.claude/settings.json",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "settings",
+      "bytes": 535,
+      "estimated_tokens": 134,
+      "sha256": "1536657f95ed421f62cf3428c5beb4cf2f9e8fae7a21240fa63ac780ef2ef935",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/.claude/skills/check/SKILL.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "SKILL",
+      "bytes": 1000,
+      "estimated_tokens": 247,
+      "sha256": "5f43fe0b87db3af9700671035e8ce639b0b9258e95fdcfa9a4297cbfd28498b2",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/.github/workflows/ci.yml",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "ci",
+      "bytes": 1270,
+      "estimated_tokens": 317,
+      "sha256": "0b71929c347e928bae0e65f03813161d739c2debc955acf7272af8b6fee0d936",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/.vscode/settings.json",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "settings",
+      "bytes": 670,
+      "estimated_tokens": 167,
+      "sha256": "9baa34e43a0718cfd0bcbbce00b497fbe3ffbc73acdde20d6561d369f0f68370",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/AGENTS.md",
+      "scope": "verificador-politico",
+      "kind": "governance",
+      "title": "Faro — guía para agentes",
+      "bytes": 5032,
+      "estimated_tokens": 1236,
+      "sha256": "f7c51c9a4b4a91f2d68048a86b091e2aad5c8952df60a77623d0e8e38c3f0085",
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "Faro — guía para agentes"
+        },
+        {
+          "line": 7,
+          "level": 2,
+          "text": "Comandos"
+        },
+        {
+          "line": 20,
+          "level": 2,
+          "text": "Estado conocido"
+        },
+        {
+          "line": 26,
+          "level": 2,
+          "text": "Economía de contexto"
+        },
+        {
+          "line": 34,
+          "level": 2,
+          "text": "Minas"
+        },
+        {
+          "line": 63,
+          "level": 2,
+          "text": "Convenciones"
+        },
+        {
+          "line": 75,
+          "level": 2,
+          "text": "Dónde está cada cosa"
+        },
+        {
+          "line": 85,
+          "level": 2,
+          "text": "Trabajo en curso"
+        }
+      ],
+      "symbols": [],
+      "authority": "governed_by",
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/CLAUDE.md",
+      "scope": "verificador-politico",
+      "kind": "governance",
+      "title": "CLAUDE",
+      "bytes": 2284,
+      "estimated_tokens": 561,
+      "sha256": "fffc7d2034625c04d853c35a828faf33733519c54d6dda2504c7809816b1f23a",
+      "headings": [
+        {
+          "line": 3,
+          "level": 2,
+          "text": "Específico de Claude Code"
+        },
+        {
+          "line": 20,
+          "level": 2,
+          "text": "Faro va a salir a internet"
+        }
+      ],
+      "symbols": [],
+      "authority": "governed_by",
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/docs/despliegue.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "Sacar Faro a internet",
+      "bytes": 4152,
+      "estimated_tokens": 1022,
+      "sha256": "305eea661d97042d81344c3e9c0f64bea70fc201014e8a605192d1504a05ebbf",
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "Sacar Faro a internet"
+        },
+        {
+          "line": 10,
+          "level": 2,
+          "text": "Lo que de verdad bloquea"
+        },
+        {
+          "line": 34,
+          "level": 2,
+          "text": "Lo que se rompe al escalar a más de un proceso"
+        },
+        {
+          "line": 48,
+          "level": 2,
+          "text": "Detalles que muerden"
+        },
+        {
+          "line": 69,
+          "level": 2,
+          "text": "Por dónde iría"
+        }
+      ],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/docs/superpowers/deuda-conocida.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "Deuda conocida",
+      "bytes": 3890,
+      "estimated_tokens": 961,
+      "sha256": "1bd9634f89cb2d283a6b88f0ff951c924dfaad87a1f689036c0274ddea66130f",
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "Deuda conocida"
+        },
+        {
+          "line": 7,
+          "level": 2,
+          "text": "Vale la pena antes que nada"
+        },
+        {
+          "line": 35,
+          "level": 2,
+          "text": "Cobertura que falta"
+        },
+        {
+          "line": 45,
+          "level": 2,
+          "text": "Trampas latentes"
+        },
+        {
+          "line": 56,
+          "level": 2,
+          "text": "Limpieza"
+        }
+      ],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/docs/superpowers/plans/2026-07-26-suelo-y-contrato.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "Faro fases 1-2: el suelo y el contrato — plan de implementación",
+      "bytes": 53129,
+      "estimated_tokens": 13183,
+      "sha256": "5bfc0f4d40cc61fed7647fe1ab494cfa8dd5862d6dd9fb17b2b9faff1cdd4315",
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "Faro fases 1-2: el suelo y el contrato — plan de implementación"
+        },
+        {
+          "line": 23,
+          "level": 2,
+          "text": "Restricciones globales"
+        },
+        {
+          "line": 40,
+          "level": 2,
+          "text": "Estructura de ficheros"
+        },
+        {
+          "line": 56,
+          "level": 1,
+          "text": "BLOQUE 1 — EL SUELO"
+        },
+        {
+          "line": 58,
+          "level": 3,
+          "text": "Tarea 1: Un muro anti-bot deja de contar como lectura"
+        },
+        {
+          "line": 78,
+          "level": 1,
+          "text": "tests/test_lectura.py — añadir al final"
+        },
+        {
+          "line": 131,
+          "level": 1,
+          "text": "Marcadores de \"no estás leyendo el artículo, estás leyendo al portero\"."
+        },
+        {
+          "line": 132,
+          "level": 1,
+          "text": "Se comprueban sobre texto ya extraído y en minúsculas."
+        },
+        {
+          "line": 148,
+          "level": 1,
+          "text": "Un artículo largo que MENCIONE un captcha no es un muro. La señal es que el"
+        },
+        {
+          "line": 149,
+          "level": 1,
+          "text": "texto sea corto: los porteros no tienen cuerpo."
+        },
+        {
+          "line": 202,
+          "level": 3,
+          "text": "Tarea 2: Fuentes institucionales en el registro, y sin tope"
+        },
+        {
+          "line": 221,
+          "level": 1,
+          "text": "tests/test_fuentes.py — añadir al final"
+        },
+        {
+          "line": 240,
+          "level": 1,
+          "text": "tests/test_veredicto.py — añadir al final"
+        },
+        {
+          "line": 354,
+          "level": 3,
+          "text": "Tarea 3: Un solo default de `largo`"
+        },
+        {
+          "line": 369,
+          "level": 1,
+          "text": "tests/test_prompt.py — añadir al final"
+        },
+        {
+          "line": 437,
+          "level": 3,
+          "text": "Tarea 4: El despacho de herramientas deja de reventar"
+        },
+        {
+          "line": 451,
+          "level": 1,
+          "text": "tests/test_dispatch.py — añadir al final"
+        },
+        {
+          "line": 548,
+          "level": 3,
+          "text": "Tarea 5: Guardia SSRF inyectable, y el test de afinidad vuelve a proteger"
+        },
+        {
+          "line": 587,
+          "level": 1,
+          "text": "Punto de inyección para pruebas. En producción es siempre `_url_publica`; los"
+        },
+        {
+          "line": 588,
+          "level": 1,
+          "text": "tests herméticos lo sustituyen para poder servir desde file:// sin debilitar"
+        },
+        {
+          "line": 589,
+          "level": 1,
+          "text": "el guardia real, que es la defensa contra SSRF."
+        },
+        {
+          "line": 628,
+          "level": 2,
+          "text": "Estado conocido"
+        },
+        {
+          "line": 656,
+          "level": 1,
+          "text": "BLOQUE 2 — EL CONTRATO"
+        },
+        {
+          "line": 658,
+          "level": 3,
+          "text": "Tarea 6: El prompt emite `tipo` y deja de forzar un sello imposible"
+        }
+      ],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/docs/superpowers/specs/2026-07-26-faro-siguiente-nivel-design.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "Faro: del buscador al razonamiento",
+      "bytes": 14874,
+      "estimated_tokens": 3667,
+      "sha256": "424f3add529c0635cb85a23365bef32198b8957d751ea946c8f709c85b4edefe",
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "Faro: del buscador al razonamiento"
+        },
+        {
+          "line": 5,
+          "level": 2,
+          "text": "Problema"
+        },
+        {
+          "line": 34,
+          "level": 3,
+          "text": "Evidencia de una corrida real"
+        },
+        {
+          "line": 51,
+          "level": 2,
+          "text": "Objetivo"
+        },
+        {
+          "line": 68,
+          "level": 2,
+          "text": "Motor"
+        },
+        {
+          "line": 99,
+          "level": 2,
+          "text": "Arquitectura"
+        },
+        {
+          "line": 121,
+          "level": 3,
+          "text": "El dial de esfuerzo"
+        },
+        {
+          "line": 139,
+          "level": 3,
+          "text": "Dos decisiones de fondo"
+        },
+        {
+          "line": 152,
+          "level": 2,
+          "text": "Contrato del veredicto"
+        },
+        {
+          "line": 158,
+          "level": 3,
+          "text": "Separar qué te preguntaron de qué se concluyó"
+        },
+        {
+          "line": 173,
+          "level": 3,
+          "text": "`solidez` sustituye a `confianza`, con dos curvas"
+        },
+        {
+          "line": 196,
+          "level": 3,
+          "text": "La prosa no se borra nunca"
+        },
+        {
+          "line": 208,
+          "level": 3,
+          "text": "Nuevos campos"
+        },
+        {
+          "line": 213,
+          "level": 2,
+          "text": "Interfaz"
+        },
+        {
+          "line": 255,
+          "level": 2,
+          "text": "Pruebas"
+        },
+        {
+          "line": 270,
+          "level": 3,
+          "text": "Coste"
+        },
+        {
+          "line": 277,
+          "level": 2,
+          "text": "Orden de trabajo"
+        }
+      ],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/.oxlintrc.json",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": ".oxlintrc",
+      "bytes": 245,
+      "estimated_tokens": 62,
+      "sha256": "b4d344818a1e1bf43997e4744a9153c8eef770c98b58229cd86363dabb85ded4",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/index.html",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "index",
+      "bytes": 528,
+      "estimated_tokens": 131,
+      "sha256": "8df4a104cce509a66c40322926993fc5b7a86590921b99369b1bac2db17a5271",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/package.json",
+      "scope": "verificador-politico",
+      "kind": "manifest",
+      "title": "package faro-web",
+      "bytes": 828,
+      "estimated_tokens": 207,
+      "sha256": "b54bcae4bda2e94dd38b5493bf7dce550f9ac9c07cb51aeef48025a11f8248cc",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/App.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "App",
+      "bytes": 8086,
+      "estimated_tokens": 2015,
+      "sha256": "65efe3fd6e47f682594b8318c734851fe3f0ec9bde20e4559f734a8d69ab9264",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 10,
+          "name": "Preset"
+        },
+        {
+          "line": 17,
+          "name": "PRESETS"
+        },
+        {
+          "line": 38,
+          "name": "PAISES"
+        },
+        {
+          "line": 47,
+          "name": "Masthead"
+        },
+        {
+          "line": 68,
+          "name": "EmptyState"
+        },
+        {
+          "line": 82,
+          "name": "TurnoView"
+        },
+        {
+          "line": 91,
+          "name": "preset"
+        },
+        {
+          "line": 92,
+          "name": "pais"
+        },
+        {
+          "line": 114,
+          "name": "Composer"
+        },
+        {
+          "line": 135,
+          "name": "ref"
+        },
+        {
+          "line": 137,
+          "name": "el"
+        },
+        {
+          "line": 199,
+          "name": "App"
+        },
+        {
+          "line": 204,
+          "name": "finRef"
+        },
+        {
+          "line": 210,
+          "name": "enviar"
+        },
+        {
+          "line": 211,
+          "name": "pregunta"
+        },
+        {
+          "line": 213,
+          "name": "opcionesBase"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/components/Answer.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "Answer",
+      "bytes": 6859,
+      "estimated_tokens": 1712,
+      "sha256": "a6b6bfe8e17ab03ae9d66c3f45ff9daef1221d81910013b02e1141f19d35e055",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 11,
+          "name": "ALTO_NOTA"
+        },
+        {
+          "line": 15,
+          "name": "glosaDe"
+        },
+        {
+          "line": 16,
+          "name": "partes"
+        },
+        {
+          "line": 17,
+          "name": "e"
+        },
+        {
+          "line": 27,
+          "name": "pais"
+        },
+        {
+          "line": 32,
+          "name": "Answer"
+        },
+        {
+          "line": 36,
+          "name": "grid"
+        },
+        {
+          "line": 52,
+          "name": "escribiendo"
+        },
+        {
+          "line": 54,
+          "name": "fuentes"
+        },
+        {
+          "line": 55,
+          "name": "sello"
+        },
+        {
+          "line": 56,
+          "name": "glosa"
+        },
+        {
+          "line": 58,
+          "name": "conf"
+        },
+        {
+          "line": 65,
+          "name": "porUrl"
+        },
+        {
+          "line": 69,
+          "name": "extractoDe"
+        },
+        {
+          "line": 72,
+          "name": "fuenteActiva"
+        },
+        {
+          "line": 76,
+          "name": "invocar"
+        },
+        {
+          "line": 81,
+          "name": "caja"
+        },
+        {
+          "line": 86,
+          "name": "bruto"
+        },
+        {
+          "line": 90,
+          "name": "copiar"
+        },
+        {
+          "line": 91,
+          "name": "referencias"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/components/avatars.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "avatars",
+      "bytes": 5786,
+      "estimated_tokens": 1445,
+      "sha256": "33fd53c578a3e81e0826009de4ce0ef15f25bb902a4f6437e5ca96bd6f0193d8",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 4,
+          "name": "FaroAvatar"
+        },
+        {
+          "line": 43,
+          "name": "FaroLeyendo"
+        },
+        {
+          "line": 113,
+          "name": "MiniAvatar"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/components/RichText.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "RichText",
+      "bytes": 4012,
+      "estimated_tokens": 1002,
+      "sha256": "cb871ebafe0d40f1a026d9014877e2d24f91ef2e61a0b78e225d4b9824fab635",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 7,
+          "name": "InvocarCita"
+        },
+        {
+          "line": 9,
+          "name": "RichTextProps"
+        },
+        {
+          "line": 16,
+          "name": "Ctx"
+        },
+        {
+          "line": 22,
+          "name": "inline"
+        },
+        {
+          "line": 24,
+          "name": "porN"
+        },
+        {
+          "line": 25,
+          "name": "salida"
+        },
+        {
+          "line": 26,
+          "name": "pegadas"
+        },
+        {
+          "line": 27,
+          "name": "inicio"
+        },
+        {
+          "line": 28,
+          "name": "indice"
+        },
+        {
+          "line": 31,
+          "name": "posicion"
+        },
+        {
+          "line": 33,
+          "name": "token"
+        },
+        {
+          "line": 34,
+          "name": "clave"
+        },
+        {
+          "line": 39,
+          "name": "n"
+        },
+        {
+          "line": 40,
+          "name": "fuente"
+        },
+        {
+          "line": 67,
+          "name": "partes"
+        },
+        {
+          "line": 68,
+          "name": "url"
+        },
+        {
+          "line": 85,
+          "name": "lineas"
+        },
+        {
+          "line": 94,
+          "name": "RichText"
+        },
+        {
+          "line": 95,
+          "name": "ctx"
+        },
+        {
+          "line": 96,
+          "name": "bloques"
+        },
+        {
+          "line": 100,
+          "name": "ls"
+        },
+        {
+          "line": 108,
+          "name": "encabezado"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/components/Sources.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "Sources",
+      "bytes": 4195,
+      "estimated_tokens": 1048,
+      "sha256": "6b3f0d716ef078bca00c8ced449c9d9653eefebe4936830e6e1ed60c8194c0d2",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 9,
+          "name": "Avisos"
+        },
+        {
+          "line": 10,
+          "name": "cred"
+        },
+        {
+          "line": 11,
+          "name": "manip"
+        },
+        {
+          "line": 21,
+          "name": "tendenciaDe"
+        },
+        {
+          "line": 22,
+          "name": "t"
+        },
+        {
+          "line": 28,
+          "name": "NotaMargen"
+        },
+        {
+          "line": 39,
+          "name": "dominio"
+        },
+        {
+          "line": 40,
+          "name": "url"
+        },
+        {
+          "line": 41,
+          "name": "tendencia"
+        },
+        {
+          "line": 79,
+          "name": "ListaFuentes"
+        },
+        {
+          "line": 89,
+          "name": "orden"
+        },
+        {
+          "line": 93,
+          "name": "dominio"
+        },
+        {
+          "line": 94,
+          "name": "tendencia"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/components/Trace.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "Trace",
+      "bytes": 2771,
+      "estimated_tokens": 691,
+      "sha256": "6d0bc5a2ec8f6dcc53a6f0faf45f74b26316a56af68d886b06884ebcd79475d3",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 14,
+          "name": "IconoPaso"
+        },
+        {
+          "line": 20,
+          "name": "EstadoPaso"
+        },
+        {
+          "line": 26,
+          "name": "Trace"
+        },
+        {
+          "line": 27,
+          "name": "investigando"
+        },
+        {
+          "line": 34,
+          "name": "lecturas"
+        },
+        {
+          "line": 35,
+          "name": "busquedas"
+        },
+        {
+          "line": 36,
+          "name": "fallos"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/faro.css",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "faro",
+      "bytes": 27730,
+      "estimated_tokens": 6858,
+      "sha256": "17c0bea44c58e8794dc563b8f35201c57b2e2a0fddd5fbe0ab89483bad0eda08",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/hooks/useVerificador.ts",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "useVerificador",
+      "bytes": 3091,
+      "estimated_tokens": 772,
+      "sha256": "2ff3c5ec3fb86736510c497ba36281d79c4c7506079d01b3a7cf56f6167f93ed",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 8,
+          "name": "nuevoId"
+        },
+        {
+          "line": 12,
+          "name": "aplicarTraza"
+        },
+        {
+          "line": 13,
+          "name": "eventos"
+        },
+        {
+          "line": 14,
+          "name": "i"
+        },
+        {
+          "line": 24,
+          "name": "useVerificador"
+        },
+        {
+          "line": 27,
+          "name": "controlador"
+        },
+        {
+          "line": 29,
+          "name": "preguntar"
+        },
+        {
+          "line": 31,
+          "name": "id"
+        },
+        {
+          "line": 32,
+          "name": "abort"
+        },
+        {
+          "line": 37,
+          "name": "parchar"
+        },
+        {
+          "line": 77,
+          "name": "detener"
+        },
+        {
+          "line": 78,
+          "name": "limpiar"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/index.css",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "index",
+      "bytes": 2819,
+      "estimated_tokens": 703,
+      "sha256": "d912bc417d8a40dfcfd13f6cd415021ce084242b728ec003641353cdc2d0c637",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/lib/format.ts",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "format",
+      "bytes": 3794,
+      "estimated_tokens": 944,
+      "sha256": "85f96690a9a18cef53bd637d2cef0c954edca05d78c3cef5211ad3d922008100",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 8,
+          "name": "partirRespuesta"
+        },
+        {
+          "line": 9,
+          "name": "m"
+        },
+        {
+          "line": 11,
+          "name": "meta"
+        },
+        {
+          "line": 19,
+          "name": "abierto"
+        },
+        {
+          "line": 25,
+          "name": "urlSegura"
+        },
+        {
+          "line": 27,
+          "name": "p"
+        },
+        {
+          "line": 36,
+          "name": "TRACKING"
+        },
+        {
+          "line": 38,
+          "name": "normalizarUrl"
+        },
+        {
+          "line": 40,
+          "name": "crudo"
+        },
+        {
+          "line": 41,
+          "name": "p"
+        },
+        {
+          "line": 47,
+          "name": "host"
+        },
+        {
+          "line": 49,
+          "name": "ruta"
+        },
+        {
+          "line": 50,
+          "name": "pares"
+        },
+        {
+          "line": 52,
+          "name": "kl"
+        },
+        {
+          "line": 60,
+          "name": "TOKEN_RICO"
+        },
+        {
+          "line": 62,
+          "name": "CITA"
+        },
+        {
+          "line": 72,
+          "name": "citasPegadas"
+        },
+        {
+          "line": 73,
+          "name": "pegadas"
+        },
+        {
+          "line": 74,
+          "name": "finPrevia"
+        },
+        {
+          "line": 77,
+          "name": "i"
+        },
+        {
+          "line": 87,
+          "name": "PALABRAS"
+        },
+        {
+          "line": 92,
+          "name": "enPalabras"
+        },
+        {
+          "line": 96,
+          "name": "dominioDe"
+        },
+        {
+          "line": 98,
+          "name": "host"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/lib/maps.ts",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "maps",
+      "bytes": 3432,
+      "estimated_tokens": 847,
+      "sha256": "41ed6d596ee4be2cd053ed3b093d26cf18719fc35c6e97724c68b229a01528be",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 6,
+          "name": "Sello"
+        },
+        {
+          "line": 12,
+          "name": "SELLOS"
+        },
+        {
+          "line": 22,
+          "name": "SELLO_POR_EMOJI"
+        },
+        {
+          "line": 33,
+          "name": "CREDIBILIDAD"
+        },
+        {
+          "line": 42,
+          "name": "MANIPULACION"
+        },
+        {
+          "line": 50,
+          "name": "TENDENCIA_NOMBRE"
+        },
+        {
+          "line": 62,
+          "name": "selloDe"
+        },
+        {
+          "line": 64,
+          "name": "clave"
+        },
+        {
+          "line": 75,
+          "name": "PAISES"
+        },
+        {
+          "line": 83,
+          "name": "nombrePais"
+        },
+        {
+          "line": 85,
+          "name": "c"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/lib/sse.ts",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "sse",
+      "bytes": 2170,
+      "estimated_tokens": 542,
+      "sha256": "bcdc3c9dc97595d0b8843533557e4ab2cf3712fb1ce03da8a0ac7eedbf60afd3",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 7,
+          "name": "Handler"
+        },
+        {
+          "line": 9,
+          "name": "parseSSE"
+        },
+        {
+          "line": 10,
+          "name": "evento"
+        },
+        {
+          "line": 11,
+          "name": "datos"
+        },
+        {
+          "line": 16,
+          "name": "dato"
+        },
+        {
+          "line": 25,
+          "name": "streamVerificar"
+        },
+        {
+          "line": 31,
+          "name": "resp"
+        },
+        {
+          "line": 49,
+          "name": "lector"
+        },
+        {
+          "line": 50,
+          "name": "dec"
+        },
+        {
+          "line": 51,
+          "name": "buffer"
+        },
+        {
+          "line": 52,
+          "name": "terminal"
+        },
+        {
+          "line": 61,
+          "name": "corte"
+        },
+        {
+          "line": 63,
+          "name": "bloque"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/lib/types.ts",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "types",
+      "bytes": 1500,
+      "estimated_tokens": 375,
+      "sha256": "00a5b968c06f0eabb80c720d960a92f3fc7478da97f2804716c98f942ffb898c",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 3,
+          "name": "EstadoPaso"
+        },
+        {
+          "line": 4,
+          "name": "TipoPaso"
+        },
+        {
+          "line": 6,
+          "name": "TrazaEvento"
+        },
+        {
+          "line": 16,
+          "name": "FuenteMeta"
+        },
+        {
+          "line": 29,
+          "name": "TipoConsulta"
+        },
+        {
+          "line": 31,
+          "name": "Aviso"
+        },
+        {
+          "line": 36,
+          "name": "Meta"
+        },
+        {
+          "line": 56,
+          "name": "Opciones"
+        },
+        {
+          "line": 63,
+          "name": "Turno"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/src/main.tsx",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "main",
+      "bytes": 250,
+      "estimated_tokens": 63,
+      "sha256": "977bdf1ce49b35876e7568f72613d335b333003dd6f0840fa85295a3c1e2f1e6",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/tsconfig.app.json",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "tsconfig.app",
+      "bytes": 617,
+      "estimated_tokens": 155,
+      "sha256": "b1eac9ba6cd1c01d59ebca159805e052c798d9d4ab904680b79ce3e306ea0bbd",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/tsconfig.json",
+      "scope": "verificador-politico",
+      "kind": "manifest",
+      "title": "tsconfig",
+      "bytes": 119,
+      "estimated_tokens": 30,
+      "sha256": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/tsconfig.node.json",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "tsconfig.node",
+      "bytes": 558,
+      "estimated_tokens": 140,
+      "sha256": "d366cc0827139db39c61815f22491bbfda56c654354a42ad7795143d314e45e8",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/frontend/vite.config.ts",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "vite.config",
+      "bytes": 440,
+      "estimated_tokens": 110,
+      "sha256": "349190fa0313fd8186922427311b1737c9f437cefde5fccf82988e28cd844a20",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/main.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "main",
+      "bytes": 404,
+      "estimated_tokens": 100,
+      "sha256": "4d78b17097dff2470317736f97962dd98156e6223c9e33b6df55bdc7b00a0ad5",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/README.md",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "Faro",
+      "bytes": 5275,
+      "estimated_tokens": 1262,
+      "sha256": "8dd0a648e634004ab8e8e481f313acedd832e94f80f29f5c0d1066b15451e24d",
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "Faro"
+        },
+        {
+          "line": 10,
+          "level": 2,
+          "text": "Capacidades"
+        },
+        {
+          "line": 28,
+          "level": 2,
+          "text": "Arquitectura"
+        },
+        {
+          "line": 47,
+          "level": 2,
+          "text": "Instalación"
+        },
+        {
+          "line": 77,
+          "level": 2,
+          "text": "Ejecución"
+        },
+        {
+          "line": 104,
+          "level": 2,
+          "text": "Verificación"
+        },
+        {
+          "line": 117,
+          "level": 2,
+          "text": "Estructura"
+        },
+        {
+          "line": 142,
+          "level": 2,
+          "text": "Límites"
+        }
+      ],
+      "symbols": [],
+      "authority": "entrypoint",
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/requirements.txt",
+      "scope": "verificador-politico",
+      "kind": "documentation",
+      "title": "requirements",
+      "bytes": 484,
+      "estimated_tokens": 120,
+      "sha256": "f328cf71a4e313c3b4e4aca456101c29ee46b742473d82ffb268aa908c2babc7",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/scripts/humo.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "humo",
+      "bytes": 5617,
+      "estimated_tokens": 1396,
+      "sha256": "0b15c264d9ff546c24917462173cdafc446d00343236cefb84dcfff83e62ca48",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 39,
+          "name": "_salir"
+        },
+        {
+          "line": 44,
+          "name": "main"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/__init__.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "  init  ",
+      "bytes": 0,
+      "estimated_tokens": 1,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/conftest.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "conftest",
+      "bytes": 193,
+      "estimated_tokens": 48,
+      "sha256": "7ec1bcf98cbd4f3fafb2cad8032bbf6ed19e9b16b6f9a02ce7236092aaba6097",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/helpers.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "helpers",
+      "bytes": 1124,
+      "estimated_tokens": 281,
+      "sha256": "8114e52b7078d39579fe139b79c9ca4b847436c253951781feeec0e8ddb9008e",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 5,
+          "name": "_chunk"
+        },
+        {
+          "line": 10,
+          "name": "stream_de"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_cache.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test cache",
+      "bytes": 3554,
+      "estimated_tokens": 887,
+      "sha256": "083e25ef09daa286a0658eeb13c5a67b2df3c572203d10beb23677ac1f6bffbb",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 5,
+          "name": "setup_function"
+        },
+        {
+          "line": 9,
+          "name": "test_leer_pagina_cachea_por_url_normalizada"
+        },
+        {
+          "line": 12,
+          "name": "rapido"
+        },
+        {
+          "line": 25,
+          "name": "test_fallos_no_se_cachean"
+        },
+        {
+          "line": 28,
+          "name": "rapido"
+        },
+        {
+          "line": 38,
+          "name": "test_cache_expira"
+        },
+        {
+          "line": 47,
+          "name": "rapido2"
+        },
+        {
+          "line": 56,
+          "name": "test_cache_respeta_el_tope"
+        },
+        {
+          "line": 64,
+          "name": "test_buscar_web_reintenta_y_recupera"
+        },
+        {
+          "line": 67,
+          "name": "ddgs_texto"
+        },
+        {
+          "line": 80,
+          "name": "test_buscar_web_agota_reintentos_y_devuelve_error"
+        },
+        {
+          "line": 81,
+          "name": "revienta"
+        },
+        {
+          "line": 90,
+          "name": "test_pagina_y_video_no_comparten_cache"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_dispatch.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test dispatch",
+      "bytes": 2660,
+      "estimated_tokens": 664,
+      "sha256": "61ade34dba3ef32bfeb904797f5131796c145ef528bec5a79cd555144ad3b4f5",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 8,
+          "name": "_agente"
+        },
+        {
+          "line": 13,
+          "name": "test_schema_incluye_ver_video"
+        },
+        {
+          "line": 18,
+          "name": "test_dispatch_ver_video"
+        },
+        {
+          "line": 27,
+          "name": "_verificador_falso"
+        },
+        {
+          "line": 33,
+          "name": "test_ejecutar_tool_tolera_max_resultados_no_numerico"
+        },
+        {
+          "line": 41,
+          "name": "test_ejecutar_tool_tolera_argumentos_que_no_son_objeto"
+        },
+        {
+          "line": 49,
+          "name": "test_ejecutar_tool_tolera_argumentos_none"
+        },
+        {
+          "line": 55,
+          "name": "test_ejecutar_tool_tolera_max_resultados_infinito"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_format.mjs",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test format",
+      "bytes": 2946,
+      "estimated_tokens": 733,
+      "sha256": "da5c6d830c69de5c857c3b8f37a4d500020cb4f80f94fcb6fb9a819048468094",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 11,
+          "name": "completa"
+        },
+        {
+          "line": 18,
+          "name": "abierta"
+        },
+        {
+          "line": 47,
+          "name": "pegadas"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_fuentes.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test fuentes",
+      "bytes": 7006,
+      "estimated_tokens": 1746,
+      "sha256": "b15288aaf93bcc587281308ab7ec0538631f0e173a2b851f9104707feed52c5b",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 12,
+          "name": "test_dominio_registrable_normaliza"
+        },
+        {
+          "line": 19,
+          "name": "test_clasificar_conocida_exacta_y_por_sufijo"
+        },
+        {
+          "line": 28,
+          "name": "test_clasificar_desconocida_es_none"
+        },
+        {
+          "line": 34,
+          "name": "test_anotar_conocida_incluye_credibilidad_y_tendencia"
+        },
+        {
+          "line": 41,
+          "name": "test_clasificar_incluye_manipulacion_default_ninguna"
+        },
+        {
+          "line": 47,
+          "name": "test_anotar_incluye_eje_manipulacion"
+        },
+        {
+          "line": 52,
+          "name": "test_anotar_desconocida_pide_clasificar"
+        },
+        {
+          "line": 58,
+          "name": "test_registro_degrada_a_dict_vacio_si_falta_json"
+        },
+        {
+          "line": 66,
+          "name": "test_registro_degrada_a_dict_vacio_si_json_invalido"
+        },
+        {
+          "line": 72,
+          "name": "test_extraer_meta_lee_el_json_final"
+        },
+        {
+          "line": 80,
+          "name": "test_capturar_propuestas_solo_desconocidas_y_dedupe"
+        },
+        {
+          "line": 98,
+          "name": "test_capturar_propuestas_manipulacion_default_ninguna"
+        },
+        {
+          "line": 109,
+          "name": "test_capturar_propuestas_meta_vacia_no_rompe"
+        },
+        {
+          "line": 115,
+          "name": "test_registro_incluye_fuentes_institucionales"
+        },
+        {
+          "line": 129,
+          "name": "test_ningun_paraguas_de_gobierno_en_el_registro"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_lectura.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test lectura",
+      "bytes": 8814,
+      "estimated_tokens": 2195,
+      "sha256": "694a7cbdc9dbc3a2099d1069100fc908d5dc6aeb5bda78a9633ccadef19d55dd",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 10,
+          "name": "setup_function"
+        },
+        {
+          "line": 14,
+          "name": "_chromium_disponible"
+        },
+        {
+          "line": 32,
+          "name": "test_navegador_reutilizado_entre_hilos"
+        },
+        {
+          "line": 52,
+          "name": "correr"
+        },
+        {
+          "line": 66,
+          "name": "test_leer_pagina_usa_ruta_rapida"
+        },
+        {
+          "line": 69,
+          "name": "boom"
+        },
+        {
+          "line": 78,
+          "name": "test_leer_pagina_cae_al_navegador"
+        },
+        {
+          "line": 87,
+          "name": "test_leer_pagina_trunca"
+        },
+        {
+          "line": 96,
+          "name": "test_leer_pagina_falla_todo"
+        },
+        {
+          "line": 104,
+          "name": "test_leer_pagina_ok_antepone_anotacion"
+        },
+        {
+          "line": 113,
+          "name": "test_buscar_web_anota_cada_resultado"
+        },
+        {
+          "line": 116,
+          "name": "_DDGS"
+        },
+        {
+          "line": 117,
+          "name": "__enter__"
+        },
+        {
+          "line": 118,
+          "name": "__exit__"
+        },
+        {
+          "line": 119,
+          "name": "text"
+        },
+        {
+          "line": 127,
+          "name": "test_ddgs_se_serializa_entre_hilos"
+        },
+        {
+          "line": 131,
+          "name": "_DDGS"
+        },
+        {
+          "line": 132,
+          "name": "__enter__"
+        },
+        {
+          "line": 133,
+          "name": "__exit__"
+        },
+        {
+          "line": 134,
+          "name": "text"
+        },
+        {
+          "line": 153,
+          "name": "test_url_publica_bloquea_redes_internas_y_credenciales"
+        },
+        {
+          "line": 154,
+          "name": "resolver"
+        },
+        {
+          "line": 166,
+          "name": "test_ruta_rapida_valida_cada_redireccion"
+        },
+        {
+          "line": 172,
+          "name": "get"
+        },
+        {
+          "line": 185,
+          "name": "test_es_muro_detecta_captcha_corto"
+        },
+        {
+          "line": 192,
+          "name": "test_es_muro_ignora_articulo_largo_que_menciona_captcha"
+        },
+        {
+          "line": 198,
+          "name": "test_es_muro_detecta_paywall_y_cloudflare"
+        },
+        {
+          "line": 203,
+          "name": "test_es_muro_no_marca_texto_normal_corto"
+        },
+        {
+          "line": 207,
+          "name": "test_leer_pagina_rechaza_un_muro"
+        },
+        {
+          "line": 220,
+          "name": "test_es_muro_no_marca_prosa_legitima_con_palabras_ambiguas"
+        },
+        {
+          "line": 233,
+          "name": "test_es_muro_si_marca_una_pagina_de_error_pelada"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_paralelo.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test paralelo",
+      "bytes": 1806,
+      "estimated_tokens": 452,
+      "sha256": "caf93f475c4813b1e43582c7f50937feb5387b6e1d6cf92139b2f22cb339f94c",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 11,
+          "name": "_agente"
+        },
+        {
+          "line": 15,
+          "name": "test_dos_lecturas_corren_a_la_vez"
+        },
+        {
+          "line": 20,
+          "name": "lp"
+        },
+        {
+          "line": 38,
+          "name": "test_mensajes_tool_conservan_el_orden"
+        },
+        {
+          "line": 42,
+          "name": "fake_create"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_prompt.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test prompt",
+      "bytes": 5056,
+      "estimated_tokens": 1260,
+      "sha256": "1169d3c7414c5d07a87f2955a7f510e79405c38f5fc231b9589398cd969a8cfe",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 4,
+          "name": "test_prompt_clasifica_pregunta_y_pondera_credibilidad"
+        },
+        {
+          "line": 20,
+          "name": "test_prompt_pondera_manipulacion"
+        },
+        {
+          "line": 30,
+          "name": "test_prompt_pide_concision_citas_y_n"
+        },
+        {
+          "line": 40,
+          "name": "test_prompt_distingue_eco_de_confirmacion_independiente"
+        },
+        {
+          "line": 48,
+          "name": "test_prompt_autentica_contenido_concreto"
+        },
+        {
+          "line": 57,
+          "name": "test_prompt_rastrea_origen_de_virales"
+        },
+        {
+          "line": 66,
+          "name": "test_instruccion_modo_textos_por_eje"
+        },
+        {
+          "line": 77,
+          "name": "test_instruccion_modo_cae_al_default_si_invalido"
+        },
+        {
+          "line": 82,
+          "name": "test_prompt_prohibe_encabezados_markdown"
+        },
+        {
+          "line": 91,
+          "name": "test_todas_las_capas_comparten_el_mismo_default_de_largo"
+        },
+        {
+          "line": 109,
+          "name": "test_prompt_pide_el_campo_tipo"
+        },
+        {
+          "line": 115,
+          "name": "test_informativo_ya_no_es_un_veredicto"
+        },
+        {
+          "line": 121,
+          "name": "test_solo_las_afirmaciones_llevan_sello"
+        },
+        {
+          "line": 125,
+          "name": "test_los_modos_no_ordenan_estampar_veredicto"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_server.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test server",
+      "bytes": 4195,
+      "estimated_tokens": 1047,
+      "sha256": "19cafe1750f6363b9784d38b55e862b43928bb8c08e42f92e26be37380a320c0",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 5,
+          "name": "test_sse_emite_traza_y_respuesta"
+        },
+        {
+          "line": 7,
+          "name": "_FakeAgente"
+        },
+        {
+          "line": 8,
+          "name": "preguntar"
+        },
+        {
+          "line": 24,
+          "name": "test_pregunta_vacia_no_llama_al_agente"
+        },
+        {
+          "line": 27,
+          "name": "_A"
+        },
+        {
+          "line": 28,
+          "name": "preguntar"
+        },
+        {
+          "line": 40,
+          "name": "test_sse_emite_delta_y_reset"
+        },
+        {
+          "line": 41,
+          "name": "_FakeAgente"
+        },
+        {
+          "line": 42,
+          "name": "preguntar"
+        },
+        {
+          "line": 58,
+          "name": "test_error_interno_emite_terminal_saneado"
+        },
+        {
+          "line": 59,
+          "name": "_FakeAgente"
+        },
+        {
+          "line": 60,
+          "name": "preguntar"
+        },
+        {
+          "line": 72,
+          "name": "test_endpoint_valida_largo_detalle_pais_rigor"
+        },
+        {
+          "line": 75,
+          "name": "_FakeAgente"
+        },
+        {
+          "line": 76,
+          "name": "preguntar"
+        },
+        {
+          "line": 95,
+          "name": "test_payload_no_objeto_y_pregunta_excesiva_son_422"
+        },
+        {
+          "line": 101,
+          "name": "test_pais_invalido_es_422"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_sse.mjs",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test sse",
+      "bytes": 976,
+      "estimated_tokens": 244,
+      "sha256": "6fb960bdeb24519ae614b125e42d61002029c6c5d46bacf31aeb179a31c6c94c",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 4,
+          "name": "encoder"
+        },
+        {
+          "line": 6,
+          "name": "respuestaSSE"
+        },
+        {
+          "line": 19,
+          "name": "eventos"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_streaming.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test streaming",
+      "bytes": 2543,
+      "estimated_tokens": 636,
+      "sha256": "fb3e03f706d52b9feb303e3ff65cfac3e2ac9d71be09d4d4a32a78a3376909a4",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 11,
+          "name": "_agente"
+        },
+        {
+          "line": 15,
+          "name": "test_completar_pide_stream_y_junta_el_contenido"
+        },
+        {
+          "line": 19,
+          "name": "fake_create"
+        },
+        {
+          "line": 33,
+          "name": "test_completar_reconstruye_tool_calls_sin_emitir_deltas"
+        },
+        {
+          "line": 44,
+          "name": "test_completar_resetea_si_llegan_tools_tras_texto"
+        },
+        {
+          "line": 47,
+          "name": "flujo"
+        },
+        {
+          "line": 58,
+          "name": "test_completar_sin_on_step_no_rompe"
+        },
+        {
+          "line": 66,
+          "name": "test_preguntar_cancelada_no_llama_al_modelo"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_traza.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test traza",
+      "bytes": 8177,
+      "estimated_tokens": 2039,
+      "sha256": "a05089b199c668386b378125df82347061a38e6e0e1100b1b183029cfde22247",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 8,
+          "name": "test_dominio"
+        },
+        {
+          "line": 13,
+          "name": "test_on_step_estructurado"
+        },
+        {
+          "line": 36,
+          "name": "test_on_step_fallo"
+        },
+        {
+          "line": 64,
+          "name": "test_on_step_ver_video_no_youtube_es_fallo"
+        },
+        {
+          "line": 86,
+          "name": "test_preguntar_captura_propuestas"
+        },
+        {
+          "line": 107,
+          "name": "test_preguntar_inyecta_instruccion_de_modo"
+        },
+        {
+          "line": 114,
+          "name": "fake_create"
+        },
+        {
+          "line": 137,
+          "name": "test_cada_consulta_es_independiente"
+        },
+        {
+          "line": 145,
+          "name": "fake_create"
+        },
+        {
+          "line": 166,
+          "name": "test_preguntar_enriquece_meta"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_urls.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test urls",
+      "bytes": 984,
+      "estimated_tokens": 246,
+      "sha256": "18a38c1d70cd9005198c18e626433cd1db240675f00fe642e1db3619ed2d10a0",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 4,
+          "name": "test_quita_esquema_www_y_barra_final"
+        },
+        {
+          "line": 9,
+          "name": "test_quita_tracking_pero_conserva_query_real"
+        },
+        {
+          "line": 14,
+          "name": "test_quita_fragmento_y_normaliza_mayusculas_de_host"
+        },
+        {
+          "line": 18,
+          "name": "test_sin_esquema_tambien_funciona"
+        },
+        {
+          "line": 22,
+          "name": "test_vacia_o_solo_espacios_da_vacio"
+        },
+        {
+          "line": 27,
+          "name": "test_equivalencias_que_deben_casar"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_veredicto.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test veredicto",
+      "bytes": 18003,
+      "estimated_tokens": 4495,
+      "sha256": "0a3835337148c0c5a89d134b43b7e59fa7d4d2e358be2cc21111b050c4222243",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 5,
+          "name": "_evidencia"
+        },
+        {
+          "line": 19,
+          "name": "test_partir_separa_prosa_y_meta"
+        },
+        {
+          "line": 26,
+          "name": "test_partir_sin_bloque_devuelve_meta_none"
+        },
+        {
+          "line": 30,
+          "name": "test_partir_json_invalido_devuelve_meta_none"
+        },
+        {
+          "line": 36,
+          "name": "test_partir_json_que_no_es_dict_devuelve_none"
+        },
+        {
+          "line": 40,
+          "name": "test_validar_meta_normaliza_campos"
+        },
+        {
+          "line": 62,
+          "name": "test_validar_meta_descarta_lo_invalido_campo_a_campo"
+        },
+        {
+          "line": 83,
+          "name": "test_validar_meta_acota_confianza"
+        },
+        {
+          "line": 88,
+          "name": "test_validar_meta_no_coacciona_strings_a_booleanos_y_deduplica_n"
+        },
+        {
+          "line": 97,
+          "name": "test_validar_meta_no_dict_es_none"
+        },
+        {
+          "line": 103,
+          "name": "test_marcar_citas_pone_citada_por_fuente"
+        },
+        {
+          "line": 109,
+          "name": "test_marcar_citas_huerfanas_se_loguean_sin_romper"
+        },
+        {
+          "line": 118,
+          "name": "test_marcar_citas_sin_fuentes_no_rompe"
+        },
+        {
+          "line": 123,
+          "name": "test_aplicar_registro_sobreescribe_dominios_curados"
+        },
+        {
+          "line": 138,
+          "name": "test_adjuntar_extractos_casa_por_url_normalizada"
+        },
+        {
+          "line": 149,
+          "name": "test_adjuntar_extractos_sin_datos_no_rompe"
+        },
+        {
+          "line": 156,
+          "name": "test_solidez_cero_sin_fuentes_que_coincidan"
+        },
+        {
+          "line": 163,
+          "name": "test_solidez_una_fuente_alta_es_media"
+        },
+        {
+          "line": 170,
+          "name": "test_solidez_contraste_izq_der_sube"
+        },
+        {
+          "line": 182,
+          "name": "test_solidez_tres_buenas_contrastadas_ronda_90_y_nunca_100"
+        },
+        {
+          "line": 191,
+          "name": "test_fuentes_deshonestas_no_suman_y_penalizan"
+        },
+        {
+          "line": 206,
+          "name": "test_sin_tendencia_no_cuenta_como_contraste"
+        },
+        {
+          "line": 219,
+          "name": "test_solidez_ignora_no_leidas_no_citadas_y_dominios_duplicados"
+        },
+        {
+          "line": 227,
+          "name": "test_evidencia_que_matiza_reduce_solidez"
+        },
+        {
+          "line": 236,
+          "name": "test_procesar_pipeline_completo"
+        },
+        {
+          "line": 257,
+          "name": "test_procesar_repara_una_vez_si_falta_el_json"
+        },
+        {
+          "line": 260,
+          "name": "reparar"
+        },
+        {
+          "line": 269,
+          "name": "test_procesar_acepta_reparacion_con_json_pelado"
+        },
+        {
+          "line": 277,
+          "name": "test_procesar_degrada_si_la_reparacion_falla"
+        },
+        {
+          "line": 285,
+          "name": "test_procesar_sin_reparador_devuelve_prosa"
+        },
+        {
+          "line": 290,
+          "name": "test_aplicar_registro_expone_el_tipo_de_fuente"
+        },
+        {
+          "line": 296,
+          "name": "test_primaria_oficial_no_sufre_el_tope_de_no_curada"
+        },
+        {
+          "line": 315,
+          "name": "test_validar_meta_acepta_tipo"
+        },
+        {
+          "line": 321,
+          "name": "test_tipo_invalido_cae_a_afirmacion"
+        },
+        {
+          "line": 326,
+          "name": "test_una_pregunta_no_arrastra_veredicto"
+        },
+        {
+          "line": 333,
+          "name": "test_afirmacion_conserva_su_veredicto"
+        },
+        {
+          "line": 338,
+          "name": "test_informativo_ya_no_es_veredicto_valido"
+        },
+        {
+          "line": 343,
+          "name": "test_mecanismo_con_una_primaria_oficial_da_solidez_alta"
+        },
+        {
+          "line": 351,
+          "name": "test_afirmacion_con_una_sola_fuente_no_da_solidez_alta"
+        },
+        {
+          "line": 359,
+          "name": "test_mecanismo_solo_con_wikipedia_no_da_solidez_alta"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/tests/test_video.py",
+      "scope": "verificador-politico",
+      "kind": "test",
+      "title": "test video",
+      "bytes": 2663,
+      "estimated_tokens": 663,
+      "sha256": "9f63e4eae7befa636a46e259664396cf729a8956771cf5bc26c85393db752d2b",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 4,
+          "name": "setup_function"
+        },
+        {
+          "line": 8,
+          "name": "test_id_youtube_formas"
+        },
+        {
+          "line": 15,
+          "name": "test_adaptador_usa_api_fetch_actual"
+        },
+        {
+          "line": 20,
+          "name": "_Tramo"
+        },
+        {
+          "line": 21,
+          "name": "__init__"
+        },
+        {
+          "line": 24,
+          "name": "_Api"
+        },
+        {
+          "line": 25,
+          "name": "fetch"
+        },
+        {
+          "line": 35,
+          "name": "test_ver_video_youtube_usa_transcripcion"
+        },
+        {
+          "line": 44,
+          "name": "test_ver_video_sin_transcripcion"
+        },
+        {
+          "line": 51,
+          "name": "test_ver_video_no_youtube_es_fallo"
+        },
+        {
+          "line": 58,
+          "name": "test_ver_video_ok_antepone_anotacion"
+        },
+        {
+          "line": 67,
+          "name": "test_ver_video_fallo_no_antepone_anotacion"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/__init__.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "  init  ",
+      "bytes": 149,
+      "estimated_tokens": 37,
+      "sha256": "e6b594fad05ca8a22536322575256193443d5fc52d14edc615cf2c2144b25641",
+      "headings": [],
+      "symbols": [],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/agent.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "agent",
+      "bytes": 13971,
+      "estimated_tokens": 3478,
+      "sha256": "110e3bd83b82170dfec787d20d936fdeb6fcc85ebd86400ab1282d491bd2e583",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 36,
+          "name": "ConsultaCancelada"
+        },
+        {
+          "line": 40,
+          "name": "_contenido_no_confiable"
+        },
+        {
+          "line": 55,
+          "name": "_extracto_de"
+        },
+        {
+          "line": 62,
+          "name": "Verificador"
+        },
+        {
+          "line": 69,
+          "name": "__post_init__"
+        },
+        {
+          "line": 72,
+          "name": "_system_messages"
+        },
+        {
+          "line": 89,
+          "name": "_ejecutar_tool"
+        },
+        {
+          "line": 125,
+          "name": "_reparar_json"
+        },
+        {
+          "line": 141,
+          "name": "_completar"
+        },
+        {
+          "line": 190,
+          "name": "preguntar"
+        },
+        {
+          "line": 261,
+          "name": "_correr"
+        },
+        {
+          "line": 301,
+          "name": "_dominio"
+        },
+        {
+          "line": 309,
+          "name": "_evento_inicio"
+        },
+        {
+          "line": 320,
+          "name": "_require_config"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/cli.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "cli",
+      "bytes": 5141,
+      "estimated_tokens": 1203,
+      "sha256": "31a1a74c80788ed1eb1663a0af2311246e1ba14c5057ccf7840bb5180f7ea767",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 43,
+          "name": "_formatear_paso"
+        },
+        {
+          "line": 57,
+          "name": "_leer_pregunta"
+        },
+        {
+          "line": 64,
+          "name": "main"
+        },
+        {
+          "line": 118,
+          "name": "_responder"
+        },
+        {
+          "line": 119,
+          "name": "on_step"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/config.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "config",
+      "bytes": 2739,
+      "estimated_tokens": 682,
+      "sha256": "bf9ad2587d6766d9fae818085191ce9d0bce316f44b6ce60fe4a3bcd1dd0a15d",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 32,
+          "name": "Config"
+        },
+        {
+          "line": 38,
+          "name": "_parse_env_file"
+        },
+        {
+          "line": 54,
+          "name": "_buscar_valor"
+        },
+        {
+          "line": 70,
+          "name": "cargar_config"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/fuentes.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "fuentes",
+      "bytes": 7158,
+      "estimated_tokens": 1781,
+      "sha256": "5165fbd793a1721309920afedeb0e693de3c7d5f7879ca0bee2df1b042f31e98",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 31,
+          "name": "Fuente"
+        },
+        {
+          "line": 40,
+          "name": "_cargar_registro"
+        },
+        {
+          "line": 57,
+          "name": "dominio_registrable"
+        },
+        {
+          "line": 68,
+          "name": "clasificar"
+        },
+        {
+          "line": 85,
+          "name": "anotar"
+        },
+        {
+          "line": 104,
+          "name": "extraer_meta"
+        },
+        {
+          "line": 115,
+          "name": "_dominios_propuestos"
+        },
+        {
+          "line": 134,
+          "name": "capturar_propuestas"
+        },
+        {
+          "line": 169,
+          "name": "_revisar"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/prompts.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "prompts",
+      "bytes": 18722,
+      "estimated_tokens": 4605,
+      "sha256": "dfe9ae4ece47206ef025f2790fc5b6b609721c44846f21d5767cae9f5bdc5d42",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 301,
+          "name": "instruccion_modo"
+        }
+      ],
+      "authority": null,
+      "git_status": " M"
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/search.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "search",
+      "bytes": 20069,
+      "estimated_tokens": 4984,
+      "sha256": "d3c043f9162cb19b29eedb579d3330e8c90ca973ed9a45f3bee506e21fc8caf2",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 31,
+          "name": "Lectura"
+        },
+        {
+          "line": 57,
+          "name": "_cache_get"
+        },
+        {
+          "line": 71,
+          "name": "_cache_put"
+        },
+        {
+          "line": 101,
+          "name": "_url_publica"
+        },
+        {
+          "line": 136,
+          "name": "_id_youtube"
+        },
+        {
+          "line": 141,
+          "name": "_fetch_transcripcion"
+        },
+        {
+          "line": 165,
+          "name": "ver_video"
+        },
+        {
+          "line": 198,
+          "name": "_ddgs_texto"
+        },
+        {
+          "line": 207,
+          "name": "buscar_web"
+        },
+        {
+          "line": 259,
+          "name": "_bucle_navegador"
+        },
+        {
+          "line": 307,
+          "name": "_arrancar_navegador"
+        },
+        {
+          "line": 323,
+          "name": "_leer_en_pagina"
+        },
+        {
+          "line": 329,
+          "name": "filtrar"
+        },
+        {
+          "line": 343,
+          "name": "_extraer"
+        },
+        {
+          "line": 351,
+          "name": "_leer_rapido"
+        },
+        {
+          "line": 388,
+          "name": "_leer_navegador"
+        },
+        {
+          "line": 406,
+          "name": "cerrar_navegador"
+        },
+        {
+          "line": 460,
+          "name": "_es_muro"
+        },
+        {
+          "line": 475,
+          "name": "leer_pagina"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/server.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "server",
+      "bytes": 7699,
+      "estimated_tokens": 1920,
+      "sha256": "38c9170476f95a476b5b6541a1287fca5df86e3adfb50e979de93c187be34c41",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 47,
+          "name": "VerificarEntrada"
+        },
+        {
+          "line": 60,
+          "name": "validar_pais"
+        },
+        {
+          "line": 68,
+          "name": "_agente"
+        },
+        {
+          "line": 77,
+          "name": "_sse"
+        },
+        {
+          "line": 81,
+          "name": "_evento_cola"
+        },
+        {
+          "line": 92,
+          "name": "index"
+        },
+        {
+          "line": 105,
+          "name": "favicon"
+        },
+        {
+          "line": 113,
+          "name": "healthz"
+        },
+        {
+          "line": 118,
+          "name": "verificar"
+        },
+        {
+          "line": 127,
+          "name": "gen"
+        },
+        {
+          "line": 136,
+          "name": "emitir"
+        },
+        {
+          "line": 146,
+          "name": "emitir_terminal"
+        },
+        {
+          "line": 159,
+          "name": "agotar_tiempo"
+        },
+        {
+          "line": 167,
+          "name": "trabajar"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/urls.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "urls",
+      "bytes": 1166,
+      "estimated_tokens": 290,
+      "sha256": "a0085eee301dbfca555cf334f7a8c448cd58fddf9b8b1896ab7e5a7ca8dcc7e8",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 15,
+          "name": "normalizar_url"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    },
+    {
+      "path": "proyectos/verificador-politico/verificador/veredicto.py",
+      "scope": "verificador-politico",
+      "kind": "source",
+      "title": "veredicto",
+      "bytes": 15452,
+      "estimated_tokens": 3844,
+      "sha256": "af4f79c47ab5a1e84eb5a44a78d171a0e02035c3b324f61a6caa482e79cebec6",
+      "headings": [],
+      "symbols": [
+        {
+          "line": 41,
+          "name": "partir"
+        },
+        {
+          "line": 54,
+          "name": "validar_meta"
+        },
+        {
+          "line": 118,
+          "name": "marcar_citas"
+        },
+        {
+          "line": 130,
+          "name": "aplicar_registro"
+        },
+        {
+          "line": 145,
+          "name": "adjuntar_extractos"
+        },
+        {
+          "line": 162,
+          "name": "_dominio_fuente"
+        },
+        {
+          "line": 169,
+          "name": "_fuentes_utiles"
+        },
+        {
+          "line": 196,
+          "name": "_campo_texto"
+        },
+        {
+          "line": 207,
+          "name": "_peso_credibilidad"
+        },
+        {
+          "line": 219,
+          "name": "_solidez_afirmacion"
+        },
+        {
+          "line": 255,
+          "name": "_solidez_explicativa"
+        },
+        {
+          "line": 283,
+          "name": "calcular_solidez"
+        },
+        {
+          "line": 297,
+          "name": "resumir_evidencia"
+        },
+        {
+          "line": 328,
+          "name": "Procesado"
+        },
+        {
+          "line": 336,
+          "name": "reserializar"
+        },
+        {
+          "line": 344,
+          "name": "procesar"
+        }
+      ],
+      "authority": null,
+      "git_status": null
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Globe2, Plus, Send, Square } from "lucide-react";
-import { FaroAvatar, MiniAvatar } from "./components/avatars";
+import { FaroAvatar, FaroLeyendo, MiniAvatar } from "./components/avatars";
 import { Trace } from "./components/Trace";
 import { Answer } from "./components/Answer";
 import { useVerificador } from "./hooks/useVerificador";
@@ -101,6 +101,11 @@ function TurnoView({
         <h2 id={`consulta-${turno.id}`}>{turno.pregunta}</h2>
       </header>
       <Trace turno={turno} />
+      {/* Decorativo a propósito: la traza de arriba ya anuncia el estado por
+          aria-live, y repetirlo aquí sería leerlo dos veces. */}
+      {turno.estado === "investigando" && (
+        <div className="esperando" aria-hidden="true"><FaroLeyendo /></div>
+      )}
       <Answer turno={turno} onReintentar={onReintentar} />
     </article>
   );

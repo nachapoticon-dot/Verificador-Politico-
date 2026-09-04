@@ -45,14 +45,16 @@ export const MANIPULACION: Record<string, { txt: string; clase: string }> = {
   desinformadora: { txt: "desinforma", clase: "m-desinfo" },
 };
 
-export const TEND_ABREV: Record<string, string> = {
-  izquierda: "izq",
-  "centro-izquierda": "c-izq",
+// En versalitas caben enteras, así que se dicen enteras: "c-izq" era jerga que
+// el lector tenía que descifrar para nada.
+export const TENDENCIA_NOMBRE: Record<string, string> = {
+  izquierda: "izquierda",
+  "centro-izquierda": "centro izquierda",
   centro: "centro",
-  "centro-derecha": "c-der",
-  derecha: "der",
-  verificador: "verif.",
-  internacional: "int.",
+  "centro-derecha": "centro derecha",
+  derecha: "derecha",
+  verificador: "verificador",
+  internacional: "internacional",
 };
 
 // El sello solo existe para afirmaciones. Una pregunta o un mecanismo bien

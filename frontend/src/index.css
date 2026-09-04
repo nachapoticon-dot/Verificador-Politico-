@@ -1,4 +1,12 @@
 @import "@fontsource-variable/geist";
+/* Alegreya (Huerta Tipográfica, Buenos Aires) se dibujó para lectura larga en
+   español, no adaptada después. Es la voz del documento; Geist se queda en el
+   chasis de la app. Alegreya SC es familia aparte a propósito: sintetizar
+   versalitas con font-variant-caps deforma los trazos. */
+@import "@fontsource-variable/alegreya";
+@import "@fontsource-variable/alegreya/wght-italic.css";
+@import "@fontsource/alegreya-sc/latin-400.css";
+@import "@fontsource/alegreya-sc/latin-700.css";
 
 :root {
   --canvas: #f5efe5;
@@ -21,7 +29,17 @@
   --display: "Geist Variable", "Helvetica Neue", Arial, sans-serif;
   --serif: Georgia, "Times New Roman", serif;
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --wrap: 1040px;
+  /* La respuesta: lectura para la prosa, versalitas para el aparato. */
+  --lectura: "Alegreya Variable", Georgia, serif;
+  --versal: "Alegreya SC", "Alegreya Variable", Georgia, serif;
+  --wrap: 1240px;
+  /* Medida de lectura y ancho del margen donde se invocan las fuentes. Cuadran
+     entre sí: 40rem centradas en --wrap dejan a cada lado justo lo que ocupa
+     una nota más su calle (15rem + 1.75rem = 16.75rem ≤ 17.25rem). Si tocas
+     una, recalcula las otras o la nota se sale del contenedor. */
+  --medida: 40rem;
+  --margen: 15rem;
+  --calle: 1.75rem;
 }
 
 * { box-sizing: border-box; }

@@ -62,7 +62,8 @@ cd ..
 ```
 
 Configura `DEEPSEEK_API_KEY` en `.env` o en el entorno. Por compatibilidad, la
-aplicación también puede leerla desde `EDIFICIA_DIR/.env.local`.
+aplicación también puede leerla desde `EDIFICIA_DIR/.env.local`; si esa variable
+no está definida, busca el proyecto hermano `../EdifcIA/.env.local`.
 
 El modelo por defecto es `deepseek-v4-flash`. DeepSeek retira nombres de modelo
 con periodo de gracia corto —`deepseek-chat` y `deepseek-reasoner` dejaron de
@@ -78,7 +79,7 @@ python scripts/humo.py
 Interfaz web:
 
 ```bash
-uvicorn verificador.server:app --reload
+.venv/bin/python -m uvicorn verificador.server:app --reload
 ```
 
 Abre `http://127.0.0.1:8000`.
