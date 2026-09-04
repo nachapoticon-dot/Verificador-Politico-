@@ -1,33 +1,40 @@
-import { useState } from "react";
-import {
-  Check,
-  CircleCheck,
-  CircleHelp,
-  Copy,
-  Info,
-  Scale,
-  RotateCcw,
-  TriangleAlert,
-  X,
-} from "lucide-react";
-import { partirRespuesta } from "../lib/format";
+import { useRef, useState, type CSSProperties } from "react";
+import { Check, Copy, RotateCcw } from "lucide-react";
+import { enPalabras, normalizarUrl, partirRespuesta } from "../lib/format";
 import { nombrePais, selloDe } from "../lib/maps";
-import { MiniAvatar } from "./avatars";
 import { RichText } from "./RichText";
-import { Sources } from "./Sources";
-import type { Turno } from "../lib/types";
+import { ListaFuentes, NotaMargen } from "./Sources";
+import type { FuenteMeta, Meta, Turno } from "../lib/types";
 
-function IconoVeredicto({ valor }: { valor: string }) {
-  const props = { size: 20, strokeWidth: 2.2, "aria-hidden": true as const };
-  if (valor === "true") return <CircleCheck {...props} />;
-  if (valor === "false") return <X {...props} />;
-  if (valor === "warn") return <TriangleAlert {...props} />;
-  if (valor === "info") return <Info {...props} />;
-  return <CircleHelp {...props} />;
+// Alto estimado de una nota al margen. Solo se usa para que la nota no se
+// ancle tan abajo que desborde el bloque; errar por poco no se nota.
+const ALTO_NOTA = 260;
+
+/** La glosa dice de qué está hecha la solidez. Sustituye a la rejilla de tres
+ *  celdas: la misma información, en una línea que se lee como una frase. */
+function glosaDe(meta: Meta | null): string | null {
+  const partes: string[] = [];
+  const e = meta?.evidencia;
+  if (e && e.leidas > 0) {
+    partes.push(`${enPalabras(e.leidas)} ${e.leidas === 1 ? "fuente leída" : "fuentes leídas"}`);
+    if (e.dominios_independientes > 1) {
+      partes.push(`${enPalabras(e.dominios_independientes)} dominios independientes`);
+    }
+    if (e.matizan > 0) {
+      partes.push(`${enPalabras(e.matizan)} ${e.matizan === 1 ? "matiza" : "matizan"}`);
+    }
+  }
+  const pais = nombrePais(meta?.pais);
+  if (pais) partes.push(pais);
+  return partes.length ? partes.join(" · ") : null;
 }
 
 export function Answer({ turno, onReintentar }: { turno: Turno; onReintentar: () => void }) {
   const [copiado, setCopiado] = useState(false);
+  const [cita, setCita] = useState<{ n: number; y: number } | null>(null);
+  const [lista, setLista] = useState(false);
+  const grid = useRef<HTMLDivElement>(null);
+
   if (turno.error) return (
     <div className="aviso" role="alert">
       <span>{turno.error}</span>
@@ -46,17 +53,39 @@ export function Answer({ turno, onReintentar }: { turno: Turno; onReintentar: ()
   const { prosa, meta } = partirRespuesta(turno.respuesta);
   const fuentes = meta?.fuentes ?? [];
   const sello = selloDe(meta, prosa);
-  const pais = nombrePais(meta?.pais);
-  const extractos: Record<string, string> = {};
-  for (const ev of turno.eventos) {
-    if (ev.url && ev.extracto) extractos[ev.url] = ev.extracto;
-  }
+  const glosa = glosaDe(meta);
 
   const conf =
     meta && typeof meta.solidez === "number" && Number.isFinite(meta.solidez)
       ? Math.max(0, Math.min(100, Math.round(meta.solidez)))
       : null;
-  const evidencia = meta?.evidencia;
+
+  // Extractos de la traza, indexados por URL canónica: la fuente del meta y el
+  // evento de lectura pueden traer la misma página escrita distinto.
+  const porUrl: Record<string, string> = {};
+  for (const ev of turno.eventos) {
+    if (ev.url && ev.extracto) porUrl[normalizarUrl(ev.url)] = ev.extracto;
+  }
+  const extractoDe = (f: FuenteMeta) =>
+    f.extracto ?? (f.url ? porUrl[normalizarUrl(f.url)] : undefined);
+
+  const fuenteActiva = cita ? fuentes.find((f) => f.n === cita.n) : undefined;
+
+  // Un segundo toque sobre la misma cita apaga la nota: invocar y retirar son
+  // el mismo gesto, como encender y apagar una luz.
+  const invocar = (n: number, el: HTMLElement) => {
+    if (cita?.n === n) {
+      setCita(null);
+      return;
+    }
+    const caja = grid.current?.getBoundingClientRect();
+    if (!caja) {
+      setCita({ n, y: 0 });
+      return;
+    }
+    const bruto = el.getBoundingClientRect().top - caja.top;
+    setCita({ n, y: Math.max(0, Math.min(bruto, caja.height - ALTO_NOTA)) });
+  };
 
   const copiar = async () => {
     const referencias = fuentes
@@ -73,65 +102,80 @@ export function Answer({ turno, onReintentar }: { turno: Turno; onReintentar: ()
   };
 
   return (
-    <section className="veredicto" aria-label="Resultado de la verificación">
-      <div className="resp-firma">
-        <MiniAvatar />
-        <div>
-          <b>Faro</b>
-          <span>análisis{pais ? ` · ${pais}` : ""}</span>
-        </div>
-        {!escribiendo && (
-          <button className="accion-icono" type="button" onClick={copiar} aria-label="Copiar análisis">
-            {copiado ? <Check size={17} aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}
-            <span>{copiado ? "Copiado" : "Copiar"}</span>
-          </button>
-        )}
-      </div>
-
-      {/* La banda vive aquí aunque no haya sello: en pregunta/mecanismo
-          `selloDe` devuelve null a propósito (no hay veredicto que sellar),
-          pero la solidez sigue siendo un dato real y debe verse igual. */}
+    <section className="pieza" aria-label="Resultado de la verificación">
+      {/* La cabecera existe aunque no haya sello: en pregunta y mecanismo
+          `selloDe` devuelve null a propósito, pero la solidez sigue siendo un
+          dato real y no puede cambiar de sitio según el tipo de consulta. */}
       {!escribiendo && (sello || conf !== null) && (
-        <div className="sello-banda" data-v={sello?.v}>
-          {sello && (
-            <span className="sello-etiqueta">
-              <IconoVeredicto valor={sello.v} />
-              {sello.etiqueta}
-            </span>
-          )}
-          {conf !== null && (
-            <div className="conf">
-              <span>Solidez de la evidencia</span>
-              <strong>{conf}%</strong>
-              <progress value={conf} max={100} aria-label={`Solidez de la evidencia: ${conf}%`} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {meta?.resumen && !escribiendo && <h2 className="resp-titular">{meta.resumen}</h2>}
-      {meta?.aviso && (
-        <p className="aviso-evidencia" role="status">
-          {meta.aviso.texto}
-        </p>
-      )}
-      <RichText texto={prosa} fuentes={fuentes} />
-      {escribiendo && <span className="escribiendo"><span className="sr-only">Redactando respuesta</span></span>}
-
-      {!escribiendo && evidencia && evidencia.leidas > 0 && (
-        <div className="evidencia-resumen" aria-label="Resumen de evidencia">
-          <div><span>Evidencia leída</span><strong>{evidencia.leidas}</strong></div>
-          <div><span>Dominios distintos</span><strong>{evidencia.dominios_independientes}</strong></div>
-          <div>
-            <span>Contraste</span>
-            <strong>{evidencia.respaldan} / {evidencia.matizan}</strong>
-            <small>respaldan / matizan</small>
+        <header className="dictamen" data-v={sello?.v}>
+          <div className="dictamen-linea">
+            {sello && <h2 className="dictamen-sello">{sello.etiqueta}</h2>}
+            {conf !== null && (
+              <p className="dictamen-solidez">
+                <span>solidez</span>
+                <b>{conf}</b>
+              </p>
+            )}
           </div>
-          <Scale size={20} aria-hidden="true" />
-        </div>
+          {/* La regla mide lo que mide la evidencia: su largo ES la solidez.
+              La estructura carga el dato en vez de decorarlo. */}
+          <div className="regla" role="presentation">
+            <span style={{ "--k": (conf ?? 0) / 100 } as CSSProperties} />
+          </div>
+          {glosa && <p className="glosa">{glosa}</p>}
+        </header>
       )}
 
-      {!escribiendo && <Sources fuentes={fuentes} extractos={extractos} />}
+      <div className="pieza-grid" ref={grid}>
+        <div className="pieza-col">
+          {meta?.resumen && !escribiendo && <p className="entradilla">{meta.resumen}</p>}
+          {meta?.aviso && <p className="salvedad" role="status">{meta.aviso.texto}</p>}
+
+          <RichText
+            texto={prosa}
+            fuentes={fuentes}
+            citaActiva={cita?.n ?? null}
+            onCita={invocar}
+          />
+          {escribiendo && (
+            <span className="escribiendo"><span className="sr-only">Redactando respuesta</span></span>
+          )}
+
+          {!escribiendo && (
+            <footer className="pie">
+              {fuentes.length > 0 && (
+                <button
+                  className="pie-accion"
+                  type="button"
+                  aria-expanded={lista}
+                  onClick={() => setLista(!lista)}
+                >
+                  {lista ? "Ocultar las fuentes" : `Ver las ${enPalabras(fuentes.length)} fuentes`}
+                </button>
+              )}
+              <button className="pie-accion" type="button" onClick={copiar}>
+                {copiado ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+                {copiado ? "Copiado" : "Copiar"}
+              </button>
+            </footer>
+          )}
+
+          {!escribiendo && lista && (
+            <ListaFuentes fuentes={fuentes} activa={cita?.n ?? null} onInvocar={invocar} />
+          )}
+        </div>
+
+        <aside className="margen">
+          {fuenteActiva && cita && (
+            <NotaMargen
+              fuente={fuenteActiva}
+              extracto={extractoDe(fuenteActiva)}
+              y={cita.y}
+              onCerrar={() => setCita(null)}
+            />
+          )}
+        </aside>
+      </div>
     </section>
   );
 }

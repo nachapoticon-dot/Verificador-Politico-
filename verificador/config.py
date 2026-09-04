@@ -16,8 +16,9 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-# Ruta por defecto al proyecto EdifcIA (sobreescribible con EDIFICIA_DIR).
-_DEFAULT_EDIFICIA_DIR = Path.home() / "Proyectos" / "EdifcIA"
+# Proyecto EdifcIA hermano dentro del workspace (sobreescribible con
+# EDIFICIA_DIR).
+_DEFAULT_EDIFICIA_DIR = Path(__file__).resolve().parents[2] / "EdifcIA"
 
 # DeepSeek es compatible con la API de OpenAI.
 DEFAULT_BASE_URL = "https://api.deepseek.com"

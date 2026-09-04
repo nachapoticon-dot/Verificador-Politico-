@@ -10,7 +10,7 @@ esto explica cómo trabajar en él sin pisar minas.
 .venv/bin/python -m pytest -q        # backend (herméticas, sin red)
 cd frontend && npm run check         # contratos SSE + oxlint + build
 .venv/bin/python scripts/humo.py     # contrato contra la API real (gasta tokens)
-uvicorn verificador.server:app --reload
+.venv/bin/python -m uvicorn verificador.server:app --reload
 ```
 
 **Usa `python -m pytest`, nunca `.venv/bin/pytest`.** Los ejecutables del
@@ -22,6 +22,14 @@ carpeta una vez: están rotos. `.venv/bin/python` es un enlace y sí funciona.
 La suite pasa entera. Si `npm install` nunca se corrió en esta máquina,
 `frontend/node_modules` no existe y `npm run check` falla por ahí, no por el
 código.
+
+## Economía de contexto
+
+Si la sesión se abrió desde la raíz del Taller, usar `$recuperar-contexto` y
+consultar el scope `verificador-politico` antes de leer muchas rutas. La vista
+`.context/INDEX.md` orienta la navegación, pero no reemplaza esta guía ni la
+inspección del código y las pruebas involucradas. Regenerarla siempre desde la
+raíz; no editarla a mano.
 
 ## Minas
 
