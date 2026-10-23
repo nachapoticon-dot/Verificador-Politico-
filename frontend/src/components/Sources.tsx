@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ChevronDown, ExternalLink, Globe2, ShieldAlert } from "lucide-react";
 import { CREDIBILIDAD, MANIPULACION, TEND_ABREV } from "../lib/maps";
 import { dominioDe, normalizarUrl, urlSegura } from "../lib/format";
@@ -29,6 +29,8 @@ function Avisos({ f }: { f: FuenteMeta }) {
 
 export function Sources({ fuentes, extractos }: { fuentes: FuenteMeta[]; extractos: Record<string, string> }) {
   const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  // Cada turno pinta su propio bloque de fuentes: los ids deben ser únicos.
+  const uid = useId();
   if (!fuentes.length) return null;
 
   const porUrl: Record<string, string> = {};
@@ -44,11 +46,11 @@ export function Sources({ fuentes, extractos }: { fuentes: FuenteMeta[]; extract
   });
 
   return (
-    <section className="fuentes-bloque" aria-labelledby="fuentes-titulo">
+    <section className="fuentes-bloque" aria-labelledby={`${uid}-titulo`}>
       <div className="fuentes-cab">
         <div>
           <span className="eyebrow">Evidencia</span>
-          <h3 id="fuentes-titulo">Fuentes contrastadas</h3>
+          <h3 id={`${uid}-titulo`}>Fuentes contrastadas</h3>
         </div>
         <span>{leidas} leídas · {fuentes.length} listadas</span>
       </div>
@@ -58,7 +60,7 @@ export function Sources({ fuentes, extractos }: { fuentes: FuenteMeta[]; extract
           const dominio = dominioDe(f.url);
           const extracto = f.extracto ?? (f.url ? porUrl[normalizarUrl(f.url)] : undefined);
           const abierta = abiertas.has(clave);
-          const panelId = `evidencia-${clave}`;
+          const panelId = `${uid}-evidencia-${clave}`;
           const url = urlSegura(f.url);
           const tendencia = (f.tendencia || "").toLowerCase();
           return (

@@ -1,6 +1,6 @@
-// Lectura del flujo SSE de /api/verificar, portada del frontend original.
-// Llama a onEvento(nombre, dato) por cada evento del servidor: "traza",
-// "respuesta", "error".
+// Lectura del flujo SSE de /api/verificar. Llama a onEvento(nombre, dato) por
+// cada evento del servidor: "traza", "delta", "delta_reset", "respuesta" y
+// "error".
 
 import type { Opciones } from "./types";
 

@@ -1,23 +1,22 @@
 // Mapas de presentación (sello del veredicto, credibilidad, manipulación,
-// tendencia), portados del frontend original.
+// tendencia) y nombres de país.
 
 import type { Meta } from "./types";
 
 export interface Sello {
   etiqueta: string;
   v: string;
-  emoji: string;
 }
 
 export const SELLOS: Record<string, Sello> = {
-  verdadero: { etiqueta: "Verdadero", v: "true", emoji: "✅" },
-  falso: { etiqueta: "Falso", v: "false", emoji: "❌" },
-  enganoso: { etiqueta: "Engañoso", v: "warn", emoji: "⚠️" },
-  fuera_de_contexto: { etiqueta: "Sacado de contexto", v: "warn", emoji: "🔀" },
-  prediccion: { etiqueta: "Predicción", v: "muted", emoji: "🔮" },
-  sin_evidencia: { etiqueta: "Sin evidencia", v: "muted", emoji: "❓" },
-  informativo: { etiqueta: "Información", v: "info", emoji: "ℹ️" },
-  no_verificable: { etiqueta: "No verificable", v: "muted", emoji: "💬" },
+  verdadero: { etiqueta: "Verdadero", v: "true" },
+  falso: { etiqueta: "Falso", v: "false" },
+  enganoso: { etiqueta: "Engañoso", v: "warn" },
+  fuera_de_contexto: { etiqueta: "Sacado de contexto", v: "warn" },
+  prediccion: { etiqueta: "Predicción", v: "muted" },
+  sin_evidencia: { etiqueta: "Sin evidencia", v: "muted" },
+  informativo: { etiqueta: "Información", v: "info" },
+  no_verificable: { etiqueta: "No verificable", v: "muted" },
 };
 
 // Respaldo: si faltara el JSON, detectamos el sello por el emoji de la prosa.
