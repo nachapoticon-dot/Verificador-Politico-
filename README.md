@@ -12,8 +12,6 @@ Tiene una interfaz web (React) y una interfaz de terminal (CLI). El “cerebro�
 es un modelo de [DeepSeek](https://api-docs.deepseek.com/) con herramientas
 propias de búsqueda y lectura.
 
-> El repositorio se llama `Verificador-Politico-` porque ese fue el nombre
-> original del proyecto; luego pasó a llamarse Tomás y finalmente Faro.
 
 ---
 
