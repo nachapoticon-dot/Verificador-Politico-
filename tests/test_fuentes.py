@@ -4,7 +4,7 @@ from io import StringIO
 
 from verificador.fuentes import (
     Fuente, dominio_registrable, clasificar, anotar,
-    extraer_meta, capturar_propuestas,
+    capturar_propuestas,
 )
 
 
@@ -66,14 +66,6 @@ def test_registro_degrada_a_dict_vacio_si_json_invalido():
     import verificador.fuentes as m
     with mock.patch("pathlib.Path.open", return_value=StringIO("not-json")):
         assert m._cargar_registro() == {}
-
-
-def test_extraer_meta_lee_el_json_final():
-    texto = 'Bla bla [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
-    meta = extraer_meta(texto)
-    assert meta["veredicto"] == "informativo"
-    assert extraer_meta("sin json") is None
-    assert extraer_meta("```json\n{mal json\n```") is None
 
 
 def test_capturar_propuestas_solo_desconocidas_y_dedupe(tmp_path):

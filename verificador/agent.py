@@ -274,8 +274,9 @@ class Verificador:
                     tid, ev, lectura = futuro.result()
                     resultados[tid] = lectura
                     con_extracto = ev["tipo"] in ("pagina", "video") and lectura.ok
+                    extracto = _extracto_de(lectura.texto) if con_extracto else ""
                     if con_extracto and ev["url"]:
-                        extractos[ev["url"]] = _extracto_de(lectura.texto)
+                        extractos[ev["url"]] = extracto
                     if on_step:
                         fin = {"id": ev["id"], "tipo": ev["tipo"],
                                "estado": "ok" if lectura.ok else "fallo",
@@ -284,7 +285,7 @@ class Verificador:
                         # Solo en éxito guardamos el extracto: el texto de error
                         # nunca debe llegar al visor "ver de dónde salió".
                         if con_extracto:
-                            fin["extracto"] = _extracto_de(lectura.texto)
+                            fin["extracto"] = extracto
                         on_step(fin)
             for t in tool_calls:
                 messages.append({"role": "tool", "tool_call_id": t["id"],

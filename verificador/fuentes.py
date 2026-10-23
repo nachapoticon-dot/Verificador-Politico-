@@ -18,7 +18,6 @@ le falta el campo `manipulacion`, se asume `ninguna`.
 from __future__ import annotations
 
 import json
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
@@ -97,20 +96,6 @@ def anotar(url: str) -> str:
 
 
 PROPUESTAS_PATH = _DATA_DIR / "propuestas.jsonl"
-
-_JSON_RE = re.compile(r"```json\s*([\s\S]*?)```\s*$", re.IGNORECASE)
-
-
-def extraer_meta(texto: str) -> dict | None:
-    """Parsea el bloque ```json``` final de una respuesta. None si falta o es inválido."""
-    m = _JSON_RE.search(texto or "")
-    if not m:
-        return None
-    try:
-        return json.loads(m.group(1).strip())
-    except Exception:  # noqa: BLE001 — JSON inválido: lo ignoramos
-        return None
-
 
 def _dominios_propuestos(ruta: Path) -> set[str]:
     if not ruta.exists():

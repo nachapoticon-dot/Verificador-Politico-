@@ -4,7 +4,9 @@ DeepSeek no tiene búsqueda web nativa (a diferencia de Claude), así que se la
 damos nosotros mediante function calling:
 
   - ``buscar_web``  → resultados de DuckDuckGo (sin necesidad de API key).
-  - ``leer_pagina`` → descarga una URL y extrae su texto principal.
+  - ``leer_pagina`` → descarga una URL y extrae su texto principal (httpx y,
+    si falla, Chromium headless vía Playwright).
+  - ``ver_video``   → lee la transcripción de un vídeo de YouTube.
 
 Estas funciones se exponen al modelo como "tools". El modelo decide cuándo
 llamarlas para contrastar fuentes de distintas tendencias.
@@ -15,6 +17,7 @@ from __future__ import annotations
 import atexit
 import ipaddress
 import queue
+import re
 import socket
 import threading
 import time
@@ -22,7 +25,6 @@ from typing import NamedTuple
 from urllib.parse import urljoin, urlparse
 
 import httpx
-import re
 
 from . import fuentes
 from .urls import normalizar_url

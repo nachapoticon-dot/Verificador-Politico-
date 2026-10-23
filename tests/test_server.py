@@ -6,7 +6,8 @@ def test_sse_emite_traza_y_respuesta(monkeypatch):
     # Falsea el agente: emite un paso de traza y devuelve una respuesta.
     class _FakeAgente:
         def preguntar(self, pregunta, *, country=None, rigor="riguroso",
-                      largo="corta", detalle="simple", on_step=None):
+                      largo="corta", detalle="simple", on_step=None,
+                      cancel_event=None):
             on_step({"id": "s1", "tipo": "busqueda", "estado": "buscando",
                      "titulo": "x", "url": None, "dominio": None})
             return "RESPUESTA FINAL"
@@ -40,7 +41,8 @@ def test_pregunta_vacia_no_llama_al_agente(monkeypatch):
 def test_sse_emite_delta_y_reset(monkeypatch):
     class _FakeAgente:
         def preguntar(self, pregunta, *, country=None, rigor="riguroso",
-                      largo="corta", detalle="simple", on_step=None):
+                      largo="corta", detalle="simple", on_step=None,
+                      cancel_event=None):
             on_step({"tipo": "delta", "texto": "Hola "})
             on_step({"tipo": "delta_reset"})
             on_step({"tipo": "delta", "texto": "Veredicto"})
@@ -74,7 +76,8 @@ def test_endpoint_valida_largo_detalle_pais_rigor(monkeypatch):
 
     class _FakeAgente:
         def preguntar(self, pregunta, *, country=None, rigor="riguroso",
-                      largo="corta", detalle="simple", on_step=None):
+                      largo="corta", detalle="simple", on_step=None,
+                      cancel_event=None):
             capturado.update(country=country, rigor=rigor,
                              largo=largo, detalle=detalle)
             return "ok"

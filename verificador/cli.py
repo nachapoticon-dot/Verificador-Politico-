@@ -112,7 +112,6 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"País fijado: {country}.")
             continue
         _responder(agente, pregunta, country)
-    return 0
 
 
 def _responder(agente: Verificador, pregunta: str, country: str | None) -> int:

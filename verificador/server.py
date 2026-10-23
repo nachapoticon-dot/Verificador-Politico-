@@ -13,7 +13,6 @@ Levantar:  uvicorn verificador.server:app --reload
 from __future__ import annotations
 
 import asyncio
-import inspect
 import json
 import logging
 import queue
@@ -119,10 +118,9 @@ async def verificar(body: VerificarEntrada, request: Request) -> StreamingRespon
     pregunta = body.pregunta
     country = body.pais
     rigor = "rapido" if body.rigor == "rapido" else "riguroso"
-    largo = body.largo
-    largo = largo if largo in ("corta", "normal", "detallada") else "normal"
-    detalle = body.detalle
-    detalle = detalle if detalle in ("simple", "tecnico") else "simple"
+    # Valores fuera de vocabulario caen al modo por defecto en vez de dar 422.
+    largo = body.largo if body.largo in ("corta", "normal", "detallada") else "normal"
+    detalle = body.detalle if body.detalle in ("simple", "tecnico") else "simple"
 
     async def gen():
         if not pregunta:
@@ -172,16 +170,15 @@ async def verificar(body: VerificarEntrada, request: Request) -> StreamingRespon
                 return
             try:
                 agente = _agente()
-                kwargs = {
-                    "country": country,
-                    "rigor": rigor,
-                    "largo": largo,
-                    "detalle": detalle,
-                    "on_step": lambda ev: emitir(*_evento_cola(ev)),
-                }
-                if "cancel_event" in inspect.signature(agente.preguntar).parameters:
-                    kwargs["cancel_event"] = cancel_event
-                final = agente.preguntar(pregunta, **kwargs)
+                final = agente.preguntar(
+                    pregunta,
+                    country=country,
+                    rigor=rigor,
+                    largo=largo,
+                    detalle=detalle,
+                    on_step=lambda ev: emitir(*_evento_cola(ev)),
+                    cancel_event=cancel_event,
+                )
                 emitir_terminal("respuesta", {"texto": final})
             except ConsultaCancelada:
                 if timeout_event.is_set():
