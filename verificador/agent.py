@@ -306,12 +306,14 @@ def _dominio(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
-def _evento_inicio(_id: str, nombre: str, args: dict) -> dict:
+def _evento_inicio(_id: str, nombre: str, args) -> dict:
+    # Mismo criterio que _ejecutar_tool: argumentos raros no tumban la consulta.
+    args = args if isinstance(args, dict) else {}
     if nombre == "buscar_web":
         return {"id": _id, "tipo": "busqueda", "estado": "buscando",
-                "titulo": args.get("query", ""), "url": None, "dominio": None}
+                "titulo": str(args.get("query", "")), "url": None, "dominio": None}
     tipo = "video" if nombre == "ver_video" else "pagina"
-    url = args.get("url", "")
+    url = str(args.get("url", ""))
     dom = _dominio(url)
     return {"id": _id, "tipo": tipo, "estado": "leyendo",
             "titulo": dom or url, "url": url, "dominio": dom}

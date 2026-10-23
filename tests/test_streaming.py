@@ -7,8 +7,6 @@ from verificador.agent import ConsultaCancelada
 from tests.helpers import agente_de_prueba, stream_de
 
 
-
-
 def test_completar_pide_stream_y_junta_el_contenido(monkeypatch):
     a = agente_de_prueba()
     capturado = {}

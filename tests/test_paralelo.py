@@ -6,8 +6,6 @@ from verificador.search import Lectura
 from tests.helpers import agente_de_prueba, stream_de
 
 
-
-
 def test_dos_lecturas_corren_a_la_vez(monkeypatch):
     """Una barrera de 2: solo se cruza si ambas lecturas corren en paralelo."""
     a = agente_de_prueba()

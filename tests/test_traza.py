@@ -194,3 +194,18 @@ def test_preguntar_enriquece_meta(monkeypatch):
     assert not f["extracto"].startswith("[fuente:")  # sin la anotación interna
     assert meta["confianza_modelo"] == 90
     assert 40 <= meta["confianza"] <= 55        # recalculada: 1 fuente alta
+
+
+def test_argumentos_que_no_son_objeto_no_tumban_la_consulta(monkeypatch):
+    """Si el modelo manda una lista como argumentos, la traza y la herramienta
+    lo toleran y el error vuelve al modelo en vez de romper preguntar()."""
+    a = agente_de_prueba()
+    flujos = [
+        stream_de(tool_calls=[("t1", "buscar_web", '["query", "x"]')]),
+        stream_de(content="Veredicto final"),
+    ]
+    it = iter(flujos)
+    monkeypatch.setattr(a._client.chat.completions, "create", lambda **k: next(it))
+    eventos = []
+    assert a.preguntar("¿es verdad X?", on_step=eventos.append) == "Veredicto final"
+    assert [e["estado"] for e in eventos if e.get("id") == "t1"] == ["buscando", "fallo"]
