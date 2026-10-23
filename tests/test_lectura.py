@@ -28,13 +28,15 @@ def _chromium_disponible() -> bool:
 @pytest.mark.skipif(
     not _chromium_disponible(), reason="Playwright/Chromium no disponible en este entorno"
 )
-def test_navegador_reutilizado_entre_hilos(tmp_path):
+def test_navegador_reutilizado_entre_hilos(tmp_path, monkeypatch):
     """Dos hilos distintos leen vía Chromium y ambos obtienen el texto.
 
     Real (no mockeado) y hermético (file://, sin red). Falla con el diseño de
     singleton-por-llamada (afinidad de hilo de Playwright); pasa con el hilo
-    propietario único.
+    propietario único. El guardia anti-SSRF rechaza file://, así que aquí se
+    sustituye: lo que se prueba es la afinidad de hilo, no el guardia.
     """
+    monkeypatch.setattr(search, "_url_publica", lambda _url: True)
     pagina = tmp_path / "pagina.html"
     pagina.write_text(
         "<html><body><article><h1>Titular de prueba</h1>"
