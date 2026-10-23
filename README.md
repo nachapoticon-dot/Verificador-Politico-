@@ -340,15 +340,6 @@ Existe una rama `faro-siguiente-nivel`, sin fusionar, con trabajo posterior
 humo contra la API real, CI). Algunos de sus arreglos puntuales ya se trajeron a
 `main`.
 
-## Próximos pasos posibles
-
-- Fusionar o reconciliar la rama `faro-siguiente-nivel`.
-- Ampliar el registro curado a más países y revisar periódicamente las
-  propuestas.
-- Configurar CI que corra `pytest` y `npm run check` en cada push.
-- Si se va a publicar: autenticación o límite por IP, y mover
-  `propuestas.jsonl` a un directorio configurable.
-- Exponer en el CLI las opciones de largo, detalle y rigor.
 
 ---
 
