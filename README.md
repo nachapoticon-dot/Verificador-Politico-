@@ -1,6 +1,6 @@
 # Faro — verificador político con IA
 
-**Faro** (*Frente A la Réplica de lo falsO*) es un agente que verifica
+**Faro** es un agente que verifica
 afirmaciones políticas de cualquier país. Le escribís algo que escuchaste
 —una frase de un candidato, una cifra que circula, un titular— y Faro busca
 en la web, abre las fuentes, contrasta medios de distintas tendencias y
