@@ -24,3 +24,11 @@ def stream_de(content=None, tool_calls=None):
         for j in range(0, len(content), 7):
             chunks.append(_chunk(content=content[j:j + 7]))
     return iter(chunks)
+
+
+def agente_de_prueba():
+    """Verificador con una config ficticia: no necesita DEEPSEEK_API_KEY."""
+    from verificador.agent import Verificador
+    from verificador.config import Config
+
+    return Verificador(config=Config(api_key="x", base_url="http://l", model="m"))

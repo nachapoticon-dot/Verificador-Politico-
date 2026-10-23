@@ -1,8 +1,8 @@
 from verificador import agent as agentmod
-from verificador.agent import Verificador, _dominio
+from verificador.agent import _dominio
 from verificador.search import Lectura
 
-from tests.helpers import stream_de
+from tests.helpers import agente_de_prueba, stream_de
 
 
 def test_dominio():
@@ -11,8 +11,7 @@ def test_dominio():
 
 
 def test_on_step_estructurado(monkeypatch):
-    from verificador.config import Config
-    a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
+    a = agente_de_prueba()
 
     flujos = [
         stream_de(tool_calls=[("t1", "leer_pagina", '{"url": "https://www.elpais.com/n"}')]),
@@ -34,8 +33,7 @@ def test_on_step_estructurado(monkeypatch):
 
 
 def test_on_step_fallo(monkeypatch):
-    from verificador.config import Config
-    a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
+    a = agente_de_prueba()
 
     flujos = [
         stream_de(tool_calls=[("t1", "leer_pagina", '{"url": "https://www.elpais.com/n"}')]),
@@ -62,8 +60,7 @@ def test_on_step_fallo(monkeypatch):
 
 
 def test_on_step_ver_video_no_youtube_es_fallo(monkeypatch):
-    from verificador.config import Config
-    a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
+    a = agente_de_prueba()
 
     flujos = [
         stream_de(tool_calls=[("v1", "ver_video", '{"url": "https://www.tiktok.com/@x/video/1"}')]),
@@ -84,13 +81,12 @@ def test_on_step_ver_video_no_youtube_es_fallo(monkeypatch):
 
 
 def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
-    import verificador.agent as agentmod
     import verificador.fuentes as fuentes
 
     ruta = tmp_path / "propuestas.jsonl"
     monkeypatch.setattr(fuentes, "PROPUESTAS_PATH", ruta)
 
-    ver = agentmod.Verificador()
+    ver = agente_de_prueba()
     final = ('Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":'
              '[{"n":1,"medio":"Raro","url":"https://diario-raro-xyz.tld/n",'
              '"credibilidad":"media","tendencia":"centro"}]}\n```')
@@ -105,9 +101,8 @@ def test_preguntar_captura_propuestas(monkeypatch, tmp_path):
 
 
 def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
-    import verificador.agent as agentmod
 
-    ver = agentmod.Verificador()
+    ver = agente_de_prueba()
     final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
     capturado = {}
 
@@ -136,9 +131,8 @@ def test_preguntar_inyecta_instruccion_de_modo(monkeypatch):
 
 def test_cada_consulta_es_independiente(monkeypatch):
     """Sin estado: cada preguntar() arranca de cero, sin arrastrar la anterior."""
-    import verificador.agent as agentmod
 
-    ver = agentmod.Verificador()
+    ver = agente_de_prueba()
     final = 'Respuesta [1].\n\n```json\n{"veredicto":"informativo","fuentes":[]}\n```'
     capturas = []
 
@@ -167,9 +161,8 @@ def test_preguntar_enriquece_meta(monkeypatch):
     """El texto devuelto lleva el meta validado: registro curado, extracto
     casado por URL normalizada y confianza recalculada."""
     from verificador import veredicto
-    from verificador.config import Config
 
-    a = Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
+    a = agente_de_prueba()
     final = ('Es falso [1].\n\n```json\n'
              '{"veredicto": "falso", "confianza": 90, "fuentes":'
              ' [{"n": 1, "medio": "Reuters",'

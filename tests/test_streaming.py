@@ -2,18 +2,15 @@ import threading
 
 import pytest
 
-from verificador.agent import ConsultaCancelada, Verificador
-from verificador.config import Config
+from verificador.agent import ConsultaCancelada
 
-from tests.helpers import stream_de
+from tests.helpers import agente_de_prueba, stream_de
 
 
-def _agente():
-    return Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
 
 
 def test_completar_pide_stream_y_junta_el_contenido(monkeypatch):
-    a = _agente()
+    a = agente_de_prueba()
     capturado = {}
 
     def fake_create(**k):
@@ -31,7 +28,7 @@ def test_completar_pide_stream_y_junta_el_contenido(monkeypatch):
 
 
 def test_completar_reconstruye_tool_calls_sin_emitir_deltas(monkeypatch):
-    a = _agente()
+    a = agente_de_prueba()
     monkeypatch.setattr(
         a._client.chat.completions, "create",
         lambda **k: stream_de(tool_calls=[("t1", "buscar_web", '{"query": "x"}')]))
@@ -42,7 +39,7 @@ def test_completar_reconstruye_tool_calls_sin_emitir_deltas(monkeypatch):
 
 
 def test_completar_resetea_si_llegan_tools_tras_texto(monkeypatch):
-    a = _agente()
+    a = agente_de_prueba()
 
     def flujo(**k):
         yield from stream_de(content="pensando…")
@@ -56,7 +53,7 @@ def test_completar_resetea_si_llegan_tools_tras_texto(monkeypatch):
 
 
 def test_completar_sin_on_step_no_rompe(monkeypatch):
-    a = _agente()
+    a = agente_de_prueba()
     monkeypatch.setattr(a._client.chat.completions, "create",
                         lambda **k: stream_de(content="Texto"))
     content, tcs = a._completar([], None)
@@ -64,7 +61,7 @@ def test_completar_sin_on_step_no_rompe(monkeypatch):
 
 
 def test_preguntar_cancelada_no_llama_al_modelo(monkeypatch):
-    a = _agente()
+    a = agente_de_prueba()
     llamado = {"valor": False}
     monkeypatch.setattr(
         a._client.chat.completions,

@@ -1,20 +1,16 @@
 import threading
 
 from verificador import agent as agentmod
-from verificador.agent import Verificador
-from verificador.config import Config
 from verificador.search import Lectura
 
-from tests.helpers import stream_de
+from tests.helpers import agente_de_prueba, stream_de
 
 
-def _agente():
-    return Verificador(config=Config(api_key="x", base_url="http://l", model="m"))
 
 
 def test_dos_lecturas_corren_a_la_vez(monkeypatch):
     """Una barrera de 2: solo se cruza si ambas lecturas corren en paralelo."""
-    a = _agente()
+    a = agente_de_prueba()
     barrera = threading.Barrier(2, timeout=5)
 
     def lp(url, **k):
@@ -36,7 +32,7 @@ def test_dos_lecturas_corren_a_la_vez(monkeypatch):
 
 
 def test_mensajes_tool_conservan_el_orden(monkeypatch):
-    a = _agente()
+    a = agente_de_prueba()
     capturas = []
 
     def fake_create(**k):

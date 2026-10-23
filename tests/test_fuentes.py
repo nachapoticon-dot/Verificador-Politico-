@@ -1,7 +1,6 @@
 import json as _json
 from unittest import mock
 from io import StringIO
-from pathlib import Path
 
 from verificador.fuentes import (
     Fuente, dominio_registrable, clasificar, anotar,
